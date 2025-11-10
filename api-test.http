@@ -1,0 +1,104 @@
+### RBAC + JWT + Redis Demo API 测试
+
+# 变量
+@baseUrl = http://localhost:3000/api
+@adminToken = {{login.response.body.accessToken}}
+
+### 1. 用户注册
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123",
+  "email": "test@example.com"
+}
+
+### 2. 管理员登录
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "root123456"
+}
+
+### 3. 编辑者登录
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "editor",
+  "password": "root123456"
+}
+
+### 4. 普通用户登录
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "password": "root123456"
+}
+
+### 5. 获取当前用户信息（需要认证）
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{adminToken}}
+
+### 6. 刷新 Token
+POST {{baseUrl}}/auth/refresh
+Authorization: Bearer {{adminToken}}
+
+### 7. 获取所有用户（需要 users:read 权限）
+GET {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+
+### 8. 管理员专用路由（需要 admin 角色）
+GET {{baseUrl}}/users/admin
+Authorization: Bearer {{adminToken}}
+
+### 9. 获取个人资料（需要 profile:read 权限）
+GET {{baseUrl}}/users/profile
+Authorization: Bearer {{adminToken}}
+
+### 10. 编辑者路由（需要 admin 或 editor 角色）
+GET {{baseUrl}}/users/editor
+Authorization: Bearer {{adminToken}}
+
+### 11. 高级路由（需要 users:read 和 users:write 权限）
+GET {{baseUrl}}/users/advanced
+Authorization: Bearer {{adminToken}}
+
+### 12. 清除用户缓存（需要 admin 角色）
+POST {{baseUrl}}/users/cache/clear/1
+Authorization: Bearer {{adminToken}}
+
+### 13. 用户登出（Token 黑名单）
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{adminToken}}
+
+### 14. 登出后尝试访问受保护路由（应该失败 - 401）
+GET {{baseUrl}}/users
+Authorization: Bearer {{adminToken}}
+
+### 15. 强制用户登出（管理员踢人，需要 admin 角色）
+POST {{baseUrl}}/users/force-logout/2
+Authorization: Bearer {{adminToken}}
+
+### 16. 无 Token 访问受保护路由（应该失败）
+GET {{baseUrl}}/users
+
+### 17. 使用普通用户访问管理员路由（应该失败 - 403）
+# 先用 john_doe 登录获取 token，然后访问 admin 路由
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "password": "user123"
+}
+
+###
+GET {{baseUrl}}/users/admin
+Authorization: Bearer <john_doe_token_here>
