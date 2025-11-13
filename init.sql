@@ -117,7 +117,7 @@ WHERE r.name = 'user'
 
 -- 3.4 插入用户（密码统一为：root123456）
 -- 所有用户的密码都是 root123456，方便学习测试
--- 密码已经过 bcrypt 加密（hash 轮数为 10）
+-- 密码使用 SHA-256 哈希加密
 
 -- admin 用户 (username: admin, password: root123456)
 INSERT INTO `users` (`username`, `password`, `email`) VALUES

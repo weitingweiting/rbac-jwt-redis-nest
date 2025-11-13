@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 import { TokenBlacklistService } from '../services/token-blacklist.service';
 
 @Injectable()
@@ -14,6 +14,21 @@ export class AuthService {
     private jwtService: JwtService,
     private tokenBlacklistService: TokenBlacklistService,
   ) { }
+
+  /**
+   * 使用 SHA-256 哈希密码
+   */
+  private hashPassword(password: string): string {
+    return createHash('sha256').update(password).digest('hex');
+  }
+
+  /**
+   * 验证密码
+   */
+  private verifyPassword(password: string, hashedPassword: string): boolean {
+    const inputHash = createHash('sha256').update(password).digest('hex');
+    return inputHash === hashedPassword;
+  }
 
   /**
    * 用户注册
@@ -29,7 +44,7 @@ export class AuthService {
     }
 
     // 密码加密
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = this.hashPassword(password);
 
     // 创建用户（默认不分配角色，需要管理员分配）
     const user = this.userRepository.create({
@@ -58,7 +73,7 @@ export class AuthService {
     }
 
     // 验证密码
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = this.verifyPassword(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }

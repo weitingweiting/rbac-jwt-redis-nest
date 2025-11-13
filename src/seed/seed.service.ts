@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
-import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class SeedService {
@@ -16,6 +16,13 @@ export class SeedService {
     @InjectRepository(Permission)
     private permissionRepository: Repository<Permission>,
   ) { }
+
+  /**
+   * 使用 SHA-256 哈希密码
+   */
+  private hashPassword(password: string): string {
+    return createHash('sha256').update(password).digest('hex');
+  }
 
   async seed() {
     console.log('🌱 Starting seed...');
@@ -72,7 +79,7 @@ export class SeedService {
 
     // 3. 创建用户
     console.log('📝 Creating users...');
-    const adminPassword = await bcrypt.hash('root123456', 10);
+    const adminPassword = this.hashPassword('root123456');
     await this.userRepository.save({
       username: 'admin',
       password: adminPassword,
@@ -80,7 +87,7 @@ export class SeedService {
       roles: [adminRole],
     });
 
-    const editorPassword = await bcrypt.hash('root123456', 10);
+    const editorPassword = this.hashPassword('root123456');
     await this.userRepository.save({
       username: 'editor',
       password: editorPassword,
@@ -88,7 +95,7 @@ export class SeedService {
       roles: [editorRole],
     });
 
-    const userPassword = await bcrypt.hash('root123456', 10);
+    const userPassword = this.hashPassword('root123456');
     await this.userRepository.save({
       username: 'john_doe',
       password: userPassword,

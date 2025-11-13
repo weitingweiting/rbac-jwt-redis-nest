@@ -9,7 +9,7 @@ NestJS 完整的 RBAC（基于角色的访问控制）+ JWT 认证 + Redis 缓�
 - ✅ Redis 缓存用户权限
 - ✅ Token 黑名单（用户登出、强制登出）
 - ✅ TypeORM + MySQL 数据库
-- ✅ 密码 bcrypt 加密
+- ✅ 密码 SHA-256 加密
 - ✅ 装饰器实现权限控制
 - ✅ 全局 JWT Guard
 - ✅ 公开接口标记
@@ -22,7 +22,7 @@ NestJS 完整的 RBAC（基于角色的访问控制）+ JWT 认证 + Redis 缓�
 - Redis
 - JWT
 - Passport
-- Bcrypt
+- Node.js Crypto (SHA-256)
 
 ## 前置要求
 
