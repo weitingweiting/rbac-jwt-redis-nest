@@ -1,16 +1,18 @@
 import { Controller, Get, UseGuards, Post, Param, ParseIntPipe } from '@nestjs/common';
-import { PermissionsGuard } from '../guards/permissions.guard';
-import { RolesGuard } from '../guards/roles.guard';
-import { RequirePermissions } from '../decorators/permissions.decorator';
-import { RequireRoles } from '../decorators/roles.decorator';
+import { PermissionsGuard } from '../../shared/guards/permissions.guard';
+import { RolesGuard } from '../../shared/guards/roles.guard';
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
+import { RequireRoles } from '../../shared/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UserPermissionsService } from '../services/user-permissions.service';
+import { UserPermissionsService } from '../../shared/services/user-permissions.service';
 import { AuthService } from '../auth/auth.service';
+import { UsersService } from './users.service';
 
 @Controller('users')
 @UseGuards(PermissionsGuard, RolesGuard)
 export class UsersController {
   constructor(
+    private usersService: UsersService,
     private userPermissionsService: UserPermissionsService,
     private authService: AuthService,
   ) { }

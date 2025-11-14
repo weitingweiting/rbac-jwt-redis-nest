@@ -29,3 +29,6 @@ build/
 # Docker data volumes (本地数据目录)
 docker-data/
 
+
+# 忽略所有.md文件
+*.md

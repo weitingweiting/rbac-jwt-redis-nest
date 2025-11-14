@@ -13,6 +13,7 @@ NestJS 完整的 RBAC（基于角色的访问控制）+ JWT 认证 + Redis 缓�
 - ✅ 装饰器实现权限控制
 - ✅ 全局 JWT Guard
 - ✅ 公开接口标记
+- ✅ Winston 日志系统（日志轮转、分级、自动归档）
 
 ## 技术栈
 
@@ -22,6 +23,7 @@ NestJS 完整的 RBAC（基于角色的访问控制）+ JWT 认证 + Redis 缓�
 - Redis
 - JWT
 - Passport
+- Winston (日志)
 - Node.js Crypto (SHA-256)
 
 ## 前置要求
@@ -75,13 +77,21 @@ docker-compose --profile tools up -d
 创建 `.env` 文件：
 
 ```env
+# 应用环境（development 或 production）
+NODE_ENV=development
+
+# JWT 配置
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
 JWT_EXPIRES_IN=24h
+
+# 数据库配置
 DATABASE_HOST=localhost
 DATABASE_PORT=3306
 DATABASE_USER=root
 DATABASE_PASSWORD=password
 DATABASE_NAME=rbac_demo
+
+# Redis 配置
 REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
@@ -177,7 +187,8 @@ src/
 │   └── auth.module.ts      # 认证模块
 ├── config/                  # 配置文件
 │   ├── jwt.config.ts       # JWT 配置
-│   └── redis.config.ts     # Redis 配置
+│   ├── redis.config.ts     # Redis 配置
+│   └── winston.config.ts   # Winston 日志配置
 ├── controllers/            # 控制器
 │   └── users.controller.ts
 ├── decorators/             # 权限装饰器
@@ -190,6 +201,9 @@ src/
 ├── guards/                 # 权限 Guard
 │   ├── permissions.guard.ts
 │   └── roles.guard.ts
+├── logger/                 # 日志模块
+│   ├── logger.module.ts    # 日志模块
+│   └── logging.interceptor.ts  # HTTP 日志拦截器
 ├── services/               # 服务层
 │   └── user-permissions.service.ts
 ├── seed/                   # 数据库种子
@@ -240,6 +254,33 @@ src/
 @CurrentUser() user: any
 ```
 
+## 日志系统
+
+本项目集成了完整的 Winston 日志系统：
+
+- 📝 多级别日志（error、warn、info、http、debug）
+- 📁 自动日志轮转和归档
+- 🎨 开发环境彩色控制台输出
+- 🔒 敏感信息自动脱敏
+- 📊 HTTP 请求/响应自动记录
+- 💾 按日期和类型分类存储
+
+详细使用说明请查看：
+
+- [LOGGER_GUIDE.md](LOGGER_GUIDE.md) - 日志功能介绍
+- [LOGGER_EXAMPLES.md](LOGGER_EXAMPLES.md) - 使用示例和最佳实践
+
+```bash
+# 实时查看日志
+tail -f logs/application-$(date +%Y-%m-%d).log
+
+# 查看错误日志
+tail -f logs/error-$(date +%Y-%m-%d).log
+
+# 格式化 JSON 日志
+tail -f logs/application-$(date +%Y-%m-%d).log | jq '.'
+```
+
 ## 学习要点
 
 1. **SetMetadata** vs **Reflect.metadata**：装饰器工厂的使用
@@ -248,6 +289,7 @@ src/
 4. **JWT 策略**：Passport Strategy 的实现
 5. **装饰器组合**：自定义装饰器的实践
 6. **Token 黑名单**：用户登出和强制登出的实现
+7. **Winston 日志**：结构化日志、拦截器、日志轮转的最佳实践
 
 ## License
 

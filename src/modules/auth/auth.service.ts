@@ -2,9 +2,9 @@ import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User } from '../../shared/entities/user.entity';
 import { createHash } from 'crypto';
-import { TokenBlacklistService } from '../services/token-blacklist.service';
+import { TokenBlacklistService } from '../../shared/services/token-blacklist.service';
 
 @Injectable()
 export class AuthService {
