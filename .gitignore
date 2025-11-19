@@ -29,6 +29,8 @@ build/
 # Docker data volumes (本地数据目录)
 docker-data/
 
-
-# 忽略所有.md文件
+# 文档管理 - 允许根目录README和docs目录下的文档
 *.md
+!README.md
+!docs/
+!docs/*.md

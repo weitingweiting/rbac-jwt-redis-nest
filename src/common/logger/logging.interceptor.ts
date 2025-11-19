@@ -6,9 +6,10 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
+import { response } from 'express';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -28,11 +29,36 @@ export class LoggingInterceptor implements NestInterceptor {
       url,
       ip,
       userAgent,
-      body: this.sanitizeBody(body),
+      body: process.env.NODE_ENV === 'production' ? this.sanitizeBody(body) : body,
       timestamp: new Date().toISOString(),
     });
 
     return next.handle().pipe(
+      map(data => {
+        // ✅ 统一成功响应格式
+        const wrappedResponse = {
+          success: true,
+          statusCode: response.statusCode,
+          timestamp: new Date().toISOString(),
+          path: request.url,
+          method: request.method,
+          data: data,
+          // 添加分页信息（如果需要）
+          ...(this.isPaginatedData(data) && {
+            pagination: {
+              total: data.total,
+              page: data.page,
+              limit: data.limit,
+            }
+          })
+        };
+
+        // ✅ 设置自定义响应头
+        response.setHeader('X-API-Version', '1.0');
+        response.setHeader('X-Response-Time', Date.now() - request.startTime);
+
+        return wrappedResponse;
+      }),
       tap({
         next: (data: any) => {
           const response = context.switchToHttp().getResponse();
@@ -81,5 +107,10 @@ export class LoggingInterceptor implements NestInterceptor {
     });
 
     return sanitized;
+  }
+
+  private isPaginatedData(data: any): boolean {
+    return data && typeof data === 'object' &&
+      'total' in data && 'page' in data && 'limit' in data;
   }
 }

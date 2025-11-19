@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 
 // 应用核心
 import { AppController } from './app.controller';
@@ -18,18 +18,22 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 // 通用模块
 import { LoggerModule } from './common/logger/logger.module';
 import { LoggingInterceptor } from './common/logger/logging.interceptor';
+import { FiltersModule } from './common/filters/filters.module';
 
 // 数据库和种子服务
 import { DatabaseModule } from './database/database.module';
 import { SeedService } from './database/seeds/seed.service';
+import { TestModule } from './common/test/test.module';
 
 @Module({
   imports: [
     LoggerModule,
+    FiltersModule, // 全局异常过滤器模块
     RedisConfig,
     DatabaseModule,
     AuthModule,
     UsersModule,
+    TestModule,
   ],
   controllers: [AppController],
   providers: [
@@ -45,6 +49,7 @@ import { SeedService } from './database/seeds/seed.service';
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
     },
+    // 全局异常过滤器由 FiltersModule 提供
   ],
 })
 export class AppModule { }

@@ -1,8 +1,10 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../shared/entities/user.entity';
+import { BusinessException } from '../../shared/exceptions/business.exception';
+import { ERROR_CODES } from '../../shared/constants/error-codes.constant';
 import { createHash } from 'crypto';
 import { TokenBlacklistService } from '../../shared/services/token-blacklist.service';
 
@@ -34,13 +36,30 @@ export class AuthService {
    * 用户注册
    */
   async register(username: string, password: string, email: string): Promise<{ message: string }> {
-    // 检查用户是否已存在
-    const existingUser = await this.userRepository.findOne({
-      where: [{ username }, { email }],
+    // 检查用户名是否已存在
+    const existingUsername = await this.userRepository.findOne({
+      where: { username },
     });
 
-    if (existingUser) {
-      throw new ConflictException('Username or email already exists');
+    if (existingUsername) {
+      throw new BusinessException(
+        '用户名已存在，请选择其他用户名',
+        HttpStatus.CONFLICT,
+        ERROR_CODES.USERNAME_EXISTS
+      );
+    }
+
+    // 检查邮箱是否已存在
+    const existingEmail = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    if (existingEmail) {
+      throw new BusinessException(
+        '邮箱已被注册，请使用其他邮箱',
+        HttpStatus.CONFLICT,
+        ERROR_CODES.EMAIL_EXISTS
+      );
     }
 
     // 密码加密
@@ -69,13 +88,21 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new BusinessException(
+        '用户名或密码错误',
+        HttpStatus.UNAUTHORIZED,
+        ERROR_CODES.INVALID_CREDENTIALS
+      );
     }
 
     // 验证密码
     const isPasswordValid = this.verifyPassword(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new BusinessException(
+        '用户名或密码错误',
+        HttpStatus.UNAUTHORIZED,
+        ERROR_CODES.INVALID_CREDENTIALS
+      );
     }
 
     // 生成 JWT Token
@@ -121,7 +148,11 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new BusinessException(
+        '用户不存在，无法刷新Token',
+        HttpStatus.NOT_FOUND,
+        ERROR_CODES.USER_NOT_FOUND
+      );
     }
 
     const payload = {
@@ -143,7 +174,11 @@ export class AuthService {
       // 解码 Token 获取过期时间
       const decoded = this.jwtService.decode(token) as any;
       if (!decoded || !decoded.exp) {
-        throw new UnauthorizedException('Invalid token');
+        throw new BusinessException(
+          'Token格式无效',
+          HttpStatus.UNAUTHORIZED,
+          ERROR_CODES.TOKEN_INVALID
+        );
       }
 
       // 计算 Token 剩余有效时间
@@ -157,7 +192,14 @@ export class AuthService {
 
       return { message: 'Logged out successfully' };
     } catch (error) {
-      throw new UnauthorizedException('Invalid token');
+      if (error instanceof BusinessException) {
+        throw error; // 重新抛出业务异常
+      }
+      throw new BusinessException(
+        'Token处理失败',
+        HttpStatus.UNAUTHORIZED,
+        ERROR_CODES.TOKEN_INVALID
+      );
     }
   }
 
