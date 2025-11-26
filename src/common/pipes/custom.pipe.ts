@@ -1,4 +1,4 @@
-import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common'
 
 /**
  * 自定义管道：将字符串转换为整数
@@ -11,11 +11,11 @@ import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from
 @Injectable()
 export class ParseIntPipe implements PipeTransform<string, number> {
   transform(value: string, metadata: ArgumentMetadata): number {
-    const val = parseInt(value, 10);
+    const val = parseInt(value, 10)
     if (isNaN(val)) {
-      throw new BadRequestException(`${metadata.data} 必须是一个有效的整数`);
+      throw new BadRequestException(`${metadata.data} 必须是一个有效的整数`)
     }
-    return val;
+    return val
   }
 }
 
@@ -31,28 +31,28 @@ export class ParseIntPipe implements PipeTransform<string, number> {
 export class TrimPipe implements PipeTransform {
   transform(value: any) {
     if (typeof value === 'string') {
-      return value.trim();
+      return value.trim()
     }
     if (typeof value === 'object' && value !== null) {
-      return this.trimObject(value);
+      return this.trimObject(value)
     }
-    return value;
+    return value
   }
 
   private trimObject(obj: any): any {
-    const trimmed: any = {};
+    const trimmed: any = {}
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        const value = obj[key];
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const value = obj[key]
         if (typeof value === 'string') {
-          trimmed[key] = value.trim();
+          trimmed[key] = value.trim()
         } else if (typeof value === 'object' && value !== null) {
-          trimmed[key] = this.trimObject(value);
+          trimmed[key] = this.trimObject(value)
         } else {
-          trimmed[key] = value;
+          trimmed[key] = value
         }
       }
     }
-    return trimmed;
+    return trimmed
   }
 }

@@ -15,7 +15,11 @@
     "build:detail": "bash scripts/build-verbose.sh",
     "build:info": "nest build && echo '\n📦 Build Info:' && ls -la dist/",
     "seed": "ts-node src/seed/seed.ts",
-    "gen-hash": "node scripts/generate-password-hash.js"
+    "gen-hash": "node scripts/generate-password-hash.js",
+    "lint": "eslint \"{src,scripts}/**/*.{ts,js}\" --fix",
+    "lint:check": "eslint \"{src,scripts}/**/*.{ts,js}\"",
+    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.js\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.js\""
   },
   "dependencies": {
     "@nestjs/cache-manager": "^2.0.0",
@@ -42,11 +46,18 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@types/express": "^5.0.5",
     "@types/node": "^20.3.1",
     "@types/passport-jwt": "^3.0.9",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.3"
   }

@@ -1,32 +1,24 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Inject,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
-import { Response, Request } from 'express';
-import { ResponseHeadersUtil } from '../utils/response-headers.util';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Inject } from '@nestjs/common'
+import { Observable } from 'rxjs'
+import { map, tap } from 'rxjs/operators'
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
+import { Logger } from 'winston'
+import { Response, Request } from 'express'
+import { ResponseHeadersUtil } from '../utils/response-headers.util'
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-  ) { }
+  constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest<Request>();
-    const response = context.switchToHttp().getResponse<Response>();
-    const { method, url, ip, body, headers } = request;
-    const userAgent = headers['user-agent'] || '';
-    const startTime = Date.now();
+    const request = context.switchToHttp().getRequest<Request>()
+    const response = context.switchToHttp().getResponse<Response>()
+    const { method, url, ip, body, headers } = request
+    const userAgent = headers['user-agent'] || ''
+    const startTime = Date.now()
 
     // 在请求对象上存储开始时间，供后续使用
-    request['startTime'] = startTime;
+    request['startTime'] = startTime
 
     // 记录请求信息
     this.logger.http('HTTP Request [Interceptor]', {
@@ -35,15 +27,15 @@ export class LoggingInterceptor implements NestInterceptor {
       ip,
       userAgent,
       body: process.env.NODE_ENV === 'production' ? this.sanitizeBody(body) : body,
-      timestamp: new Date().toISOString(),
-    });
+      timestamp: new Date().toISOString()
+    })
 
     return next.handle().pipe(
-      map(data => {
-        const responseTime = Date.now() - startTime;
+      map((data) => {
+        const responseTime = Date.now() - startTime
 
         // ✅ 设置自定义响应头（使用统一工具）
-        ResponseHeadersUtil.setCommonHeaders(response, { responseTime });
+        ResponseHeadersUtil.setCommonHeaders(response, { responseTime })
 
         // ✅ 统一成功响应格式
         const wrappedResponse = {
@@ -58,18 +50,18 @@ export class LoggingInterceptor implements NestInterceptor {
             pagination: {
               total: data.total,
               page: data.page,
-              limit: data.limit,
+              limit: data.limit
             }
           })
-        };
+        }
 
-        return wrappedResponse;
+        return wrappedResponse
       }),
       tap({
-        next: (data: any) => {
-          const response = context.switchToHttp().getResponse();
-          const { statusCode } = response;
-          const responseTime = Date.now() - startTime;
+        next: () => {
+          const response = context.switchToHttp().getResponse()
+          const { statusCode } = response
+          const responseTime = Date.now() - startTime
 
           // 记录响应信息
           this.logger.http('HTTP Response [Interceptor]', {
@@ -77,19 +69,19 @@ export class LoggingInterceptor implements NestInterceptor {
             url,
             statusCode,
             responseTime: `${responseTime}ms`,
-            timestamp: new Date().toISOString(),
-          });
+            timestamp: new Date().toISOString()
+          })
         },
         error: (error: any) => {
-          const response = context.switchToHttp().getResponse();
-          const responseTime = Date.now() - startTime;
+          const response = context.switchToHttp().getResponse()
+          const responseTime = Date.now() - startTime
 
           // 🔧 从异常对象获取正确的状态码
-          let statusCode = 500;
+          let statusCode = 500
           if (error && typeof error.getStatus === 'function') {
-            statusCode = error.getStatus();
+            statusCode = error.getStatus()
           } else if (response.statusCode && response.statusCode !== 200) {
-            statusCode = response.statusCode;
+            statusCode = response.statusCode
           }
 
           // 记录错误信息
@@ -100,31 +92,30 @@ export class LoggingInterceptor implements NestInterceptor {
             responseTime: `${responseTime}ms`,
             error: error.message,
             stack: error.stack,
-            timestamp: new Date().toISOString(),
-          });
-        },
-      }),
-    );
+            timestamp: new Date().toISOString()
+          })
+        }
+      })
+    )
   }
 
   // 清理敏感信息（如密码）
   private sanitizeBody(body: any): any {
-    if (!body) return body;
+    if (!body) return body
 
-    const sanitized = { ...body };
-    const sensitiveFields = ['password', 'token', 'secret', 'apiKey'];
+    const sanitized = { ...body }
+    const sensitiveFields = ['password', 'token', 'secret', 'apiKey']
 
     sensitiveFields.forEach((field) => {
       if (sanitized[field]) {
-        sanitized[field] = '***REDACTED***';
+        sanitized[field] = '***REDACTED***'
       }
-    });
+    })
 
-    return sanitized;
+    return sanitized
   }
 
   private isPaginatedData(data: any): boolean {
-    return data && typeof data === 'object' &&
-      'total' in data && 'page' in data && 'limit' in data;
+    return data && typeof data === 'object' && 'total' in data && 'page' in data && 'limit' in data
   }
 }

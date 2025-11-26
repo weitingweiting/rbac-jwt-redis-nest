@@ -1,18 +1,18 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Headers, Inject } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { Public } from './decorators/public.decorator';
-import { CurrentUser } from './decorators/current-user.decorator';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger } from 'winston';
-import { RegisterDto, LoginDto } from './dto';
-import { CurrentUserDto } from '@/shared/dto/current-user.dto';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Headers, Inject } from '@nestjs/common'
+import { AuthService } from './auth.service'
+import { Public } from './decorators/public.decorator'
+import { CurrentUser } from './decorators/current-user.decorator'
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
+import { Logger } from 'winston'
+import { RegisterDto, LoginDto } from './dto'
+import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
-  ) { }
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
+  ) {}
 
   /**
    * 用户注册
@@ -21,11 +21,11 @@ export class AuthController {
   @Public()
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
-    const result = await this.authService.register(registerDto);
+    const result = await this.authService.register(registerDto)
     this.logger.info('User registered successfully', {
-      username: registerDto.username,
-    });
-    return result;
+      username: registerDto.username
+    })
+    return result
   }
 
   /**
@@ -37,19 +37,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
     try {
-      const result = await this.authService.login(loginDto);
+      const result = await this.authService.login(loginDto)
       this.logger.info('User logged in successfully', {
         username: loginDto.username,
-        userId: result.user.id,
-      });
-      return result;
+        userId: result.user.id
+      })
+      return result
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error)
       this.logger.warn('User login failed', {
         username: loginDto.username,
-        reason: errorMessage,
-      });
-      throw error;
+        reason: errorMessage
+      })
+      throw error
     }
   }
 
@@ -61,8 +61,8 @@ export class AuthController {
   async getProfile(@CurrentUser() user: CurrentUserDto) {
     return {
       message: '获取用户信息成功',
-      user,
-    };
+      user
+    }
   }
 
   /**
@@ -74,9 +74,9 @@ export class AuthController {
     // Token 刷新是安全相关操作，值得记录
     this.logger.info('Token refreshed', {
       userId: user.id,
-      username: user.username,
-    });
-    return this.authService.refreshToken(user.id);
+      username: user.username
+    })
+    return this.authService.refreshToken(user.id)
   }
 
   /**
@@ -86,23 +86,23 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Headers('authorization') authorization: string) {
-    const token = authorization?.replace('Bearer ', '');
+    const token = authorization?.replace('Bearer ', '')
     if (!token) {
-      this.logger.warn('Logout attempt without token');
-      return { message: 'No token provided' };
+      this.logger.warn('Logout attempt without token')
+      return { message: 'No token provided' }
     }
 
     try {
-      const result = await this.authService.logout(token);
+      const result = await this.authService.logout(token)
       // 成功登出是重要的安全事件
-      this.logger.info('User logged out successfully');
-      return result;
+      this.logger.info('User logged out successfully')
+      return result
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error)
       this.logger.error('Logout failed', {
-        error: errorMessage,
-      });
-      throw error;
+        error: errorMessage
+      })
+      throw error
     }
   }
 }

@@ -27,7 +27,7 @@ export const ERROR_CODES = {
   OPERATION_NOT_ALLOWED: 'OPERATION_NOT_ALLOWED',
 
   // 路由相关
-  ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND',
-} as const;
+  ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND'
+} as const
 
-export type ErrorCode = typeof ERROR_CODES[keyof typeof ERROR_CODES];
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]

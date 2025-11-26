@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response } from 'express'
 
 /**
  * 响应头设置工具类
@@ -13,33 +13,33 @@ export class ResponseHeadersUtil {
   static setCommonHeaders(
     response: Response,
     options?: {
-      traceId?: string;
-      responseTime?: number;
-      errorType?: string;
+      traceId?: string
+      responseTime?: number
+      errorType?: string
     }
   ): void {
     // 设置API版本
-    response.setHeader('X-API-Version', '1.0');
+    response.setHeader('X-API-Version', '1.0')
 
     // 设置响应时间（如果提供）
     if (options?.responseTime !== undefined) {
-      response.setHeader('X-Response-Time', `${options.responseTime}ms`);
+      response.setHeader('X-Response-Time', `${options.responseTime}ms`)
     }
 
     // 设置追踪ID（如果提供）
     if (options?.traceId) {
-      response.setHeader('X-Error-Trace-ID', options.traceId);
+      response.setHeader('X-Error-Trace-ID', options.traceId)
     }
 
     // 设置错误类型（如果提供）
     if (options?.errorType) {
-      response.setHeader('X-Error-Type', options.errorType);
+      response.setHeader('X-Error-Type', options.errorType)
     }
 
     // 设置安全相关的响应头
-    response.setHeader('X-Content-Type-Options', 'nosniff');
-    response.setHeader('X-Frame-Options', 'DENY');
-    response.setHeader('X-XSS-Protection', '1; mode=block');
+    response.setHeader('X-Content-Type-Options', 'nosniff')
+    response.setHeader('X-Frame-Options', 'DENY')
+    response.setHeader('X-XSS-Protection', '1; mode=block')
   }
 
   /**
@@ -47,6 +47,6 @@ export class ResponseHeadersUtil {
    * @returns 9位随机字符串
    */
   static generateTraceId(): string {
-    return Math.random().toString(36).substr(2, 9);
+    return Math.random().toString(36).substr(2, 9)
   }
 }

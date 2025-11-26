@@ -1,4 +1,4 @@
-import { BaseUserDto } from '@/shared/dto/base-user.dto';
+import { BaseUserDto } from '@/shared/dto/base-user.dto'
 
 /**
  * 用户注册 DTO

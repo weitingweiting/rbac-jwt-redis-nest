@@ -7,20 +7,20 @@ export class CurrentUserDto {
   /**
    * 用户ID
    */
-  id!: number;
+  id!: number
 
   /**
    * 用户名
    */
-  username!: string;
+  username!: string
 
   /**
    * 邮箱
    */
-  email!: string;
+  email!: string
 
   /**
    * Token 签发时间戳
    */
-  tokenIssuedAt!: number;
+  tokenIssuedAt!: number
 }

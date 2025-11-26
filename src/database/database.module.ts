@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../shared/entities/user.entity';
-import { Role } from '../shared/entities/role.entity';
-import { Permission } from '../shared/entities/permission.entity';
+import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { User } from '../shared/entities/user.entity'
+import { Role } from '../shared/entities/role.entity'
+import { Permission } from '../shared/entities/permission.entity'
 
 @Module({
   imports: [
@@ -15,10 +15,10 @@ import { Permission } from '../shared/entities/permission.entity';
       database: process.env.DATABASE_NAME || 'rbac_demo',
       synchronize: process.env.NODE_ENV === 'development', // 生产环境禁用
       logging: process.env.NODE_ENV === 'development',
-      entities: [User, Role, Permission],
+      entities: [User, Role, Permission]
     }),
-    TypeOrmModule.forFeature([User, Role, Permission]),
+    TypeOrmModule.forFeature([User, Role, Permission])
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule]
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

@@ -1,18 +1,18 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../../app.module';
-import { SeedService } from './seed.service';
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from '../../app.module'
+import { SeedService } from './seed.service'
 
 async function runSeed() {
-  const app = await NestFactory.createApplicationContext(AppModule);
-  const seedService = app.get(SeedService);
+  const app = await NestFactory.createApplicationContext(AppModule)
+  const seedService = app.get(SeedService)
 
   try {
-    await seedService.seed();
+    await seedService.seed()
   } catch (error) {
-    console.error('❌ Seed failed:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Seed failed:', error instanceof Error ? error.message : String(error))
   } finally {
-    await app.close();
+    await app.close()
   }
 }
 
-runSeed();
+runSeed()

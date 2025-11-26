@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, MinLength, MaxLength, IsEmail } from 'class-validator';
-import { IsPhoneNumber } from '../../../common/validators/custom.validator';
+import { IsString, IsOptional, MinLength, MaxLength, IsEmail } from 'class-validator'
+import { IsPhoneNumber } from '../../../common/validators/custom.validator'
 
 /**
  * 查询用户 DTO
@@ -9,15 +9,15 @@ export class QueryUserDto {
   @IsOptional()
   @IsString({ message: '用户名必须是字符串' })
   @MinLength(3, { message: '用户名至少3个字符' })
-  username?: string;
+  username?: string
 
   @IsOptional()
   @IsEmail({}, { message: '请输入有效的邮箱地址' })
-  email?: string;
+  email?: string
 
   @IsOptional()
   @IsString({ message: '角色必须是字符串' })
-  role?: string;
+  role?: string
 }
 
 /**
@@ -29,14 +29,14 @@ export class UpdateProfileDto {
   @IsString({ message: '昵称必须是字符串' })
   @MinLength(2, { message: '昵称至少2个字符' })
   @MaxLength(20, { message: '昵称最多20个字符' })
-  nickname?: string;
+  nickname?: string
 
   @IsOptional()
   @IsPhoneNumber({ message: '请输入有效的中国手机号' })
-  phone?: string;
+  phone?: string
 
   @IsOptional()
   @IsString({ message: '地址必须是字符串' })
   @MaxLength(200, { message: '地址最多200个字符' })
-  address?: string;
+  address?: string
 }

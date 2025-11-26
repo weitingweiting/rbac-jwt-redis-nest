@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
-import { AllExceptionsFilter } from './all-exceptions.filter';
-import { HttpExceptionFilter } from './http-exception.filter';
-import { BusinessExceptionFilter } from './business-exception.filter';
-import { ValidationExceptionFilter } from './validation-exception.filter';
+import { Module } from '@nestjs/common'
+import { APP_FILTER } from '@nestjs/core'
+import { AllExceptionsFilter } from './all-exceptions.filter'
+import { HttpExceptionFilter } from './http-exception.filter'
+import { BusinessExceptionFilter } from './business-exception.filter'
+import { ValidationExceptionFilter } from './validation-exception.filter'
 
 @Module({
   imports: [],
@@ -12,21 +12,21 @@ import { ValidationExceptionFilter } from './validation-exception.filter';
     // 执行顺序：ValidationException → BusinessException → HttpException → AllExceptions
     {
       provide: APP_FILTER,
-      useClass: AllExceptionsFilter, // 最后执行：捕获所有其他异常
+      useClass: AllExceptionsFilter // 最后执行：捕获所有其他异常
     },
     {
       provide: APP_FILTER,
-      useClass: HttpExceptionFilter, // 第三执行：一般 HTTP 异常
+      useClass: HttpExceptionFilter // 第三执行：一般 HTTP 异常
     },
     {
       provide: APP_FILTER,
-      useClass: BusinessExceptionFilter, // 第二执行：业务异常
+      useClass: BusinessExceptionFilter // 第二执行：业务异常
     },
     {
       provide: APP_FILTER,
-      useClass: ValidationExceptionFilter, // 最先执行：验证异常（最具体）
-    },
+      useClass: ValidationExceptionFilter // 最先执行：验证异常（最具体）
+    }
   ],
-  exports: [],
+  exports: []
 })
-export class FiltersModule { }
+export class FiltersModule {}

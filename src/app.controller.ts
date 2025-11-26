@@ -1,6 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
-import { Public } from './modules/auth/decorators/public.decorator';
-import { BaseResponseDto } from './shared/dto/base-response.dto';
+import { Controller, Get } from '@nestjs/common'
+import { Public } from './modules/auth/decorators/public.decorator'
+import { BaseResponseDto } from './shared/dto/base-response.dto'
 
 @Controller()
 export class AppController {
@@ -11,10 +11,10 @@ export class AppController {
       {
         name: 'RBAC JWT Redis Demo',
         version: '1.0.0',
-        description: 'NestJS RBAC + JWT + Redis 后端管理系统',
+        description: 'NestJS RBAC + JWT + Redis 后端管理系统'
       },
       'API 运行正常'
-    );
+    )
   }
 
   @Get('health')
@@ -24,9 +24,9 @@ export class AppController {
       {
         status: 'ok',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
+        uptime: process.uptime()
       },
       '系统健康检查'
-    );
+    )
   }
 }

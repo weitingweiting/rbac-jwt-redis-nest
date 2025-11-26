@@ -1,4 +1,4 @@
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer'
 
 /**
  * 用户信息 DTO（用于响应）
@@ -6,25 +6,25 @@ import { Exclude, Expose, Type } from 'class-transformer';
 @Exclude()
 export class UserInfoDto {
   @Expose()
-  id!: number;
+  id!: number
 
   @Expose()
-  username!: string;
+  username!: string
 
   @Expose()
-  email!: string;
+  email!: string
 
   @Expose()
-  roles?: any[];
+  roles?: any[]
 
   @Expose()
-  permissions?: any[];
+  permissions?: any[]
 
   @Expose()
-  createdAt?: Date;
+  createdAt?: Date
 
   @Expose()
-  updatedAt?: Date;
+  updatedAt?: Date
 }
 
 /**
@@ -32,11 +32,11 @@ export class UserInfoDto {
  */
 export class LoginResponseDto {
   @Expose()
-  accessToken!: string;
+  accessToken!: string
 
   @Expose()
   @Type(() => UserInfoDto)
-  user!: UserInfoDto;
+  user!: UserInfoDto
 }
 
 /**
@@ -44,7 +44,7 @@ export class LoginResponseDto {
  */
 export class TokenResponseDto {
   @Expose()
-  accessToken!: string;
+  accessToken!: string
 }
 
 /**
@@ -52,5 +52,5 @@ export class TokenResponseDto {
  */
 export class MessageResponseDto {
   @Expose()
-  message!: string;
+  message!: string
 }

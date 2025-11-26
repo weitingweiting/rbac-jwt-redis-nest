@@ -1,26 +1,26 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
-import { Role } from './role.entity';
-import { Exclude } from 'class-transformer';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm'
+import { Role } from './role.entity'
+import { Exclude } from 'class-transformer'
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
-  id!: number;
+  id!: number
 
   @Column({ unique: true })
-  username!: string;
+  username!: string
 
   @Column()
   @Exclude() // 序列化时自动排除密码字段
-  password!: string;
+  password!: string
 
   @Column({ unique: true })
-  email!: string;
+  email!: string
 
-  @ManyToMany(() => Role, role => role.users, { eager: true })
+  @ManyToMany(() => Role, (role) => role.users, { eager: true })
   @JoinTable({ name: 'user_roles' })
-  roles!: Role[];
+  roles!: Role[]
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt!: Date;
+  createdAt!: Date
 }

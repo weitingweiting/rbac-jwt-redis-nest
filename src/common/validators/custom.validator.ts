@@ -1,4 +1,4 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator'
 
 /**
  * 自定义验证器：验证两个字段是否匹配（如：密码确认）
@@ -6,13 +6,13 @@ import { registerDecorator, ValidationOptions, ValidationArguments } from 'class
  * export class ChangePasswordDto {
  *   @IsString()
  *   newPassword: string;
- * 
+ *
  *   @IsMatch('newPassword', { message: '两次输入的密码不一致' })
  *   confirmPassword: string;
  * }
  */
 export function IsMatch(property: string, validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isMatch',
       target: object.constructor,
@@ -21,17 +21,17 @@ export function IsMatch(property: string, validationOptions?: ValidationOptions)
       options: validationOptions,
       validator: {
         validate(value: any, args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints;
-          const relatedValue = (args.object as any)[relatedPropertyName];
-          return value === relatedValue;
+          const [relatedPropertyName] = args.constraints
+          const relatedValue = (args.object as any)[relatedPropertyName]
+          return value === relatedValue
         },
         defaultMessage(args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints;
-          return `${propertyName} 必须与 ${relatedPropertyName} 匹配`;
-        },
-      },
-    });
-  };
+          const [relatedPropertyName] = args.constraints
+          return `${propertyName} 必须与 ${relatedPropertyName} 匹配`
+        }
+      }
+    })
+  }
 }
 
 /**
@@ -43,7 +43,7 @@ export function IsMatch(property: string, validationOptions?: ValidationOptions)
  * }
  */
 export function IsPhoneNumber(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isPhoneNumber',
       target: object.constructor,
@@ -51,16 +51,16 @@ export function IsPhoneNumber(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: any) {
-          if (typeof value !== 'string') return false;
-          const phoneRegex = /^1[3-9]\d{9}$/;
-          return phoneRegex.test(value);
+          if (typeof value !== 'string') return false
+          const phoneRegex = /^1[3-9]\d{9}$/
+          return phoneRegex.test(value)
         },
         defaultMessage() {
-          return '请输入有效的中国手机号';
-        },
-      },
-    });
-  };
+          return '请输入有效的中国手机号'
+        }
+      }
+    })
+  }
 }
 
 /**
@@ -72,7 +72,7 @@ export function IsPhoneNumber(validationOptions?: ValidationOptions) {
  * }
  */
 export function IsIdCard(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isIdCard',
       target: object.constructor,
@@ -80,16 +80,16 @@ export function IsIdCard(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: any) {
-          if (typeof value !== 'string') return false;
-          const idCardRegex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-          return idCardRegex.test(value);
+          if (typeof value !== 'string') return false
+          const idCardRegex = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/
+          return idCardRegex.test(value)
         },
         defaultMessage() {
-          return '请输入有效的身份证号';
-        },
-      },
-    });
-  };
+          return '请输入有效的身份证号'
+        }
+      }
+    })
+  }
 }
 
 /**
@@ -101,7 +101,7 @@ export function IsIdCard(validationOptions?: ValidationOptions) {
  * }
  */
 export function IsStrongPassword(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isStrongPassword',
       target: object.constructor,
@@ -109,14 +109,15 @@ export function IsStrongPassword(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: any) {
-          if (typeof value !== 'string') return false;
-          const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-          return strongPasswordRegex.test(value);
+          if (typeof value !== 'string') return false
+          const strongPasswordRegex =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+          return strongPasswordRegex.test(value)
         },
         defaultMessage() {
-          return '密码必须至少8位，包含大小写字母、数字和特殊字符';
-        },
-      },
-    });
-  };
+          return '密码必须至少8位，包含大小写字母、数字和特殊字符'
+        }
+      }
+    })
+  }
 }

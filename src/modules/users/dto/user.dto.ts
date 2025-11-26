@@ -1,7 +1,6 @@
-import { IsOptional } from 'class-validator';
-import { Exclude, Expose } from 'class-transformer';
-import { PartialType, OmitType } from '@nestjs/mapped-types';
-import { BaseUserDto } from '@/shared/dto/base-user.dto';
+import { Exclude, Expose } from 'class-transformer'
+import { PartialType, OmitType } from '@nestjs/mapped-types'
+import { BaseUserDto } from '@/shared/dto/base-user.dto'
 
 /**
  * 创建用户 DTO
@@ -16,9 +15,7 @@ export class CreateUserDto extends BaseUserDto {
  * 更新用户 DTO
  * 使用 PartialType 让所有字段变为可选，排除密码字段
  */
-export class UpdateUserDto extends PartialType(
-  OmitType(BaseUserDto, ['password'] as const)
-) {
+export class UpdateUserDto extends PartialType(OmitType(BaseUserDto, ['password'] as const)) {
   // 所有字段自动变为可选
   // 排除了密码字段，密码修改应该有单独的接口
 }
@@ -26,26 +23,26 @@ export class UpdateUserDto extends PartialType(
 @Exclude()
 export class UserResponseDto {
   @Expose()
-  id!: number;
+  id!: number
 
   @Expose()
-  username!: string;
+  username!: string
 
   @Expose()
-  email!: string;
+  email!: string
 
   @Expose()
-  roles!: string[];
+  roles!: string[]
 
   @Expose()
-  permissions!: string[];
+  permissions!: string[]
 
   @Expose()
-  createdAt!: Date;
+  createdAt!: Date
 
   @Expose()
-  updatedAt!: Date;
+  updatedAt!: Date
 }
 
 // 导出所有 DTO
-export * from './query-user.dto';
+export * from './query-user.dto'

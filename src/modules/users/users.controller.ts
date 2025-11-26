@@ -10,19 +10,18 @@ import {
   ParseIntPipe,
   UseGuards,
   HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import { PermissionsGuard } from '../../shared/guards/permissions.guard';
-import { RolesGuard } from '../../shared/guards/roles.guard';
-import { RequirePermissions } from '../../shared/decorators/permissions.decorator';
-import { RequireRoles } from '../../shared/decorators/roles.decorator';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UserPermissionsService } from '../../shared/services/user-permissions.service';
-import { AuthService } from '../auth/auth.service';
-import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto, QueryUserDto } from './dto/user.dto';
-import { PaginationDto } from '../../shared/dto/pagination.dto';
-import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto';
+  HttpStatus
+} from '@nestjs/common'
+import { PermissionsGuard } from '../../shared/guards/permissions.guard'
+import { RolesGuard } from '../../shared/guards/roles.guard'
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
+import { RequireRoles } from '../../shared/decorators/roles.decorator'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { UserPermissionsService } from '../../shared/services/user-permissions.service'
+import { AuthService } from '../auth/auth.service'
+import { UsersService } from './users.service'
+import { CreateUserDto, UpdateUserDto, QueryUserDto } from './dto/user.dto'
+import { PaginationDto } from '../../shared/dto/pagination.dto'
 
 @Controller('users')
 @UseGuards(PermissionsGuard, RolesGuard)
@@ -30,8 +29,8 @@ export class UsersController {
   constructor(
     private usersService: UsersService,
     private userPermissionsService: UserPermissionsService,
-    private authService: AuthService,
-  ) { }
+    private authService: AuthService
+  ) {}
 
   /**
    * 获取用户列表（带分页和查询）
@@ -42,14 +41,14 @@ export class UsersController {
   async findAll(
     @Query() pagination: PaginationDto,
     @Query() query: QueryUserDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: any
   ) {
-    const users = await this.usersService.findAll(pagination, query);
+    const users = await this.usersService.findAll(pagination, query)
     return {
       message: '获取用户列表成功',
       currentUser: currentUser.username,
-      ...users,
-    };
+      ...users
+    }
   }
 
   /**
@@ -59,11 +58,11 @@ export class UsersController {
   @Get(':id')
   @RequirePermissions('users:read')
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.usersService.findOne(id);
+    const user = await this.usersService.findOne(id)
     return {
       message: '获取用户详情成功',
-      data: user,
-    };
+      data: user
+    }
   }
 
   /**
@@ -73,11 +72,11 @@ export class UsersController {
   @Post()
   @RequirePermissions('users:create')
   async create(@Body() createUserDto: CreateUserDto) {
-    const user = await this.usersService.create(createUserDto);
+    const user = await this.usersService.create(createUserDto)
     return {
       message: '创建用户成功',
-      data: user,
-    };
+      data: user
+    }
   }
 
   /**
@@ -86,15 +85,12 @@ export class UsersController {
    */
   @Put(':id')
   @RequirePermissions('users:update')
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
-  ) {
-    const user = await this.usersService.update(id, updateUserDto);
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
+    const user = await this.usersService.update(id, updateUserDto)
     return {
       message: '更新用户成功',
-      data: user,
-    };
+      data: user
+    }
   }
 
   /**
@@ -105,7 +101,7 @@ export class UsersController {
   @RequirePermissions('users:delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.usersService.delete(id);
+    await this.usersService.delete(id)
   }
 
   @Get('admin')
@@ -113,8 +109,8 @@ export class UsersController {
   adminOnly(@CurrentUser() user: any) {
     return {
       message: 'Admin only route - Welcome to admin dashboard',
-      currentUser: user,
-    };
+      currentUser: user
+    }
   }
 
   @Get('profile')
@@ -122,8 +118,8 @@ export class UsersController {
   getProfile(@CurrentUser() user: any) {
     return {
       message: 'User profile',
-      user,
-    };
+      user
+    }
   }
 
   @Get('editor')
@@ -131,8 +127,8 @@ export class UsersController {
   editorRoute(@CurrentUser() user: any) {
     return {
       message: 'This route is accessible by admin or editor',
-      currentUser: user,
-    };
+      currentUser: user
+    }
   }
 
   @Get('advanced')
@@ -140,29 +136,29 @@ export class UsersController {
   advancedRoute(@CurrentUser() user: any) {
     return {
       message: 'This route requires both users:read AND users:write permissions',
-      currentUser: user,
-    };
+      currentUser: user
+    }
   }
 
   @Post('cache/clear/:userId')
   @RequireRoles('admin')
   async clearUserCache(@Param('userId', ParseIntPipe) userId: number) {
-    await this.userPermissionsService.clearUserCache(userId);
+    await this.userPermissionsService.clearUserCache(userId)
     return {
       message: `Cache cleared for user ${userId}`,
-      success: true,
-    };
+      success: true
+    }
   }
 
   @Post('force-logout/:userId')
   @RequireRoles('admin')
   async forceLogoutUser(@Param('userId', ParseIntPipe) userId: number) {
-    await this.authService.forceLogout(userId);
+    await this.authService.forceLogout(userId)
     // 同时清除权限缓存
-    await this.userPermissionsService.clearUserCache(userId);
+    await this.userPermissionsService.clearUserCache(userId)
     return {
       message: `User ${userId} has been forcefully logged out`,
-      success: true,
-    };
+      success: true
+    }
   }
 }
