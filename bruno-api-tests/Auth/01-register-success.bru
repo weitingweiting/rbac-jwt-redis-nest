@@ -1,0 +1,29 @@
+meta {
+  name: 用户注册 - 成功
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{authBaseUrl}}/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "weiting5",
+    "password": "Weiting5"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("注册成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.property('message');
+  });
+}

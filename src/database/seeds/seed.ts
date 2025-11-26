@@ -9,7 +9,7 @@ async function runSeed() {
   try {
     await seedService.seed();
   } catch (error) {
-    console.error('❌ Seed failed:', error);
+    console.error('❌ Seed failed:', error instanceof Error ? error.message : String(error));
   } finally {
     await app.close();
   }

@@ -39,17 +39,14 @@ import { TestModule } from './common/test/test.module';
   providers: [
     AppService,
     SeedService,
-    // 全局应用 JWT Guard（所有接口默认需要认证，除非标记 @Public()）
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
-    // 全局应用日志拦截器
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
-    },
-    // 全局异常过滤器由 FiltersModule 提供
+    }
   ],
 })
 export class AppModule { }

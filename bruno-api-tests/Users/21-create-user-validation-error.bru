@@ -1,0 +1,35 @@
+meta {
+  name: 创建用户 - 验证错误
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{usersBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "username": "ab",
+    "email": "invalid-email",
+    "password": "weak"
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("创建用户验证错误", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.message).to.be.an('array');
+    expect(res.body.message.length).to.be.greaterThan(0);
+  });
+}

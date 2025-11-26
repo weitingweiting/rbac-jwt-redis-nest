@@ -6,6 +6,7 @@
 
 - 🔐 完整的 RBAC 权限控制系统
 - 🎫 JWT Token 认证与刷新
+- ✅ class-validator 请求验证体系
 - 📊 Redis 缓存优化
 - 🗄️ TypeORM + MySQL 数据库
 - 📝 Winston 日志系统
@@ -33,15 +34,32 @@ pnpm run start:dev
 
 ## 📚 完整文档
 
-所有详细文档已统一整理到 [`docs/`](docs/) 目录下：
+所有详细文档已按功能分类整理，请查看：
 
-- 📖 [完整项目文档](docs/INDEX.md) - 文档总览
-- 🚀 [快速开始指南](docs/QUICKSTART.md) - 详细的安装和配置步骤
-- 🏗️ [项目架构说明](docs/PROJECT_STRUCTURE.md) - 完整的项目结构介绍
-- 🗄️ [数据库初始化](docs/DATABASE_INIT.md) - 数据库配置和初始化
-- 📝 [日志系统指南](docs/LOGGER_GUIDE.md) - Winston 日志系统使用
-- 🚨 [异常处理指南](docs/EXCEPTION_FILTER_GUIDE.md) - 全局异常过滤器使用
-- 🐳 [Docker 部署指南](docs/DOCKER_GUIDE.md) - 容器化部署说明
+### 📖 [文档总览](docs/README.md)
+
+### 🚀 快速开始
+
+- [安装和配置](docs/getting-started/quickstart.md) - 详细的安装和配置步骤
+- [项目结构](docs/getting-started/project-structure.md) - 完整的项目结构介绍
+
+### 🛠️ 开发指南
+
+- [认证与授权](docs/development/auth-rbac.md) - RBAC 和 JWT 实现
+- [API 设计](docs/development/api-design.md) - 接口设计规范
+- [数据验证](docs/development/validation.md) - class-validator 使用指南
+- [异常处理](docs/development/exception-handling.md) - 全局异常处理
+
+### 🚀 部署运维
+
+- [Docker 部署](docs/deployment/docker.md) - 容器化部署指南
+- [数据库配置](docs/deployment/database.md) - 数据库初始化和配置
+- [日志管理](docs/deployment/logging.md) - Winston 日志系统
+
+### 🧪 测试指南
+
+- [API 测试](docs/testing/api-testing.md) - Bruno 测试集合使用
+- [验证测试](docs/testing/validation-testing.md) - 输入验证测试
 
 ## 🎯 核心功能
 

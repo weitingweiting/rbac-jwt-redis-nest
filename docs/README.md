@@ -1,34 +1,116 @@
-# RBAC + JWT + Redis Demo
+# 📚 RBAC + JWT + Redis Demo 文档
 
-NestJS 完整的 RBAC（基于角色的访问控制）+ JWT 认证 + Redis 缓存优化 Demo。
+欢迎查看完整的项目文档！所有文档已按照功能和用途重新整理分类。
 
-## 功能特性
+## 📁 文档结构
 
-- ✅ 基于角色的访问控制 (RBAC)
-- ✅ JWT Token 认证
-- ✅ Redis 缓存用户权限
-- ✅ Token 黑名单（用户登出、强制登出）
-- ✅ TypeORM + MySQL 数据库
-- ✅ 密码 SHA-256 加密
-- ✅ 装饰器实现权限控制
-- ✅ 全局 JWT Guard
-- ✅ 公开接口标记
-- ✅ Winston 日志系统（日志轮转、分级、自动归档）
+```
+docs/
+├── 🚀 getting-started/     # 快速开始
+│   ├── quickstart.md       # 安装配置指南
+│   └── project-structure.md # 项目结构说明
+├── 🛠️ development/         # 开发指南
+│   ├── auth-rbac.md       # 认证与权限
+│   ├── api-design.md      # API 设计规范
+│   ├── validation.md      # 数据验证
+│   └── exception-handling.md # 异常处理
+├── 🚀 deployment/          # 部署运维
+│   ├── docker.md          # Docker 部署
+│   ├── database.md        # 数据库配置
+│   └── logging.md         # 日志管理
+├── 🧪 testing/            # 测试指南
+│   ├── api-testing.md     # API 测试
+│   └── validation-testing.md # 验证测试
+└── 📖 references/         # 参考文档
+    └── optimization.md    # 性能优化指南
+```
 
-## 技术栈
+## 🚀 快速导航
 
-- NestJS 10
-- TypeORM
-- MySQL
-- Redis
-- JWT
-- Passport
-- Winston (日志)
-- Node.js Crypto (SHA-256)
+### 新用户开始这里
 
-## 前置要求
+- [📖 快速开始指南](getting-started/quickstart.md) - 5 分钟快速上手
+- [🏗️ 项目结构说明](getting-started/project-structure.md) - 了解项目架构
 
-- Node.js >= 16
+### 开发者指南
+
+- [🔐 认证与权限系统](development/auth-rbac.md) - RBAC 和 JWT 完整实现
+- [📋 API 设计规范](development/api-design.md) - RESTful API 最佳实践
+- [✅ 数据验证指南](development/validation.md) - class-validator 使用
+- [🚨 异常处理指南](development/exception-handling.md) - 全局异常处理
+
+### 部署运维
+
+- [🐳 Docker 部署指南](deployment/docker.md) - 容器化部署完整方案
+- [🗄️ 数据库配置](deployment/database.md) - MySQL 配置和初始化
+- [📝 日志管理](deployment/logging.md) - Winston 日志系统
+
+### 测试指南
+
+- [🧪 API 测试指南](testing/api-testing.md) - Bruno 测试集合使用
+- [✅ 验证测试指南](testing/validation-testing.md) - 输入验证测试
+
+## 🎯 核心特性
+
+### 🔐 认证与授权
+
+- JWT Token 认证机制
+- 基于角色的访问控制 (RBAC)
+- 权限细粒度控制
+- Token 黑名单机制
+
+### 📊 性能优化
+
+- Redis 缓存用户权限
+- 数据库查询优化
+- 日志性能优化
+- 异常处理优化
+
+### 🛠️ 开发体验
+
+- 模块化架构设计
+- TypeScript 类型安全
+- 完整的异常处理体系
+- 结构化日志记录
+- 自动化测试集合
+
+## 🔄 从旧文档迁移
+
+如果你之前使用的是散乱的文档结构，以下是新旧文档的对应关系：
+
+| 旧文档                      | 新位置                                 | 说明             |
+| --------------------------- | -------------------------------------- | ---------------- |
+| `QUICKSTART.md`             | `getting-started/quickstart.md`        | 快速开始指南     |
+| `PROJECT_STRUCTURE.md`      | `getting-started/project-structure.md` | 项目结构         |
+| `TOKEN_BLACKLIST.md`        | `development/auth-rbac.md`             | 合并到认证文档   |
+| `VALIDATION_GUIDE.md`       | `development/validation.md`            | 数据验证指南     |
+| `EXCEPTION_FILTER_GUIDE.md` | `development/exception-handling.md`    | 异常处理         |
+| `DOCKER_GUIDE.md`           | `deployment/docker.md`                 | Docker 部署      |
+| `DATABASE_INIT.md`          | `deployment/database.md`               | 数据库配置       |
+| `LOGGER_*.md`               | `deployment/logging.md`                | 日志系统（合并） |
+| `USERS_API_REFERENCE.md`    | `development/api-design.md`            | API 设计规范     |
+
+## 🤝 贡献指南
+
+如果你想为文档做贡献：
+
+1. 保持文档结构的一致性
+2. 使用清晰的标题和章节
+3. 提供实际的代码示例
+4. 更新相关的导航链接
+
+## 📞 获得帮助
+
+如果你在使用过程中遇到问题：
+
+1. 查看对应章节的文档
+2. 检查 [GitHub Issues](../../issues)
+3. 提交新的 Issue 描述问题
+
+---
+
+💡 **提示**: 所有文档都支持在线查看，建议按顺序从快速开始指南开始阅读。
+
 - Docker & Docker Compose（推荐）
 - 或者 MySQL >= 5.7 + Redis >= 5.0（手动安装）
 

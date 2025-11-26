@@ -7,6 +7,13 @@ import { BusinessException } from '../../shared/exceptions/business.exception';
 import { ERROR_CODES } from '../../shared/constants/error-codes.constant';
 import { createHash } from 'crypto';
 import { TokenBlacklistService } from '../../shared/services/token-blacklist.service';
+import {
+  RegisterDto,
+  LoginDto,
+  LoginResponseDto,
+  TokenResponseDto,
+  MessageResponseDto
+} from './dto';
 
 @Injectable()
 export class AuthService {
@@ -35,7 +42,9 @@ export class AuthService {
   /**
    * 用户注册
    */
-  async register(username: string, password: string, email: string): Promise<{ message: string }> {
+  async register(registerDto: RegisterDto): Promise<MessageResponseDto> {
+    const { username, password, email } = registerDto;
+
     // 检查用户名是否已存在
     const existingUsername = await this.userRepository.findOne({
       where: { username },
@@ -74,13 +83,15 @@ export class AuthService {
 
     await this.userRepository.save(user);
 
-    return { message: 'User registered successfully' };
+    return { message: '用户注册成功' };
   }
 
   /**
    * 用户登录
    */
-  async login(username: string, password: string): Promise<{ accessToken: string; user: any }> {
+  async login(loginDto: LoginDto): Promise<LoginResponseDto> {
+    const { username, password } = loginDto;
+
     // 查找用户
     const user = await this.userRepository.findOne({
       where: { username },
@@ -142,7 +153,7 @@ export class AuthService {
   /**
    * 刷新 Token（可选功能）
    */
-  async refreshToken(userId: number): Promise<{ accessToken: string }> {
+  async refreshToken(userId: number): Promise<TokenResponseDto> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
@@ -169,7 +180,7 @@ export class AuthService {
   /**
    * 用户登出（将 Token 加入黑名单）
    */
-  async logout(token: string): Promise<{ message: string }> {
+  async logout(token: string): Promise<MessageResponseDto> {
     try {
       // 解码 Token 获取过期时间
       const decoded = this.jwtService.decode(token) as any;
@@ -190,7 +201,7 @@ export class AuthService {
         await this.tokenBlacklistService.addToBlacklist(token, expiresIn);
       }
 
-      return { message: 'Logged out successfully' };
+      return { message: '登出成功' };
     } catch (error) {
       if (error instanceof BusinessException) {
         throw error; // 重新抛出业务异常
@@ -206,10 +217,10 @@ export class AuthService {
   /**
    * 强制用户登出（将用户所有 Token 失效）
    */
-  async forceLogout(userId: number): Promise<{ message: string }> {
+  async forceLogout(userId: number): Promise<MessageResponseDto> {
     // 假设 Token 最长有效期为 24 小时
     const maxTokenLifetime = 24 * 60 * 60; // 24 小时（秒）
     await this.tokenBlacklistService.blacklistUser(userId, maxTokenLifetime);
-    return { message: `User ${userId} has been forcefully logged out` };
+    return { message: `用户 ${userId} 已被强制登出` };
   }
 }

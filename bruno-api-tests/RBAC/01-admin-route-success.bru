@@ -1,0 +1,25 @@
+meta {
+  name: 管理员专用路由 - 成功
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{usersBaseUrl}}/admin
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("管理员路由访问成功", function() {
+    expect(res.status).to.equal(200);
+  });
+}

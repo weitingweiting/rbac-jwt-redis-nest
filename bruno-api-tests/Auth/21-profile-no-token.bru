@@ -1,0 +1,22 @@
+meta {
+  name: 获取用户信息 - 无Token
+  type: http
+  seq: 21
+}
+
+get {
+  url: {{authBaseUrl}}/profile
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+}
+
+tests {
+  test("无Token访问验证", function() {
+    expect(res.status).to.equal(401);
+    expect(res.body.message).to.include('未授权');
+  });
+}

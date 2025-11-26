@@ -1,0 +1,29 @@
+meta {
+  name: 用户登录 - 用户名错误
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{authBaseUrl}}/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "wronguser",
+    "password": "admin123"
+  }
+}
+
+assert {
+  res.status: eq 401
+}
+
+tests {
+  test("用户名错误验证", function() {
+    expect(res.status).to.equal(401);
+    expect(res.body.message).to.include('用户名或密码错误');
+  });
+}

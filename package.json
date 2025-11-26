@@ -10,6 +10,10 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "build": "nest build",
+    "build:tsc": "tsc --build --verbose",
+    "build:watch": "nest build --watch",
+    "build:detail": "bash scripts/build-verbose.sh",
+    "build:info": "nest build && echo '\n📦 Build Info:' && ls -la dist/",
     "seed": "ts-node src/seed/seed.ts",
     "gen-hash": "node scripts/generate-password-hash.js"
   },
@@ -18,6 +22,7 @@
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "^10.0.0",
+    "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/typeorm": "^10.0.0",

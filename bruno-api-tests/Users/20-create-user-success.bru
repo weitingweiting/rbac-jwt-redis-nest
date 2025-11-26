@@ -1,0 +1,36 @@
+meta {
+  name: 创建用户 - 成功
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{usersBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "username": "newUser123",
+    "email": "newuser@example.com",
+    "password": "Test@123456"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("创建用户成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.property('id');
+    expect(res.body).to.have.property('username');
+    expect(res.body).to.have.property('email');
+  });
+}

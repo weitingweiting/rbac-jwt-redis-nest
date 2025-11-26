@@ -104,7 +104,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
       // 记录严重错误
       if (status >= 500) {
-        this.logger.error('Unhandled Exception', {
+        this.logger.error('🤷 AllExceptionsFilter: Unhandled Exception', {
           name: exception.name,
           constructor: exception.constructor.name,
           message: exception.message,
@@ -120,7 +120,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error = 'UNKNOWN_ERROR';
       message = '未知错误';
 
-      this.logger.error('Unknown Exception Type', {
+      this.logger.error('🤷 AllExceptionsFilter: 未知异常类型', {
         exception: String(exception),
         method: request.method,
         url: request.url,

@@ -1,0 +1,50 @@
+meta {
+  name: 完整测试流程 - 注册登录获取信息
+  type: http
+  seq: 100
+}
+
+post {
+  url: {{authBaseUrl}}/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "flowTestUser",
+    "email": "flowtest@example.com",
+    "password": "FlowTest@123"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    // 注册成功后，进行登录
+    const loginRequest = {
+      url: bru.getEnvVar("authBaseUrl") + "/login",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username: "flowTestUser",
+        password: "FlowTest@123"
+      })
+    };
+    
+    // 这里可以设置下一步测试的变量
+    bru.setVar("testUsername", "flowTestUser");
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("完整流程 - 注册成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.property('message');
+  });
+}

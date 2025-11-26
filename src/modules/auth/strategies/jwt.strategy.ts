@@ -1,8 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthService } from '../auth.service';
-import { TokenBlacklistService } from '../../../shared/services/token-blacklist.service';
+import { AuthService } from '@/modules/auth/auth.service';
+import { TokenBlacklistService } from '@/shared/services/token-blacklist.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -11,16 +11,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private tokenBlacklistService: TokenBlacklistService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Bearer Token 中提取 JWT
+      ignoreExpiration: false, // 不忽略过期时间，过期的 Token 会被拒绝
       secretOrKey: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-      passReqToCallback: true, // 允许在 validate 方法中访问 request
+      passReqToCallback: true, // 允许在 validate 方法中访问 request, 以便获取完整的请求信息
+      algorithms: ['HS256'], // 指定签名算法
     });
   }
 
   async validate(request: any, payload: any) {
     // payload 包含 JWT 中的数据：{ sub: userId, username, email, iat }
     const token = request.headers.authorization?.replace('Bearer ', '');
+
+    if (!payload || !payload.sub || !payload.username) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
 
     // 1. 检查 Token 是否在黑名单中
     if (token && await this.tokenBlacklistService.isBlacklisted(token)) {
@@ -36,7 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.authService.validateToken(payload.sub);
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('User not found');
     }
 
     // 返回的数据会被挂载到 request.user

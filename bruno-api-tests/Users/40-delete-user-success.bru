@@ -1,0 +1,25 @@
+meta {
+  name: 删除用户 - 成功
+  type: http
+  seq: 40
+}
+
+delete {
+  url: {{usersBaseUrl}}/3
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: in [200, 204]
+}
+
+tests {
+  test("删除用户成功", function() {
+    expect(res.status).to.be.oneOf([200, 204]);
+  });
+}

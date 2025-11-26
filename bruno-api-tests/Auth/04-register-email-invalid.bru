@@ -1,0 +1,30 @@
+meta {
+  name: 用户注册 - 邮箱格式错误
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{authBaseUrl}}/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "testUser",
+    "email": "invalid-email",
+    "password": "Test@123456"
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("邮箱格式验证", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.message).to.include('请输入有效的邮箱地址');
+  });
+}

@@ -1,0 +1,25 @@
+meta {
+  name: 强制用户登出 - 管理员权限
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{usersBaseUrl}}/force-logout/2
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: in [200, 204]
+}
+
+tests {
+  test("强制登出成功", function() {
+    expect(res.status).to.be.oneOf([200, 204]);
+  });
+}

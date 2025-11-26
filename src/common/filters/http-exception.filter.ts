@@ -3,13 +3,20 @@ import {
   Catch,
   ArgumentsHost,
   HttpException,
+  Inject,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
+import { ResponseHeadersUtil } from '../utils/response-headers.util';
+import { Logger } from 'winston';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
+  constructor(
+    @Inject(WINSTON_MODULE_PROVIDER)
+    private readonly logger: Logger,
+  ) { }
   catch(exception: HttpException, host: ArgumentsHost) {
-
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
@@ -30,10 +37,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     } else {
       message = exception.message;
       error = exception.name;
-    }
-
-    // ✅ 生成追踪ID
-    const traceId = Math.random().toString(36).substr(2, 9);
+    }    // ✅ 生成追踪ID
+    const traceId = ResponseHeadersUtil.generateTraceId();
 
     // ✅ 统一的错误响应格式
     const errorResponse = {
@@ -52,14 +57,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
       })
     };
 
-    // ✅ 设置自定义响应头
-    response.setHeader('X-Error-Trace-ID', traceId);
-    response.setHeader('X-API-Version', '1.0');
+    // ✅ 设置自定义响应头（使用统一工具）
+    ResponseHeadersUtil.setCommonHeaders(response, { traceId });
 
-    console.log("🚨 HttpExceptionFilter: 处理异常", {
+    // 记录 HTTP 异常日志
+    this.logger.error("🚨 HttpExceptionFilter: 处理异常", {
       status,
       path: request.url,
-      traceId
+      method: request.method,
+      error,
+      message: Array.isArray(message) ? message.join('; ') : message,
+      traceId,
+      timestamp: new Date().toISOString(),
     });
 
     response.status(status).json(errorResponse);

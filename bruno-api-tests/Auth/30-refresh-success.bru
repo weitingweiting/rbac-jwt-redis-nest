@@ -1,0 +1,32 @@
+meta {
+  name: 刷新Token - 成功
+  type: http
+  seq: 30
+}
+
+post {
+  url: {{authBaseUrl}}/refresh
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 201) {
+    bru.setEnvVar("token", res.body.accessToken);
+  }
+}
+
+assert {
+  res.status: in [200, 201]
+}
+
+tests {
+  test("刷新Token成功", function() {
+    expect(res.status).to.be.oneOf([200, 201]);
+    expect(res.body).to.have.property('accessToken');
+  });
+}

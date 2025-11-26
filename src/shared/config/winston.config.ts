@@ -1,7 +1,7 @@
 import * as winston from 'winston';
 import * as path from 'path';
 import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
-import * as DailyRotateFile from 'winston-daily-rotate-file';
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 // 日志级别
 const levels = {

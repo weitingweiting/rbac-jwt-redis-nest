@@ -4,17 +4,8 @@ import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
-
-class RegisterDto {
-  username: string;
-  password: string;
-  email: string;
-}
-
-class LoginDto {
-  username: string;
-  password: string;
-}
+import { RegisterDto, LoginDto } from './dto';
+import { CurrentUserDto } from '@/shared/dto/current-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -23,69 +14,75 @@ export class AuthController {
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) { }
 
+  /**
+   * 用户注册
+   * POST /api/auth/register
+   */
   @Public()
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
-    this.logger.info('User registration attempt', {
+    const result = await this.authService.register(registerDto);
+    this.logger.info('User registered successfully', {
       username: registerDto.username,
-      email: registerDto.email,
     });
-
-    try {
-      const result = await this.authService.register(
-        registerDto.username,
-        registerDto.password,
-        registerDto.email,
-      );
-      this.logger.info('User registered successfully', {
-        username: registerDto.username,
-      });
-      return result;
-    } catch (error) {
-      this.logger.error('User registration failed', {
-        username: registerDto.username,
-        error: error.message,
-      });
-      throw error;
-    }
+    return result;
   }
 
+  /**
+   * 用户登录
+   * POST /api/auth/login
+   */
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
-    this.logger.info('User login attempt', {
-      username: loginDto.username,
-    });
-
     try {
-      const result = await this.authService.login(loginDto.username, loginDto.password);
+      const result = await this.authService.login(loginDto);
       this.logger.info('User logged in successfully', {
         username: loginDto.username,
+        userId: result.user.id,
       });
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.warn('User login failed', {
         username: loginDto.username,
-        error: error.message,
+        reason: errorMessage,
       });
       throw error;
     }
   }
 
+  /**
+   * 获取当前用户信息
+   * GET /api/auth/profile
+   */
   @Get('profile')
-  async getProfile(@CurrentUser() user: any) {
+  async getProfile(@CurrentUser() user: CurrentUserDto) {
     return {
-      message: 'User profile',
+      message: '获取用户信息成功',
       user,
     };
   }
 
+  /**
+   * 刷新 Token
+   * POST /api/auth/refresh
+   */
   @Post('refresh')
-  async refreshToken(@CurrentUser() user: any) {
+  async refreshToken(@CurrentUser() user: CurrentUserDto) {
+    // Token 刷新是安全相关操作，值得记录
+    this.logger.info('Token refreshed', {
+      userId: user.id,
+      username: user.username,
+    });
     return this.authService.refreshToken(user.id);
   }
 
+  /**
+   * 用户登出
+   * POST /api/auth/logout
+   */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Headers('authorization') authorization: string) {
@@ -97,11 +94,13 @@ export class AuthController {
 
     try {
       const result = await this.authService.logout(token);
+      // 成功登出是重要的安全事件
       this.logger.info('User logged out successfully');
       return result;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error('Logout failed', {
-        error: error.message,
+        error: errorMessage,
       });
       throw error;
     }

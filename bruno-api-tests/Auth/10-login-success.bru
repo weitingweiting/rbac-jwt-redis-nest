@@ -1,0 +1,37 @@
+meta {
+  name: 用户登录 - 成功并保存Token
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{authBaseUrl}}/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "weiting3",
+    "password": "Weiting3"
+  }
+}
+
+assert {
+  res.status: in [200, 201]
+}
+
+script:post-response {
+  if (res.status === 200 || res.status === 201) {
+    bru.setEnvVar("token", res.body.accessToken);
+    bru.setEnvVar("adminToken", res.body.accessToken);
+  }
+}
+
+tests {
+  test("登录成功并获取Token", function() {
+    expect(res.status).to.be.oneOf([200, 201]);
+    expect(res.body).to.have.property('accessToken');
+    expect(res.body.accessToken).to.be.a('string');
+  });
+}

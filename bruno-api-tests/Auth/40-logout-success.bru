@@ -1,0 +1,25 @@
+meta {
+  name: 用户登出 - 成功
+  type: http
+  seq: 40
+}
+
+post {
+  url: {{authBaseUrl}}/logout
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: in [200, 204]
+}
+
+tests {
+  test("登出成功", function() {
+    expect(res.status).to.be.oneOf([200, 204]);
+  });
+}

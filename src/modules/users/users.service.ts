@@ -1,9 +1,12 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { User } from '../../shared/entities/user.entity';
 import { BusinessException } from '../../shared/exceptions/business.exception';
 import { ERROR_CODES } from '../../shared/constants/error-codes.constant';
+import { CreateUserDto, UpdateUserDto, QueryUserDto } from './dto/user.dto';
+import { PaginationDto } from '../../shared/dto/pagination.dto';
+import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -12,10 +15,49 @@ export class UsersService {
     private userRepository: Repository<User>,
   ) { }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
-      relations: ['roles', 'roles.permissions'],
-    });
+  /**
+   * 获取用户列表（带分页和查询）
+   */
+  async findAll(
+    pagination: PaginationDto,
+    query: QueryUserDto,
+  ): Promise<PaginatedResponseDto<User>> {
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'role')
+      .leftJoinAndSelect('role.permissions', 'permission');
+
+    // 应用查询条件
+    if (query.username) {
+      queryBuilder.andWhere('user.username LIKE :username', {
+        username: `%${query.username}%`,
+      });
+    }
+
+    if (query.email) {
+      queryBuilder.andWhere('user.email LIKE :email', {
+        email: `%${query.email}%`,
+      });
+    }
+
+    if (query.role) {
+      queryBuilder.andWhere('role.name = :roleName', {
+        roleName: query.role,
+      });
+    }
+
+    // 应用分页
+    queryBuilder.skip(pagination.skip).take(pagination.take);
+
+    // 执行查询
+    const [users, total] = await queryBuilder.getManyAndCount();
+
+    return new PaginatedResponseDto(
+      users,
+      total,
+      pagination.page ?? 1,
+      pagination.limit ?? 10,
+    );
   }
 
   async findOne(id: number): Promise<User> {
@@ -35,33 +77,83 @@ export class UsersService {
     return user;
   }
 
-  async create(userData: Partial<User>): Promise<User> {
-    const user = this.userRepository.create(userData);
+  /**
+   * 创建用户
+   */
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    // 检查用户名是否已存在
+    const existingUser = await this.userRepository.findOne({
+      where: { username: createUserDto.username },
+    });
+
+    if (existingUser) {
+      throw new BusinessException(
+        '用户名已存在',
+        HttpStatus.CONFLICT,
+        ERROR_CODES.USERNAME_EXISTS,
+      );
+    }
+
+    // 检查邮箱是否已存在
+    const existingEmail = await this.userRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+
+    if (existingEmail) {
+      throw new BusinessException(
+        '邮箱已被使用',
+        HttpStatus.CONFLICT,
+        ERROR_CODES.EMAIL_IN_USE,
+      );
+    }
+
+    const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
 
-  async update(id: number, userData: Partial<User>): Promise<User> {
+  /**
+   * 更新用户
+   */
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id); // 这里会抛出 BusinessException 如果用户不存在
 
-    // 检查邮箱是否被其他用户使用
-    if (userData.email && userData.email !== user.email) {
+    // 检查用户名是否被其他用户使用
+    if (updateUserDto.username && updateUserDto.username !== user.username) {
       const existingUser = await this.userRepository.findOne({
-        where: { email: userData.email }
+        where: { username: updateUserDto.username },
       });
 
       if (existingUser) {
         throw new BusinessException(
-          '邮箱已被其他用户使用',
+          '用户名已被其他用户使用',
           HttpStatus.CONFLICT,
-          ERROR_CODES.EMAIL_IN_USE
+          ERROR_CODES.USERNAME_EXISTS,
         );
       }
     }
 
-    await this.userRepository.update(id, userData);
+    // 检查邮箱是否被其他用户使用
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const existingEmail = await this.userRepository.findOne({
+        where: { email: updateUserDto.email },
+      });
+
+      if (existingEmail) {
+        throw new BusinessException(
+          '邮箱已被其他用户使用',
+          HttpStatus.CONFLICT,
+          ERROR_CODES.EMAIL_IN_USE,
+        );
+      }
+    }
+
+    await this.userRepository.update(id, updateUserDto);
     return this.findOne(id);
   }
 
+  /**
+   * 删除用户
+   */
   async delete(id: number): Promise<void> {
     const user = await this.findOne(id); // 这里会抛出 BusinessException 如果用户不存在
 

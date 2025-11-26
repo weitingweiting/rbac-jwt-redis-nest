@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "RBAC JWT Redis API Tests",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

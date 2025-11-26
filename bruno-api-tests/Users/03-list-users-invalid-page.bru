@@ -1,0 +1,26 @@
+meta {
+  name: 获取用户列表 - 分页参数验证错误
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{usersBaseUrl}}?page=0&limit=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("分页参数验证", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body.message).to.be.an('array');
+  });
+}

@@ -1,0 +1,25 @@
+meta {
+  name: 清除用户缓存 - 管理员权限
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{usersBaseUrl}}/cache/clear/1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: in [200, 204]
+}
+
+tests {
+  test("清除缓存成功", function() {
+    expect(res.status).to.be.oneOf([200, 204]);
+  });
+}
