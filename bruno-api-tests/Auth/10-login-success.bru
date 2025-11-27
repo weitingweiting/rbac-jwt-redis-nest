@@ -23,15 +23,35 @@ assert {
 
 script:post-response {
   if (res.status === 200 || res.status === 201) {
-    bru.setEnvVar("token", res.body.accessToken);
-    bru.setEnvVar("adminToken", res.body.accessToken);
+    // 正确的路径：res.body.data.accessToken
+    const token = res.body.data.accessToken;
+    
+    // 调试输出
+    console.log("========== 登录成功 ==========");
+    console.log("完整响应:", JSON.stringify(res.body, null, 2));
+    console.log("Access Token:", token);
+    console.log("Token 长度:", token?.length);
+    console.log("用户信息:", res.body.data.user);
+    
+    // 保存到环境变量
+    bru.setVar("token", token);
+    bru.setVar("adminToken", token);
+    
+    // 验证是否保存成功
+    console.log("已保存的 token:", bru.getVar("token"));
+    console.log("=============================");
+  } else {
+    console.error("登录失败 - 状态码:", res.status);
+    console.error("错误信息:", res.body);
   }
 }
 
 tests {
   test("登录成功并获取Token", function() {
     expect(res.status).to.be.oneOf([200, 201]);
-    expect(res.body).to.have.property('accessToken');
-    expect(res.body.accessToken).to.be.a('string');
+    expect(res.body.data).to.have.property('accessToken');
+    expect(res.body.data.accessToken).to.be.a('string');
+    expect(res.body.data).to.have.property('user');
+    expect(res.body.data.user).to.have.property('username');
   });
 }

@@ -88,18 +88,17 @@ export class AuthController {
   async logout(@Headers('authorization') authorization: string) {
     const token = authorization?.replace('Bearer ', '')
     if (!token) {
-      this.logger.warn('Logout attempt without token')
-      return { message: 'No token provided' }
+      this.logger.warn('尝试登出但未提供令牌')
+      return { message: '未提供令牌' }
     }
 
     try {
       const result = await this.authService.logout(token)
-      // 成功登出是重要的安全事件
-      this.logger.info('User logged out successfully')
+      this.logger.info('用户登出成功')
       return result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      this.logger.error('Logout failed', {
+      this.logger.error('登出失败', {
         error: errorMessage
       })
       throw error

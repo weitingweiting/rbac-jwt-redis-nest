@@ -183,7 +183,7 @@ export class AuthService {
   async logout(token: string): Promise<MessageResponseDto> {
     try {
       // 解码 Token 获取过期时间
-      const decoded = this.jwtService.decode(token) as any
+      const decoded = this.jwtService.decode(token)
       if (!decoded || !decoded.exp) {
         throw new BusinessException(
           'Token格式无效',
@@ -204,7 +204,7 @@ export class AuthService {
       return { message: '登出成功' }
     } catch (error) {
       if (error instanceof BusinessException) {
-        throw error // 重新抛出业务异常
+        throw error
       }
       throw new BusinessException(
         'Token处理失败',

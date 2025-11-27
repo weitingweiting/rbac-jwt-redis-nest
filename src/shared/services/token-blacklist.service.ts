@@ -1,12 +1,16 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
+import { Logger } from 'winston'
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 
 @Injectable()
 export class TokenBlacklistService {
   constructor(
     @Inject(CACHE_MANAGER)
-    private cacheManager: Cache
+    private cacheManager: Cache,
+
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
   ) {}
 
   /**
@@ -18,7 +22,7 @@ export class TokenBlacklistService {
     const key = `blacklist:token:${token}`
     // 设置过期时间为 Token 的剩余有效期
     await this.cacheManager.set(key, '1', expiresIn * 1000)
-    console.log(`🚫 Token added to blacklist, expires in ${expiresIn}s`)
+    this.logger.info(`🚫 Token 已加入黑名单，剩余有效期 ${expiresIn} 秒`)
   }
 
   /**
@@ -40,7 +44,7 @@ export class TokenBlacklistService {
   async blacklistUser(userId: number, expiresIn: number): Promise<void> {
     const key = `blacklist:user:${userId}`
     await this.cacheManager.set(key, Date.now().toString(), expiresIn * 1000)
-    console.log(`🚫 All tokens for user ${userId} blacklisted`)
+    this.logger.info(`🚫 用户 ${userId} 的所有 Token 已加入黑名单，剩余有效期 ${expiresIn} 秒`)
   }
 
   /**
@@ -69,6 +73,6 @@ export class TokenBlacklistService {
   async removeUserFromBlacklist(userId: number): Promise<void> {
     const key = `blacklist:user:${userId}`
     await this.cacheManager.del(key)
-    console.log(`✅ User ${userId} removed from blacklist`)
+    this.logger.info(`✅ 用户 ${userId} 已从黑名单中移除，允许重新登录`)
   }
 }

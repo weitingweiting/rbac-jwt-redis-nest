@@ -18,6 +18,19 @@ assert {
   res.status: eq 200
 }
 
+script:pre-request {
+  // 验证 token 是否存在
+  const token = bru.getVar("token");
+  console.log("========== Profile 请求 ==========");
+  console.log("使用的 Token:", token ? token.substring(0, 50) + "..." : "❌ Token 不存在");
+  console.log("Token 长度:", token?.length);
+  console.log("================================");
+  
+  if (!token) {
+    throw new Error("Token 不存在，请先运行登录请求");
+  }
+}
+
 tests {
   test("获取用户信息成功", function() {
     expect(res.status).to.equal(200);
