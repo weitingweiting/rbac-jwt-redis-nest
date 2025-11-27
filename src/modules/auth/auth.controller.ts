@@ -1,4 +1,14 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Headers, Inject } from '@nestjs/common'
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Get,
+  Headers,
+  Inject,
+  Version
+} from '@nestjs/common'
 import { AuthService } from './auth.service'
 import { Public } from './decorators/public.decorator'
 import { CurrentUser } from './decorators/current-user.decorator'
@@ -7,6 +17,7 @@ import { Logger } from 'winston'
 import { RegisterDto, LoginDto } from './dto'
 import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 
+@Version('1')
 @Controller('auth')
 export class AuthController {
   constructor(

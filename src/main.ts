@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston'
-import { ValidationPipe } from '@nestjs/common'
+import { ValidationPipe, VersioningType } from '@nestjs/common'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -39,6 +39,13 @@ async function bootstrap() {
 
   // 全局前缀
   app.setGlobalPrefix('api')
+
+  // 启用 API 版本控制
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+    prefix: 'v'
+  })
 
   await app.listen(3000)
 

@@ -18,9 +18,6 @@ export class ResponseHeadersUtil {
       errorType?: string
     }
   ): void {
-    // 设置API版本
-    response.setHeader('X-API-Version', '1.0')
-
     // 设置响应时间（如果提供）
     if (options?.responseTime !== undefined) {
       response.setHeader('X-Response-Time', `${options.responseTime}ms`)

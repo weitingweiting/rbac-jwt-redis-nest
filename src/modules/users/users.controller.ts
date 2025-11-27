@@ -10,7 +10,8 @@ import {
   ParseIntPipe,
   UseGuards,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  Version
 } from '@nestjs/common'
 import { PermissionsGuard } from '../../shared/guards/permissions.guard'
 import { RolesGuard } from '../../shared/guards/roles.guard'
@@ -23,6 +24,7 @@ import { UsersService } from './users.service'
 import { CreateUserDto, UpdateUserDto, QueryUserDto } from './dto/user.dto'
 import { PaginationDto } from '../../shared/dto/pagination.dto'
 
+@Version('1')
 @Controller('users')
 @UseGuards(PermissionsGuard, RolesGuard)
 export class UsersController {
