@@ -14,8 +14,8 @@ export class BusinessExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus()
     const exceptionResponse = exception.getResponse() as any
 
-    // ✅ 生成追踪ID
-    const traceId = Math.random().toString(36).substr(2, 9)
+    // ✅ 使用中间件生成的 requestId，如果没有则生成新的
+    const requestId = request['requestId'] || Math.random().toString(36).substr(2, 9)
 
     // ✅ 业务异常的专门响应格式
     const errorResponse = {
@@ -26,12 +26,12 @@ export class BusinessExceptionFilter implements ExceptionFilter {
       method: request.method,
       error: exceptionResponse.errorCode || 'BUSINESS_ERROR',
       message: exceptionResponse.message,
-      traceId
+      requestId
       // 业务异常通常不需要显示技术栈信息
     }
 
     // ✅ 设置响应头
-    response.setHeader('X-Error-Trace-ID', traceId)
+    response.setHeader('X-Request-ID', requestId)
     response.setHeader('X-Error-Type', 'BusinessException')
 
     // 根据业务异常类型选择日志级别
@@ -42,7 +42,7 @@ export class BusinessExceptionFilter implements ExceptionFilter {
       statusCode: status,
       path: request.url,
       method: request.method,
-      traceId,
+      requestId,
       timestamp: new Date().toISOString()
     })
 

@@ -18,8 +18,8 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     const isValidationError = Array.isArray(exceptionResponse.message)
 
     if (isValidationError) {
-      // ✅ 生成追踪ID
-      const traceId = Math.random().toString(36).substr(2, 9)
+      // ✅ 使用中间件生成的 requestId
+      const requestId = request['requestId'] || Math.random().toString(36).substr(2, 9)
 
       // ✅ 验证异常的专门响应格式
       const errorResponse = {
@@ -31,11 +31,11 @@ export class ValidationExceptionFilter implements ExceptionFilter {
         error: 'VALIDATION_ERROR',
         message: '数据验证失败',
         details: exceptionResponse.message, // 详细的验证错误信息
-        traceId
+        requestId
       }
 
       // ✅ 设置响应头
-      response.setHeader('X-Error-Trace-ID', traceId)
+      response.setHeader('X-Request-ID', requestId)
       response.setHeader('X-Error-Type', 'ValidationException')
 
       // 记录验证错误日志
@@ -43,7 +43,7 @@ export class ValidationExceptionFilter implements ExceptionFilter {
         path: request.url,
         method: request.method,
         validationErrors: exceptionResponse.message,
-        traceId,
+        requestId,
         timestamp: new Date().toISOString()
       })
 

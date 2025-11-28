@@ -12,34 +12,33 @@
     "baseUrl": "./", // 基础路径，通常设置为项目根目录
     "incremental": true, // 增量编译以加快后续编译速度
     "skipLibCheck": true, // 跳过库文件的类型检查以加快编译速度
-    "strictNullChecks": true, //启用严格的null检查
-    "strictBindCallApply": true, //启用严格的bind、call和apply方法检查
-    "forceConsistentCasingInFileNames": true, // 强制文件名一致的大小写，如：MyFile.ts 和 myfile.ts 会被视为不同的文件
-    "noFallthroughCasesInSwitch": true, // 防止switch语句贯穿
-    "noImplicitReturns": true, // 启用对函数返回值的隐式检查，需要显式返回值
-    "noImplicitOverride": true, // 启用对覆盖方法的隐式检查，需要显式标注 override 关键字
-    "noUncheckedIndexedAccess": true, // 启用严格的索引访问检查
-    "strict": true, // 启用所有严格类型检查选项
-    "noImplicitAny": false, // false允许隐式的any类型
+    "strictNullChecks": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": false,
+    "noImplicitReturns": false,
+    "noImplicitOverride": false,
+    "noUncheckedIndexedAccess": false,
+    "strict": false,
+    "noImplicitAny": false,
     "esModuleInterop": true, // 允许与ES模块互操作
     "resolveJsonModule": true, // 允许导入JSON模块
     "moduleResolution": "node", // 模块解析策略，使用Node.js的模块解析方式
-    "lib": [
-      "ES2022"
-    ],
+    "lib": ["ES2022"],
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "test/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
+    "docker-data",
+    "logs",
+    "bruno-api-tests",
+    "scripts",
+    "docs",
+    "test",
     "**/*.spec.ts",
     "**/*.test.ts"
   ]

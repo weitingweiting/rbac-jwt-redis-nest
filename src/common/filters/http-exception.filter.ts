@@ -31,8 +31,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     } else {
       message = exception.message
       error = exception.name
-    } // ✅ 生成追踪ID
-    const traceId = ResponseHeadersUtil.generateTraceId()
+    } // ✅ 使用中间件生成的 requestId
+    const requestId = request['requestId'] || ResponseHeadersUtil.generateTraceId()
 
     // ✅ 统一的错误响应格式
     const errorResponse = {
@@ -43,7 +43,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       method: request.method,
       error: this.mapErrorCode(status, error),
       message: this.getCustomMessage(status, message),
-      traceId,
+      requestId,
       // 开发环境显示更多信息
       ...(process.env.NODE_ENV === 'development' && {
         stack: exception.stack,
@@ -51,8 +51,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       })
     }
 
-    // ✅ 设置自定义响应头（使用统一工具）
-    ResponseHeadersUtil.setCommonHeaders(response, { traceId })
+    // ✅ 设置自定义响应头
+    response.setHeader('X-Request-ID', requestId)
 
     // 记录 HTTP 异常日志
     this.logger.error('🚨 HttpExceptionFilter: 处理异常', {
@@ -61,7 +61,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       method: request.method,
       error,
       message: Array.isArray(message) ? message.join('; ') : message,
-      traceId,
+      requestId,
       timestamp: new Date().toISOString()
     })
 

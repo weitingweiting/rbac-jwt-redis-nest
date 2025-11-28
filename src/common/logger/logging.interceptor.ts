@@ -16,6 +16,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url, ip, body, headers } = request
     const userAgent = headers['user-agent'] || ''
     const startTime = Date.now()
+    const requestId = request['requestId'] || 'unknown'
 
     // 在请求对象上存储开始时间，供后续使用
     request['startTime'] = startTime
@@ -27,6 +28,7 @@ export class LoggingInterceptor implements NestInterceptor {
       ip,
       userAgent,
       body: process.env.NODE_ENV === 'production' ? this.sanitizeBody(body) : body,
+      requestId,
       timestamp: new Date().toISOString()
     })
 
@@ -69,6 +71,7 @@ export class LoggingInterceptor implements NestInterceptor {
             url,
             statusCode,
             responseTime: `${responseTime}ms`,
+            requestId,
             timestamp: new Date().toISOString()
           })
         },
@@ -92,6 +95,7 @@ export class LoggingInterceptor implements NestInterceptor {
             responseTime: `${responseTime}ms`,
             error: error.message,
             stack: error.stack,
+            requestId,
             timestamp: new Date().toISOString()
           })
         }

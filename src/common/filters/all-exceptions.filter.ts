@@ -32,6 +32,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>()
     const request = ctx.getRequest<Request>()
 
+    // 使用中间件生成的 requestId
+    const requestId = request['requestId'] || Math.random().toString(36).substr(2, 9)
+
     let status = HttpStatus.INTERNAL_SERVER_ERROR
     let message: string | string[] = 'Internal server error'
     let error = 'Internal Server Error'
@@ -107,6 +110,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
           method: request.method,
           url: request.url,
           ip: request.ip,
+          requestId,
           timestamp: new Date().toISOString()
         })
       }
@@ -120,6 +124,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         method: request.method,
         url: request.url,
         ip: request.ip,
+        requestId,
         timestamp: new Date().toISOString()
       })
     }
@@ -135,13 +140,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message:
         process.env.NODE_ENV === 'production' && status === HttpStatus.INTERNAL_SERVER_ERROR
           ? 'Internal server error'
-          : message
+          : message,
+      requestId
     }
 
     // 开发环境返回堆栈信息
     if (process.env.NODE_ENV === 'development' && exception instanceof Error) {
       ;(errorResponse as any).stack = exception.stack
     }
+
+    // 设置响应头
+    response.setHeader('X-Request-ID', requestId)
 
     response.status(status).json(errorResponse)
   }

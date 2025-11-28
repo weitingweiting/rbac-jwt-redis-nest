@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 
 // 应用核心
@@ -15,15 +15,19 @@ import { RedisConfig } from './shared/config/redis.config'
 // 守卫和拦截器
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
 
+// 中间件
+import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware'
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware'
+
 // 通用模块
+import { FiltersModule } from './common/filters/filters.module'
 import { LoggerModule } from './common/logger/logger.module'
 import { LoggingInterceptor } from './common/logger/logging.interceptor'
-import { FiltersModule } from './common/filters/filters.module'
 
 // 数据库和种子服务
+import { TestModule } from './common/test/test.module'
 import { DatabaseModule } from './database/database.module'
 import { SeedService } from './database/seeds/seed.service'
-import { TestModule } from './common/test/test.module'
 
 @Module({
   imports: [
@@ -49,4 +53,12 @@ import { TestModule } from './common/test/test.module'
     }
   ]
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // 为所有路由应用请求 ID 中间件（优先级最高）
+    consumer.apply(RequestIdMiddleware).forRoutes('*')
+
+    // 为所有路由应用限流中间件
+    consumer.apply(RateLimitMiddleware).forRoutes('*')
+  }
+}

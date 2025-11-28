@@ -1,30 +1,28 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
   Body,
-  Param,
-  Query,
-  ParseIntPipe,
-  UseGuards,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
-  Version
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  UseGuards
 } from '@nestjs/common'
-import { PermissionsGuard } from '../../shared/guards/permissions.guard'
-import { RolesGuard } from '../../shared/guards/roles.guard'
 import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
 import { RequireRoles } from '../../shared/decorators/roles.decorator'
-import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { PaginationDto } from '../../shared/dto/pagination.dto'
+import { PermissionsGuard } from '../../shared/guards/permissions.guard'
+import { RolesGuard } from '../../shared/guards/roles.guard'
 import { UserPermissionsService } from '../../shared/services/user-permissions.service'
 import { AuthService } from '../auth/auth.service'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { CreateUserDto, QueryUserDto, UpdateUserDto } from './dto/user.dto'
 import { UsersService } from './users.service'
-import { CreateUserDto, UpdateUserDto, QueryUserDto } from './dto/user.dto'
-import { PaginationDto } from '../../shared/dto/pagination.dto'
 
-@Version('1')
 @Controller('users')
 @UseGuards(PermissionsGuard, RolesGuard)
 export class UsersController {
