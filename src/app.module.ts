@@ -56,9 +56,9 @@ import { SeedService } from './database/seeds/seed.service'
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // 为所有路由应用请求 ID 中间件（优先级最高）
-    consumer.apply(RequestIdMiddleware).forRoutes('*')
+    consumer.apply(RequestIdMiddleware).forRoutes('*path')
 
     // 为所有路由应用限流中间件
-    consumer.apply(RateLimitMiddleware).forRoutes('*')
+    consumer.apply(RateLimitMiddleware).forRoutes('*path')
   }
 }

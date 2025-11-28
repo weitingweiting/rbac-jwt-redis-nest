@@ -30,12 +30,13 @@
     }
   },
   "include": ["src/**/*"],
+  // 这里的排除是指不包含在编译过程中的文件和文件夹
   "exclude": [
     "node_modules",
     "dist",
     "docker-data",
     "logs",
-    "bruno-api-tests",
+    // "bruno-api-tests",
     "scripts",
     "docs",
     "test",
