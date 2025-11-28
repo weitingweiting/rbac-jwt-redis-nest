@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm'
-import { Role } from './role.entity'
 
 @Entity('permissions')
 export class Permission {
@@ -12,6 +11,7 @@ export class Permission {
   @Column({ nullable: true })
   description!: string
 
-  @ManyToMany(() => Role, (role) => role.permissions)
-  roles!: Role[]
+  // ✅ 使用字符串引用避免循环依赖
+  @ManyToMany('Role', 'permissions')
+  roles!: any[]
 }

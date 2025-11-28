@@ -1,5 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm'
-import { Role } from './role.entity'
 import { Exclude } from 'class-transformer'
 
 @Entity('users')
@@ -14,12 +13,14 @@ export class User {
   @Exclude() // 序列化时自动排除密码字段
   password!: string
 
-  @Column({ unique: true })
+  // @Column({ unique: true })
+  @Column({ nullable: true })
   email!: string
 
-  @ManyToMany(() => Role, (role) => role.users, { eager: true })
+  // ✅ 使用字符串引用避免循环依赖
+  @ManyToMany('Role', 'users', { eager: true })
   @JoinTable({ name: 'user_roles' })
-  roles!: Role[]
+  roles!: any[]
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt!: Date

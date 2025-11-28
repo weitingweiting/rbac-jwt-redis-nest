@@ -43,7 +43,7 @@ export class AuthService {
    * 用户注册
    */
   async register(registerDto: RegisterDto): Promise<MessageResponseDto> {
-    const { username, password, email } = registerDto
+    const { username, password } = registerDto
 
     // 检查用户名是否已存在
     const existingUsername = await this.userRepository.findOne({
@@ -59,17 +59,17 @@ export class AuthService {
     }
 
     // 检查邮箱是否已存在
-    const existingEmail = await this.userRepository.findOne({
-      where: { email }
-    })
+    // const existingEmail = await this.userRepository.findOne({
+    //   where: { email }
+    // })
 
-    if (existingEmail) {
-      throw new BusinessException(
-        '邮箱已被注册，请使用其他邮箱',
-        HttpStatus.CONFLICT,
-        ERROR_CODES.EMAIL_EXISTS
-      )
-    }
+    // if (existingEmail) {
+    //   throw new BusinessException(
+    //     '邮箱已被注册，请使用其他邮箱',
+    //     HttpStatus.CONFLICT,
+    //     ERROR_CODES.EMAIL_EXISTS
+    //   )
+    // }
 
     // 密码加密
     const hashedPassword = this.hashPassword(password)
@@ -77,8 +77,8 @@ export class AuthService {
     // 创建用户（默认不分配角色，需要管理员分配）
     const user = this.userRepository.create({
       username,
-      password: hashedPassword,
-      email
+      password: hashedPassword
+      // email
     })
 
     await this.userRepository.save(user)

@@ -5,8 +5,7 @@ dist/
 # Environment variables
 .env
 
-# Logs
-logs/
+# Logs (项目外部，但忽略可能意外创建的日志文件)
 *.log
 npm-debug.log*
 
@@ -25,9 +24,6 @@ coverage/
 
 # Build
 build/
-
-# Docker data volumes (本地数据目录)
-docker-data/
 
 # 文档管理 - 允许根目录README和docs目录下的文档
 *.md

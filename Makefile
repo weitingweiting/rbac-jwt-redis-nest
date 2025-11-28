@@ -29,6 +29,15 @@ help:
 	@echo "  make restore-db  - 恢复数据库（需要 backup.sql）"
 	@echo ""
 
+# 创建必要的数据目录
+create-dirs:
+	@echo "📁 创建数据目录（项目外部）..."
+	@mkdir -p ../docker-data/mysql ../docker-data/redis ../docker-data/redis-insight
+	@mkdir -p ../logs
+	@echo "✅ 目录创建完成"
+	@echo "   📂 docker-data: $$(cd .. && pwd)/docker-data"
+	@echo "   📂 logs: $$(cd .. && pwd)/logs"
+
 # 启动服务
 up:
 	@echo "🚀 启动 MySQL 和 Redis..."
@@ -78,17 +87,18 @@ ps:
 
 # 清理
 clean:
-	@echo "⚠️  警告：这将删除所有容器和数据！"
+	@echo "⚠️  警告：这将删除所有容器和外部数据目录！"
 	@read -p "确认继续？(y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
 	docker-compose --profile tools down --volumes --remove-orphans
-	rm -rf docker-data/mysql/* docker-data/redis/* docker-data/redis-insight/*
+	rm -rf ../docker-data/mysql/* ../docker-data/redis/* ../docker-data/redis-insight/*
+	rm -rf ../logs/*
 	@echo "✅ 清理完成"
 
 # 备份数据
 backup:
 	@echo "💾 备份数据目录..."
-	tar -czf docker-data-backup-$$(date +%Y%m%d-%H%M%S).tar.gz docker-data/
-	@echo "✅ 备份完成：docker-data-backup-$$(date +%Y%m%d-%H%M%S).tar.gz"
+	@cd .. && tar -czf docker-data-backup-$$(date +%Y%m%d-%H%M%S).tar.gz docker-data/
+	@echo "✅ 备份完成：../docker-data-backup-$$(date +%Y%m%d-%H%M%S).tar.gz"
 
 # 安装依赖
 install:
@@ -123,14 +133,14 @@ health:
 # 备份数据库
 backup-db:
 	@echo "💾 备份数据库到 backup.sql..."
-	docker exec rbac-demo-mysql mysqldump -uroot -ppassword rbac_demo > backup.sql
-	@echo "✅ 备份完成：backup.sql"
+	docker exec rbac-demo-mysql mysqldump -uroot -ppassword rbac_demo > ../backup.sql
+	@echo "✅ 备份完成：../backup.sql"
 
 # 恢复数据库
 restore-db:
-	@if [ ! -f backup.sql ]; then echo "❌ backup.sql 文件不存在"; exit 1; fi
-	@echo "📥 从 backup.sql 恢复数据库..."
-	docker exec -i rbac-demo-mysql mysql -uroot -ppassword rbac_demo < backup.sql
+	@if [ ! -f ../backup.sql ]; then echo "❌ ../backup.sql 文件不存在"; exit 1; fi
+	@echo "📥 从 ../backup.sql 恢复数据库..."
+	docker exec -i rbac-demo-mysql mysql -uroot -ppassword rbac_demo < ../backup.sql
 	@echo "✅ 恢复完成"
 
 # 完整初始化流程
@@ -164,5 +174,5 @@ open-redis:
 # 创建必要的数据目录
 create-dirs:
 	@echo "📁 创建数据目录..."
-	@mkdir -p docker-data/mysql docker-data/redis docker-data/redis-insight
+	@mkdir -p ../docker-data/mysql ../docker-data/redis ../docker-data/redis-insight
 	@echo "✅ 目录创建完成"

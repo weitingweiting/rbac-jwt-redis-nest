@@ -25,6 +25,6 @@ assert {
 tests {
   test("用户名太短验证", function() {
     expect(res.status).to.equal(400);
-    expect(res.body.message).to.include('用户名至少需要3个字符');
+    expect(res.body.data.message).to.include('用户名至少需要3个字符');
   });
 }

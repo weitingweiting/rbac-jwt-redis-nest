@@ -1,7 +1,7 @@
 import { Injectable, ExecutionContext } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { Reflector } from '@nestjs/core'
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
+import { IS_PUBLIC_KEY } from '@/modules/auth/decorators/public.decorator'
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -18,6 +18,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true
     }
 
+    // passport会去通过PassportStrategy，找到名为'jwt'的策略进行验证（文件：src/modules/auth/strategies/jwt.strategy.ts）
     return super.canActivate(context)
   }
 }

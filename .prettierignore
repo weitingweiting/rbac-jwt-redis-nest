@@ -2,7 +2,6 @@ dist
 node_modules
 coverage
 logs
-docker-data
 .next
 .nuxt
 .cache

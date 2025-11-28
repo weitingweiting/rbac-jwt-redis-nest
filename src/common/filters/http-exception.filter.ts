@@ -1,5 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, Inject } from '@nestjs/common'
 import { Response, Request } from 'express'
+import { ConfigService } from '@nestjs/config'
 import { ResponseHeadersUtil } from '../utils/response-headers.util'
 import { Logger } from 'winston'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
@@ -8,7 +9,8 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 export class HttpExceptionFilter implements ExceptionFilter {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    private readonly logger: Logger
+    private readonly logger: Logger,
+    private readonly configService: ConfigService
   ) {}
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
@@ -16,6 +18,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>()
     const status = exception.getStatus()
     const exceptionResponse = exception.getResponse()
+    const isDevelopment = this.configService.get<string>('app.nodeEnv') === 'development'
 
     let message: string | string[]
     let error: string
@@ -45,8 +48,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message: this.getCustomMessage(status, message),
       requestId,
       // 开发环境显示更多信息
-      ...(process.env.NODE_ENV === 'development' && {
-        stack: exception.stack,
+      ...(isDevelopment && {
+        // stack: exception.stack,
         originalMessage: exception.message
       })
     }

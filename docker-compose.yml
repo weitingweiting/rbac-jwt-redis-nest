@@ -10,17 +10,18 @@ services:
       MYSQL_PASSWORD: rbac_password
       TZ: Asia/Shanghai
     ports:
-      - "3306:3306"
+      - '3306:3306'
     volumes:
-      - ./docker-data/mysql:/var/lib/mysql
-    command: 
+      - ../docker-data/mysql:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
       - --default-authentication-plugin=mysql_native_password
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --max_connections=1000
       - --innodb_buffer_pool_size=256M
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-ppassword']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,13 +36,13 @@ services:
     environment:
       TZ: Asia/Shanghai
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
-      - ./docker-data/redis:/data
+      - ../docker-data/redis:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
@@ -57,9 +58,9 @@ services:
     environment:
       TZ: Asia/Shanghai
     ports:
-      - "5540:5540"
+      - '5540:5540'
     volumes:
-      - ./docker-data/redis-insight:/db
+      - ../docker-data/redis-insight:/db
     depends_on:
       redis:
         condition: service_healthy
@@ -79,7 +80,7 @@ services:
       ADMINER_DESIGN: nette
       TZ: Asia/Shanghai
     ports:
-      - "8080:8080"
+      - '8080:8080'
     depends_on:
       mysql:
         condition: service_healthy

@@ -24,6 +24,6 @@ assert {
 tests {
   test("注册成功", function() {
     expect(res.status).to.equal(201);
-    expect(res.body).to.have.property('message');
+    expect(res.body.data).to.have.property('message');
   });
 }

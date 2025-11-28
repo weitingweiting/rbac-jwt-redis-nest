@@ -7,16 +7,7 @@ const prettierConfig = require('eslint-config-prettier')
 module.exports = [
   {
     // 全局忽略配置，避免不必要的检查
-    ignores: [
-      'dist',
-      'node_modules',
-      'docker-data',
-      'logs',
-      '*.config.js',
-      'coverage',
-      '**/*.test.ts',
-      '**/*.spec.ts'
-    ]
+    ignores: ['dist', 'node_modules', '*.config.js', 'coverage', '**/*.test.ts', '**/*.spec.ts']
   },
   // TypeScript 文件配置
   {

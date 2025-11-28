@@ -17,6 +17,6 @@ assert {
 tests {
   test("无Token访问被拒绝", function() {
     expect(res.status).to.equal(401);
-    expect(res.body.message).to.include('未授权');
+    expect(res.body.data.message).to.include('未授权');
   });
 }

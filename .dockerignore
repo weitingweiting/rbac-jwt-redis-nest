@@ -39,8 +39,7 @@ coverage/
 *.spec.ts
 *.test.ts
 
-# Logs
-logs/
+# Logs (项目外部，但忽略可能意外创建的日志文件)
 *.log
 
 # Temp files

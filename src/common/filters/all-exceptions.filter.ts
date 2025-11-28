@@ -8,6 +8,7 @@ import {
   UnauthorizedException
 } from '@nestjs/common'
 import { Response, Request } from 'express'
+import { ConfigService } from '@nestjs/config'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 
@@ -24,7 +25,8 @@ import { Logger } from 'winston'
 export class AllExceptionsFilter implements ExceptionFilter {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER)
-    private readonly logger: Logger
+    private readonly logger: Logger,
+    private readonly configService: ConfigService
   ) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
@@ -34,6 +36,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // 使用中间件生成的 requestId
     const requestId = request['requestId'] || Math.random().toString(36).substr(2, 9)
+    const isProduction = this.configService.get<string>('app.nodeEnv') === 'production'
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR
     let message: string | string[] = 'Internal server error'
@@ -67,7 +70,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         // TypeORM 数据库错误
         status = HttpStatus.BAD_REQUEST
         error = 'DATABASE_ERROR'
-        message = process.env.NODE_ENV === 'production' ? '数据库操作失败' : exception.message
+        message = isProduction ? '数据库操作失败' : exception.message
       } else if (exception.name === 'ValidationError') {
         // class-validator 验证错误
         status = HttpStatus.BAD_REQUEST
@@ -92,12 +95,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         // JavaScript 类型错误
         status = HttpStatus.INTERNAL_SERVER_ERROR
         error = 'TYPE_ERROR'
-        message = process.env.NODE_ENV === 'production' ? '服务器内部错误' : exception.message
+        message = isProduction ? '服务器内部错误' : exception.message
       } else if (exception.name === 'ReferenceError') {
         // JavaScript 引用错误
         status = HttpStatus.INTERNAL_SERVER_ERROR
         error = 'REFERENCE_ERROR'
-        message = process.env.NODE_ENV === 'production' ? '服务器内部错误' : exception.message
+        message = isProduction ? '服务器内部错误' : exception.message
       }
 
       // 记录严重错误
@@ -138,14 +141,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       method: request.method,
       error,
       message:
-        process.env.NODE_ENV === 'production' && status === HttpStatus.INTERNAL_SERVER_ERROR
+        isProduction && status === HttpStatus.INTERNAL_SERVER_ERROR
           ? 'Internal server error'
           : message,
       requestId
     }
 
     // 开发环境返回堆栈信息
-    if (process.env.NODE_ENV === 'development' && exception instanceof Error) {
+    if (!isProduction && exception instanceof Error) {
       ;(errorResponse as any).stack = exception.stack
     }
 

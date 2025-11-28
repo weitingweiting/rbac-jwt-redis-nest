@@ -1,6 +1,4 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm'
-import { User } from './user.entity'
-import { Permission } from './permission.entity'
 
 @Entity('roles')
 export class Role {
@@ -13,10 +11,12 @@ export class Role {
   @Column({ nullable: true })
   description!: string
 
-  @ManyToMany(() => User, (user) => user.roles)
-  users!: User[]
+  // ✅ 使用字符串引用避免循环依赖
+  @ManyToMany('User', 'roles')
+  users!: any[]
 
-  @ManyToMany(() => Permission, (permission) => permission.roles, { eager: true })
+  // ✅ 使用字符串引用避免循环依赖
+  @ManyToMany('Permission', 'roles', { eager: true })
   @JoinTable({ name: 'role_permissions' })
-  permissions!: Permission[]
+  permissions!: any[]
 }

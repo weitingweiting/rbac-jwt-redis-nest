@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
+import { ConfigService } from '@nestjs/config'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { AuthService } from '@/modules/auth/auth.service'
 import { TokenBlacklistService } from '@/shared/services/token-blacklist.service'
@@ -8,12 +9,13 @@ import { TokenBlacklistService } from '@/shared/services/token-blacklist.service
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private authService: AuthService,
-    private tokenBlacklistService: TokenBlacklistService
+    private tokenBlacklistService: TokenBlacklistService,
+    private configService: ConfigService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // 从 Bearer Token 中提取 JWT
       ignoreExpiration: false, // 不忽略过期时间，过期的 Token 会被拒绝
-      secretOrKey: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+      secretOrKey: configService.get<string>('jwt.secret'),
       passReqToCallback: true, // 允许在 validate 方法中访问 request, 以便获取完整的请求信息
       algorithms: ['HS256'] // 指定签名算法
     })

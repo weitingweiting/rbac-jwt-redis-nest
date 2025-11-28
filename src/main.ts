@@ -2,12 +2,15 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston'
 import { ValidationPipe, VersioningType } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
-  // 使用 Winston 作为全局日志器
-  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
+  const configService = app.get(ConfigService)
+
+  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER)
+  app.useLogger(logger)
 
   // 全局验证管道配置
   app.useGlobalPipes(
@@ -37,20 +40,21 @@ async function bootstrap() {
   // 启用 CORS
   app.enableCors()
 
-  // 全局前缀
   app.setGlobalPrefix('api')
 
-  // 启用 API 版本控制
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
     prefix: 'v'
   })
 
-  await app.listen(3000)
+  const port = configService.get<number>('app.port', 3000)
+  await app.listen(port)
 
-  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER)
-  logger.log('Application is running on: http://localhost:3000', 'Bootstrap')
-  logger.log('API endpoint: http://localhost:3000/api', 'Bootstrap')
+  const nodeEnv = configService.get<string>('app.nodeEnv')
+  logger.log(`Application is running on: http://localhost:${port}`, 'Bootstrap')
+  logger.log(`API endpoint: http://localhost:${port}/api`, 'Bootstrap')
+  logger.log(`Environment: ${nodeEnv}`, 'Bootstrap')
+  logger.log(`Log level: ${configService.get<string>('app.logLevel')}`, 'Bootstrap')
 }
 bootstrap()

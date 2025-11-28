@@ -1,6 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Inject } from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
+import { ConfigService } from '@nestjs/config'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { Response, Request } from 'express'
@@ -8,7 +9,10 @@ import { ResponseHeadersUtil } from '../utils/response-headers.util'
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger) {}
+  constructor(
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    private readonly configService: ConfigService
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<Request>()
@@ -17,6 +21,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const userAgent = headers['user-agent'] || ''
     const startTime = Date.now()
     const requestId = request['requestId'] || 'unknown'
+    const isProduction = this.configService.get<string>('app.nodeEnv') === 'production'
 
     // 在请求对象上存储开始时间，供后续使用
     request['startTime'] = startTime
@@ -27,7 +32,7 @@ export class LoggingInterceptor implements NestInterceptor {
       url,
       ip,
       userAgent,
-      body: process.env.NODE_ENV === 'production' ? this.sanitizeBody(body) : body,
+      body: isProduction ? this.sanitizeBody(body) : body,
       requestId,
       timestamp: new Date().toISOString()
     })
