@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    // 代码质量
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint"
+  ],
+  "unwantedRecommendations": [
+    // 移除 Vue 相关扩展
+    "vue.volar",
+    "vue.vscode-typescript-vue-plugin"
+  ]
+}

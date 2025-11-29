@@ -1,0 +1,81 @@
+{
+  // TypeScript 专用配置
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  // ⚡ 性能优化：增加 TS Server 内存限制（解决崩溃问题）
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  // ⚡ 性能优化：禁用自动类型获取（减少网络和 I/O）
+  "typescript.disableAutomaticTypeAcquisition": true,
+  // ⚡ 性能优化：TS Server 日志（调试时可改为 "verbose"）
+  "typescript.tsserver.log": "off",
+  // TypeScript 语言服务器只检查 src 目录
+  "typescript.tsserver.watchOptions": {
+    "excludeDirectories": [
+      "**/node_modules",
+      "**/dist",
+      "**/bruno-api-tests",
+      "**/scripts",
+      "**/docs"
+    ]
+  },
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  // 文件关联（确保 .ts 文件使用 TypeScript）
+  "files.associations": {
+    "*.ts": "typescript",
+    "*.js": "javascript",
+    "*.json": "jsonc"
+  },
+  // ESLint 配置
+  "eslint.useFlatConfig": true,
+  "eslint.validate": [
+    "javascript",
+    "typescript"
+  ],
+  // 编辑器配置
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  // ⚡ 性能优化：减少代码提示延迟
+  "editor.quickSuggestionsDelay": 10,
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": false
+  },
+  // ⚡ 性能优化：限制建议来源
+  "editor.suggest.showWords": false,
+  // TypeScript 文件专用配置
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  // 排除不必要的文件和文件夹（减少文件监视）
+  // 这里的监视是指 VSCode 对文件变化的监听，以提高性能
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/bruno-api-tests/**": true
+  },
+  // 这里的搜索是指 VSCode 内置的全局搜索功能
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/*.log": true,
+    "pnpm-lock.yaml": true
+  },
+  // ⚡ 性能优化：排除不必要的文件显示
+  // "files.exclude": {
+  //   "**/.git": true,
+  //   "**/dist": false,
+  // }
+}
