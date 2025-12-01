@@ -59,19 +59,6 @@ export class AuthService {
       )
     }
 
-    // 检查邮箱是否已存在
-    // const existingEmail = await this.userRepository.findOne({
-    //   where: { email }
-    // })
-
-    // if (existingEmail) {
-    //   throw new BusinessException(
-    //     '邮箱已被注册，请使用其他邮箱',
-    //     HttpStatus.CONFLICT,
-    //     ERROR_CODES.EMAIL_EXISTS
-    //   )
-    // }
-
     // 密码加密
     const hashedPassword = this.hashPassword(password)
 
@@ -79,7 +66,6 @@ export class AuthService {
     const user = this.userRepository.create({
       username,
       password: hashedPassword
-      // email
     })
 
     await this.userRepository.save(user)

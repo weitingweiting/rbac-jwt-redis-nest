@@ -22,6 +22,9 @@ export class BaseUserDto {
   })
   username!: string
 
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]+$/, {
+    message: '密码必须包含大写字母、小写字母和数字，且不能包含空格'
+  })
   @IsString({ message: '密码必须是字符串' })
   @IsNotEmpty({ message: '密码不能为空' })
   @MinLength(6, { message: '密码至少需要6个字符' })

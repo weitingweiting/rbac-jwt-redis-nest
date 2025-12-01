@@ -36,14 +36,41 @@ export class SeedService {
   async seed() {
     console.log('🌱 Starting seed...')
 
-    // 清理所有现有数据
+    // 清理所有现有数据 - 按照依赖关系顺序删除
     console.log('🧹 Cleaning existing data...')
-    await this.projectAssetRepository.delete({})
-    await this.projectRepository.delete({})
-    await this.projectSpaceRepository.delete({})
-    await this.userRepository.createQueryBuilder().delete().execute()
-    await this.roleRepository.createQueryBuilder().delete().execute()
-    await this.permissionRepository.createQueryBuilder().delete().execute()
+
+    // 先删除子表
+    const assetCount = await this.projectAssetRepository.count()
+    if (assetCount > 0) {
+      await this.projectAssetRepository.createQueryBuilder().delete().where('1=1').execute()
+    }
+
+    const projectCount = await this.projectRepository.count()
+    if (projectCount > 0) {
+      await this.projectRepository.createQueryBuilder().delete().where('1=1').execute()
+    }
+
+    const spaceCount = await this.projectSpaceRepository.count()
+    if (spaceCount > 0) {
+      await this.projectSpaceRepository.createQueryBuilder().delete().where('1=1').execute()
+    }
+
+    // 删除用户和角色关联
+    const userCount = await this.userRepository.count()
+    if (userCount > 0) {
+      await this.userRepository.createQueryBuilder().delete().where('1=1').execute()
+    }
+
+    const roleCount = await this.roleRepository.count()
+    if (roleCount > 0) {
+      await this.roleRepository.createQueryBuilder().delete().where('1=1').execute()
+    }
+
+    const permissionCount = await this.permissionRepository.count()
+    if (permissionCount > 0) {
+      await this.permissionRepository.createQueryBuilder().delete().where('1=1').execute()
+    }
+
     console.log('✅ Cleaned all existing data')
 
     // 1. 创建权限

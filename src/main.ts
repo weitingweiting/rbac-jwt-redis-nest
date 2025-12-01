@@ -17,7 +17,7 @@ async function bootstrap() {
     new ValidationPipe({
       // 自动过滤掉 DTO 中未定义的属性
       whitelist: true,
-      // 当发现非白名单属性时抛出错误
+      // true: 在验证时抛出错误。false: 不报错，仅移除非白名单属性
       forbidNonWhitelisted: true,
       // 自动转换类型（例如：将字符串 "1" 转换为数字 1）
       transform: true,
