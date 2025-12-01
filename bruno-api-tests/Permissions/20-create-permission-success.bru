@@ -1,0 +1,39 @@
+meta {
+  name: 创建权限 - 成功
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{permissionsBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "code": "test.permission.{{timestamp}}",
+    "name": "测试权限{{timestamp}}",
+    "description": "这是一个测试权限"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("创建权限成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.data).to.have.property('id');
+    expect(res.body.data).to.have.property('code');
+    expect(res.body.data).to.have.property('name');
+    
+    // 保存权限ID供后续测试使用
+    bru.setVar("createdPermissionId", res.body.data.id);
+  });
+}

@@ -1,11 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm'
+import { Entity, Column, ManyToMany, JoinTable } from 'typeorm'
 import { Exclude } from 'class-transformer'
+import { BaseEntity } from './base.entity'
+import { Role } from './role.entity'
+import { ProjectSpace } from './project-space.entity'
 
 @Entity('users')
-export class User {
-  @PrimaryGeneratedColumn()
-  id!: number
-
+export class User extends BaseEntity {
   @Column({ unique: true })
   username!: string
 
@@ -13,15 +13,14 @@ export class User {
   @Exclude() // 序列化时自动排除密码字段
   password!: string
 
-  // @Column({ unique: true })
   @Column({ nullable: true })
-  email!: string
+  avatarUrl: string
 
-  // ✅ 使用字符串引用避免循环依赖
-  @ManyToMany('Role', 'users', { eager: true })
+  @ManyToMany(() => Role, (role) => role.users)
   @JoinTable({ name: 'user_roles' })
-  roles!: any[]
+  roles!: Role[]
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt!: Date
+  @ManyToMany(() => ProjectSpace, (space) => space.users)
+  @JoinTable({ name: 'user_project_spaces' })
+  projectSpaces: ProjectSpace[]
 }

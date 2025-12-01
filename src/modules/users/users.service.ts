@@ -7,18 +7,21 @@ import { ERROR_CODES } from '../../shared/constants/error-codes.constant'
 import { CreateUserDto, UpdateUserDto, QueryUserDto } from './dto/user.dto'
 import { PaginationDto } from '../../shared/dto/pagination.dto'
 import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto'
+import { BaseService } from '../../common/services/base.service'
 
 @Injectable()
-export class UsersService {
+export class UsersService extends BaseService<User> {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>
-  ) {}
+  ) {
+    super(userRepository)
+  }
 
   /**
    * 获取用户列表（带分页和查询）
    */
-  async findAll(
+  async findAllWithPagination(
     pagination: PaginationDto,
     query: QueryUserDto
   ): Promise<PaginatedResponseDto<User>> {
@@ -26,17 +29,12 @@ export class UsersService {
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.roles', 'role')
       .leftJoinAndSelect('role.permissions', 'permission')
+      .where('user.deletedAt IS NULL') // 排除软删除的用户
 
     // 应用查询条件
     if (query.username) {
       queryBuilder.andWhere('user.username LIKE :username', {
         username: `%${query.username}%`
-      })
-    }
-
-    if (query.email) {
-      queryBuilder.andWhere('user.email LIKE :email', {
-        email: `%${query.email}%`
       })
     }
 
@@ -55,10 +53,14 @@ export class UsersService {
     return new PaginatedResponseDto(users, total, pagination.page ?? 1, pagination.limit ?? 10)
   }
 
-  async findOne(id: number): Promise<User> {
+  /**
+   * 根据 ID 查找单个用户
+   */
+  async findOneUser(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['roles', 'roles.permissions']
+      relations: ['roles', 'roles.permissions'],
+      withDeleted: false
     })
 
     if (!user) {
@@ -76,22 +78,14 @@ export class UsersService {
    * 创建用户
    */
   async create(createUserDto: CreateUserDto): Promise<User> {
-    // 检查用户名是否已存在
+    // 检查用户名是否已存在（排除软删除）
     const existingUser = await this.userRepository.findOne({
-      where: { username: createUserDto.username }
+      where: { username: createUserDto.username },
+      withDeleted: false
     })
 
     if (existingUser) {
       throw new BusinessException('用户名已存在', HttpStatus.CONFLICT, ERROR_CODES.USERNAME_EXISTS)
-    }
-
-    // 检查邮箱是否已存在
-    const existingEmail = await this.userRepository.findOne({
-      where: { email: createUserDto.email }
-    })
-
-    if (existingEmail) {
-      throw new BusinessException('邮箱已被使用', HttpStatus.CONFLICT, ERROR_CODES.EMAIL_IN_USE)
     }
 
     const user = this.userRepository.create(createUserDto)
@@ -102,12 +96,13 @@ export class UsersService {
    * 更新用户
    */
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id) // 这里会抛出 BusinessException 如果用户不存在
+    const user = await this.findOneUser(id) // 这里会抛出 BusinessException 如果用户不存在
 
-    // 检查用户名是否被其他用户使用
+    // 检查用户名是否被其他用户使用（排除软删除）
     if (updateUserDto.username && updateUserDto.username !== user.username) {
       const existingUser = await this.userRepository.findOne({
-        where: { username: updateUserDto.username }
+        where: { username: updateUserDto.username },
+        withDeleted: false
       })
 
       if (existingUser) {
@@ -119,30 +114,15 @@ export class UsersService {
       }
     }
 
-    // 检查邮箱是否被其他用户使用
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const existingEmail = await this.userRepository.findOne({
-        where: { email: updateUserDto.email }
-      })
-
-      if (existingEmail) {
-        throw new BusinessException(
-          '邮箱已被其他用户使用',
-          HttpStatus.CONFLICT,
-          ERROR_CODES.EMAIL_IN_USE
-        )
-      }
-    }
-
     await this.userRepository.update(id, updateUserDto)
-    return this.findOne(id)
+    return this.findOneUser(id)
   }
 
   /**
-   * 删除用户
+   * 软删除用户
    */
   async delete(id: number): Promise<void> {
-    const user = await this.findOne(id) // 这里会抛出 BusinessException 如果用户不存在
+    const user = await this.findOneUser(id) // 这里会抛出 BusinessException 如果用户不存在
 
     // 检查是否是最后一个管理员
     const userRoles = user.roles || []
@@ -153,6 +133,7 @@ export class UsersService {
         .createQueryBuilder('user')
         .innerJoin('user.roles', 'role')
         .where('role.name = :roleName', { roleName: 'admin' })
+        .andWhere('user.deletedAt IS NULL') // 只统计未删除的管理员
         .getCount()
 
       if (adminCount <= 1) {
@@ -164,6 +145,7 @@ export class UsersService {
       }
     }
 
-    await this.userRepository.delete(id)
+    // 使用软删除
+    await this.userRepository.softDelete(id)
   }
 }

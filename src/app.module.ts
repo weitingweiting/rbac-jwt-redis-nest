@@ -33,6 +33,11 @@ import { LoggingInterceptor } from './common/logger/logging.interceptor'
 import { TestModule } from './common/test/test.module'
 import { DatabaseModule } from './database/database.module'
 import { SeedService } from './database/seeds/seed.service'
+import { RolesModule } from './modules/roles/roles.module'
+import { PermissionsModule } from './modules/permissions/permissions.module'
+import { ProjectSpacesModule } from './modules/project-spaces/project-spaces.module'
+import { ProjectsModule } from './modules/projects/projects.module'
+import { ProjectAssetsModule } from './modules/project-assets/project-assets.module'
 
 @Module({
   imports: [
@@ -57,7 +62,12 @@ import { SeedService } from './database/seeds/seed.service'
     QueueModule,
     AuthModule,
     UsersModule,
-    TestModule
+    TestModule,
+    RolesModule,
+    PermissionsModule,
+    ProjectSpacesModule,
+    ProjectsModule,
+    ProjectAssetsModule
   ],
   controllers: [AppController],
   providers: [

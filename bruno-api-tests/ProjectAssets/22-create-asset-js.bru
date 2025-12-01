@@ -1,0 +1,39 @@
+meta {
+  name: 创建项目资源 - 成功 (js)
+  type: http
+  seq: 22
+}
+
+post {
+  url: {{projectAssetsBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "projectId": 1,
+    "url": "https://example.com/assets/script-{{timestamp}}.js",
+    "type": "js",
+    "size": 2048,
+    "meta": {
+      "minified": false
+    }
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("创建JS资源成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.data).to.have.property('id');
+    expect(res.body.data.type).to.equal('js');
+  });
+}

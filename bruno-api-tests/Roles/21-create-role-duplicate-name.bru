@@ -1,0 +1,33 @@
+meta {
+  name: 创建角色 - 名称重复
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{rolesBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "admin",
+    "description": "重复的角色名"
+  }
+}
+
+assert {
+  res.status: eq 409
+}
+
+tests {
+  test("角色名称重复返回409", function() {
+    expect(res.status).to.equal(409);
+    expect(res.body).to.have.property('message');
+  });
+}

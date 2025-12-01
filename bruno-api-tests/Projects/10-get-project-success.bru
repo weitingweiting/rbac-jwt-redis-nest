@@ -1,0 +1,31 @@
+meta {
+  name: 获取单个项目 - 成功
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{projectsBaseUrl}}/{{projectId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("获取单个项目成功", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.data).to.have.property('id');
+    expect(res.body.data).to.have.property('name');
+    expect(res.body.data).to.have.property('status');
+    expect(res.body.data).to.have.property('projectSpace');
+    expect(res.body.data).to.have.property('assets');
+    expect(res.body.data.assets).to.be.an('array');
+  });
+}

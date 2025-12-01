@@ -1,378 +1,228 @@
-# 📚 RBAC + JWT + Redis Demo 文档
+# 📚 项目文档目录
 
-欢迎查看完整的项目文档！所有文档已按照功能和用途重新整理分类。
+欢迎查看 RBAC + JWT + Redis Demo 项目文档！
 
-## 📁 文档结构
+## 📖 文档列表
 
-```
-docs/
-├── 🚀 getting-started/     # 快速开始
-│   ├── quickstart.md       # 安装配置指南
-│   └── project-structure.md # 项目结构说明
-├── 🛠️ development/         # 开发指南
-│   ├── auth-rbac.md       # 认证与权限
-│   ├── api-design.md      # API 设计规范
-│   ├── validation.md      # 数据验证
-│   └── exception-handling.md # 异常处理
-├── 🚀 deployment/          # 部署运维
-│   ├── docker.md          # Docker 部署
-│   ├── database.md        # 数据库配置
-│   └── logging.md         # 日志管理
-├── 🧪 testing/            # 测试指南
-│   ├── api-testing.md     # API 测试
-│   └── validation-testing.md # 验证测试
-└── 📖 references/         # 参考文档
-    └── optimization.md    # 性能优化指南
-```
+### 🚀 [快速开始](./快速开始.md)
 
-## 🚀 快速导航
+5 分钟快速上手项目，包括：
 
-### 新用户开始这里
+- 环境准备和安装步骤
+- Docker 容器启动
+- **数据库初始化（重要说明）**
+- 默认账户信息
+- 常见问题解决
 
-- [📖 快速开始指南](getting-started/quickstart.md) - 5 分钟快速上手
-- [🏗️ 项目结构说明](getting-started/project-structure.md) - 了解项目架构
-
-### 开发者指南
-
-- [🔐 认证与权限系统](development/auth-rbac.md) - RBAC 和 JWT 完整实现
-- [📋 API 设计规范](development/api-design.md) - RESTful API 最佳实践
-- [✅ 数据验证指南](development/validation.md) - class-validator 使用
-- [🚨 异常处理指南](development/exception-handling.md) - 全局异常处理
-
-### 部署运维
-
-- [🐳 Docker 部署指南](deployment/docker.md) - 容器化部署完整方案
-- [🗄️ 数据库配置](deployment/database.md) - MySQL 配置和初始化
-- [📝 日志管理](deployment/logging.md) - Winston 日志系统
-
-### 测试指南
-
-- [🧪 API 测试指南](testing/api-testing.md) - Bruno 测试集合使用
-- [✅ 验证测试指南](testing/validation-testing.md) - 输入验证测试
-
-## 🎯 核心特性
-
-### 🔐 认证与授权
-
-- JWT Token 认证机制
-- 基于角色的访问控制 (RBAC)
-- 权限细粒度控制
-- Token 黑名单机制
-
-### 📊 性能优化
-
-- Redis 缓存用户权限
-- 数据库查询优化
-- 日志性能优化
-- 异常处理优化
-
-### 🛠️ 开发体验
-
-- 模块化架构设计
-- TypeScript 类型安全
-- 完整的异常处理体系
-- 结构化日志记录
-- 自动化测试集合
-
-## 🔄 从旧文档迁移
-
-如果你之前使用的是散乱的文档结构，以下是新旧文档的对应关系：
-
-| 旧文档                      | 新位置                                 | 说明             |
-| --------------------------- | -------------------------------------- | ---------------- |
-| `QUICKSTART.md`             | `getting-started/quickstart.md`        | 快速开始指南     |
-| `PROJECT_STRUCTURE.md`      | `getting-started/project-structure.md` | 项目结构         |
-| `TOKEN_BLACKLIST.md`        | `development/auth-rbac.md`             | 合并到认证文档   |
-| `VALIDATION_GUIDE.md`       | `development/validation.md`            | 数据验证指南     |
-| `EXCEPTION_FILTER_GUIDE.md` | `development/exception-handling.md`    | 异常处理         |
-| `DOCKER_GUIDE.md`           | `deployment/docker.md`                 | Docker 部署      |
-| `DATABASE_INIT.md`          | `deployment/database.md`               | 数据库配置       |
-| `LOGGER_*.md`               | `deployment/logging.md`                | 日志系统（合并） |
-| `USERS_API_REFERENCE.md`    | `development/api-design.md`            | API 设计规范     |
-
-## 🤝 贡献指南
-
-如果你想为文档做贡献：
-
-1. 保持文档结构的一致性
-2. 使用清晰的标题和章节
-3. 提供实际的代码示例
-4. 更新相关的导航链接
-
-## 📞 获得帮助
-
-如果你在使用过程中遇到问题：
-
-1. 查看对应章节的文档
-2. 检查 [GitHub Issues](../../issues)
-3. 提交新的 Issue 描述问题
+**适合：** 第一次使用项目的开发者
 
 ---
 
-💡 **提示**: 所有文档都支持在线查看，建议按顺序从快速开始指南开始阅读。
+### 🏗️ [项目结构](./项目结构.md)
 
-- Docker & Docker Compose（推荐）
-- 或者 MySQL >= 5.7 + Redis >= 5.0（手动安装）
+详细的项目架构说明，包括：
 
-## 快速开始
+- 完整的目录结构
+- 分层架构设计
+- 模块依赖关系
+- 核心模块职责
+- RBAC 权限系统设计
+- 数据库 ERD 图
 
-### 方式一：使用 Makefile（推荐）
+**适合：** 需要深入了解项目架构的开发者
 
-```bash
-# 查看所有可用命令
-make help
+---
 
-# 一键初始化（启动服务 + 安装依赖 + 初始化数据）
-make init
+### 🛠️ [开发指南](./开发指南.md)
 
-# 启动开发服务器
-make dev
-```
+核心功能实现详解，包括：
 
-### 方式二：手动步骤
+- JWT 认证流程
+- RBAC 权限系统实现
+- 数据验证（class-validator）
+- 数据库操作（TypeORM）
+- 软删除机制
+- 异常处理
+- 日志记录
+- 队列任务（BullMQ）
 
-#### 1. 克隆项目并安装依赖
+**适合：** 正在开发新功能的开发者
 
-```bash
-npm install
-```
+---
 
-#### 2. 启动数据库服务（推荐使用 Docker）
+### 📖 [API 接口](./API接口.md)
 
-```bash
-# 启动 MySQL 和 Redis
-docker-compose up -d
+完整的 REST API 文档，包括：
 
-# 查看服务状态
-docker-compose ps
+- 认证接口（注册、登录、刷新 Token）
+- 用户管理接口
+- 角色管理接口
+- 权限管理接口
+- 项目空间管理接口
+- 项目管理接口
+- 项目资源管理接口
+- 错误响应格式
 
-# (可选) 启动管理工具
-docker-compose --profile tools up -d
-# 访问 http://localhost:8080 (Adminer - MySQL 管理)
-# 访问 http://localhost:8081 (Redis Commander)
-```
+**适合：** 前端开发者、接口测试人员
 
-详细 Docker 使用说明请查看 [DOCKER_GUIDE.md](DOCKER_GUIDE.md)
+---
 
-## 配置环境变量
+### 🚀 [部署指南](./部署指南.md)
 
-创建 `.env` 文件：
+生产环境部署完整方案，包括：
 
-```env
-# 应用环境（development 或 production）
-NODE_ENV=development
+- 部署架构图
+- 服务器环境准备
+- Docker 生产配置
+- **数据库初始化选择（重要）**
+- Nginx 反向代理配置
+- SSL 证书配置
+- 安全加固措施
+- 监控和日志管理
+- 备份策略
+- 故障排查
 
-# JWT 配置
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_EXPIRES_IN=24h
+**适合：** 运维人员、部署负责人
 
-# 数据库配置
-DATABASE_HOST=localhost
-DATABASE_PORT=3306
-DATABASE_USER=root
-DATABASE_PASSWORD=password
-DATABASE_NAME=rbac_demo
+---
 
-# Redis 配置
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
+## 🔑 关键概念
 
-## 启动服务
+### 数据库初始化说明
 
-```bash
-# 开发模式
-npm run start:dev
+项目提供 **两种方式** 初始化数据库，**选择其一即可**：
 
-# 生产模式
-npm run build
-npm run start:prod
-```
-
-## 初始化数据
+#### 方式一：使用 Seed 脚本（⭐ 推荐）
 
 ```bash
 npm run seed
 ```
 
-默认用户（所有密码都是 `root123456`）：
+**特点：**
 
-- 管理员：`admin` / `root123456`
-- 编辑者：`editor` / `root123456`
-- 普通用户：`john_doe` / `root123456`
+- ✅ TypeORM 自动创建表结构（synchronize: true）
+- ✅ 自动插入初始数据（权限、角色、用户、示例项目）
+- ✅ 支持增量更新
+- ✅ **开发和生产环境推荐**
 
-## API 使用示例
+**何时使用：**
 
-### 1. 注册
+- 首次部署项目
+- 开发环境快速初始化
+- 需要重置数据库到初始状态
 
-```bash
-POST /auth/register
-Content-Type: application/json
-
-{
-  "username": "testuser",
-  "password": "password123",
-  "email": "test@example.com"
-}
-```
-
-### 2. 登录
+#### 方式二：执行 SQL 脚本
 
 ```bash
-POST /auth/login
-Content-Type: application/json
+# 通过 docker
+docker exec -i rbac-demo-mysql mysql -uroot -ppassword rbac_demo < init.sql
 
-{
-  "username": "admin",
-  "password": "root123456"
-}
+# 或通过 Adminer 手动导入
 ```
 
-### 3. 访问受保护接口
+**特点：**
 
-```bash
-GET /users
-Authorization: Bearer {your-jwt-token}
-```
+- ✅ 手动执行 SQL，完全可控
+- ✅ 适合理解数据库结构
+- ⚠️ 需要手动管理表结构变更
 
-### 4. 获取用户信息
+**何时使用：**
 
-```bash
-GET /auth/profile
-Authorization: Bearer {your-jwt-token}
-```
+- 学习数据库结构
+- 需要完全控制初始化过程
+- 不信任 TypeORM 自动建表
 
-### 5. 用户登出（Token 加入黑名单）
+### 默认账户
 
-```bash
-POST /auth/logout
-Authorization: Bearer {your-jwt-token}
-```
+所有环境初始化后都会创建以下账户：
 
-### 6. 管理员强制登出用户
+| 用户名 | 密码      | 角色   | 权限数量                       |
+| ------ | --------- | ------ | ------------------------------ |
+| admin  | Admin123  | 管理员 | 27个（全部）                   |
+| editor | Editor123 | 编辑者 | 19个（查看、创建、更新、发布） |
+| viewer | Viewer123 | 查看者 | 7个（仅查看）                  |
 
-```bash
-POST /users/force-logout/:userId
-Authorization: Bearer {admin-token}
-```
+## 🛠️ 技术栈
 
-## 项目结构
+- **框架**: NestJS 10.x
+- **语言**: TypeScript 5.x
+- **数据库**: MySQL 8.0
+- **缓存**: Redis 7.x
+- **ORM**: TypeORM
+- **认证**: JWT + Passport
+- **队列**: BullMQ
+- **日志**: Winston
+- **验证**: class-validator
+- **测试**: Bruno (API测试)
 
-```
-src/
-├── auth/                    # 认证模块
-│   ├── decorators/         # 装饰器（Public, CurrentUser）
-│   ├── guards/             # JWT Guard
-│   ├── strategies/         # Passport JWT 策略
-│   ├── auth.service.ts     # 认证服务
-│   ├── auth.controller.ts  # 认证控制器
-│   └── auth.module.ts      # 认证模块
-├── config/                  # 配置文件
-│   ├── jwt.config.ts       # JWT 配置
-│   ├── redis.config.ts     # Redis 配置
-│   └── winston.config.ts   # Winston 日志配置
-├── controllers/            # 控制器
-│   └── users.controller.ts
-├── decorators/             # 权限装饰器
-│   ├── permissions.decorator.ts
-│   └── roles.decorator.ts
-├── entities/               # 数据库实体
-│   ├── user.entity.ts
-│   ├── role.entity.ts
-│   └── permission.entity.ts
-├── guards/                 # 权限 Guard
-│   ├── permissions.guard.ts
-│   └── roles.guard.ts
-├── logger/                 # 日志模块
-│   ├── logger.module.ts    # 日志模块
-│   └── logging.interceptor.ts  # HTTP 日志拦截器
-├── services/               # 服务层
-│   └── user-permissions.service.ts
-├── seed/                   # 数据库种子
-│   └── seed.service.ts
-├── app.module.ts           # 根模块
-└── main.ts                 # 入口文件
-```
+## 📦 核心功能
 
-## 核心概念
+- ✅ JWT 认证和 Token 刷新
+- ✅ Token 黑名单（登出功能）
+- ✅ RBAC 权限系统（基于 permission code）
+- ✅ 用户、角色、权限管理
+- ✅ 项目空间和项目管理
+- ✅ 软删除机制
+- ✅ Redis 权限缓存
+- ✅ 全局异常处理
+- ✅ 统一响应格式
+- ✅ 日志系统（按级别和日期分割）
+- ✅ 数据验证
+- ✅ BullMQ 队列系统
 
-### 1. RBAC 模型
+## 📂 文档更新记录
 
-- User（用户）→ User_Roles → Role（角色）→ Role_Permissions → Permission（权限）
-- 用户通过角色间接获得权限
+- **2025-11-30**: 重新整理文档结构，合并相关内容，统一为中文文档
+- 删除临时修复文档（CIRCULAR_DEPENDENCY_FIX.md 等）
+- 明确数据库初始化的两种方式及其选择
+- 更新部署指南，增加生产环境配置
+- 添加完整的 API 接口文档
 
-### 2. JWT 认证
+## 🆘 需要帮助？
 
-- 登录后返回 JWT Token
-- 请求时携带 Token 在 Authorization Header
-- JwtAuthGuard 自动验证 Token
+### 常见问题
 
-### 3. Redis 缓存
+1. **数据库连接失败**
+   - 检查 Docker 容器是否启动：`docker ps`
+   - 查看 MySQL 日志：`docker logs rbac-demo-mysql`
+   - 验证环境变量配置
 
-- 缓存用户权限列表，避免频繁查询数据库
-- 首次查询写入缓存，后续从缓存读取
-- 角色/权限变更时清除缓存
+2. **权限验证失败**
+   - 确认 Token 有效性
+   - 检查用户权限缓存：Redis 中 `user:*:permissions` 键
+   - 验证角色权限配置
 
-### 4. Token 黑名单
+3. **TypeORM synchronize 问题**
+   - 开发环境：`synchronize: true`（自动同步表结构）
+   - 生产环境：`synchronize: false`（使用 migrations 管理）
 
-- 用户登出后 Token 立即失效
-- 管理员可强制踢出指定用户
-- 使用 Redis 存储，自动过期清理
-- 详见 [TOKEN_BLACKLIST.md](TOKEN_BLACKLIST.md)
+### 获取支持
 
-### 5. 装饰器使用
+- 查看文档：优先阅读相关文档章节
+- 查看日志：检查 `logs/` 目录下的日志文件
+- API 测试：使用 Bruno 测试集合验证接口
+- 代码调试：使用 VSCode 断点调试
 
-```typescript
-// 标记公开接口（无需认证）
-@Public()
+## 🗺️ 学习路径
 
-// 要求特定权限
-@RequirePermissions('users:read', 'users:write')
+### 新手入门（第 1 天）
 
-// 要求特定角色
-@RequireRoles('admin', 'superadmin')
+1. [快速开始](./快速开始.md) - 安装和启动项目
+2. [API 接口](./API接口.md) - 测试基础接口
+3. 使用 Bruno 执行测试用例
 
-// 获取当前用户
-@CurrentUser() user: any
-```
+### 深入理解（第 2-3 天）
 
-## 日志系统
+1. [项目结构](./项目结构.md) - 了解架构
+2. [开发指南](./开发指南.md) - 学习核心功能
+3. 阅读源代码，理解实现细节
 
-本项目集成了完整的 Winston 日志系统：
+### 生产部署（第 4-5 天）
 
-- 📝 多级别日志（error、warn、info、http、debug）
-- 📁 自动日志轮转和归档
-- 🎨 开发环境彩色控制台输出
-- 🔒 敏感信息自动脱敏
-- 📊 HTTP 请求/响应自动记录
-- 💾 按日期和类型分类存储
+1. [部署指南](./部署指南.md) - 部署到服务器
+2. 配置 Nginx、SSL
+3. 设置监控和备份
 
-详细使用说明请查看：
+---
 
-- [LOGGER_GUIDE.md](LOGGER_GUIDE.md) - 日志功能介绍
-- [LOGGER_EXAMPLES.md](LOGGER_EXAMPLES.md) - 使用示例和最佳实践
-
-```bash
-# 实时查看日志
-tail -f logs/application-$(date +%Y-%m-%d).log
-
-# 查看错误日志
-tail -f logs/error-$(date +%Y-%m-%d).log
-
-# 格式化 JSON 日志
-tail -f logs/application-$(date +%Y-%m-%d).log | jq '.'
-```
-
-## 学习要点
-
-1. **SetMetadata** vs **Reflect.metadata**：装饰器工厂的使用
-2. **Guard 执行顺序**：JwtAuthGuard → PermissionsGuard → RolesGuard
-3. **Redis 缓存策略**：TTL + 主动清除
-4. **JWT 策略**：Passport Strategy 的实现
-5. **装饰器组合**：自定义装饰器的实践
-6. **Token 黑名单**：用户登出和强制登出的实现
-7. **Winston 日志**：结构化日志、拦截器、日志轮转的最佳实践
-
-## License
-
-MIT
+**祝你使用愉快！如有问题，请先查阅相关文档。** 🎉

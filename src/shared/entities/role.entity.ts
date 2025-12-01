@@ -1,22 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm'
+import { Entity, Column, ManyToMany, JoinTable } from 'typeorm'
+import { BaseEntity } from './base.entity'
+import { Permission } from './permission.entity'
+import { User } from './user.entity'
 
 @Entity('roles')
-export class Role {
-  @PrimaryGeneratedColumn()
-  id!: number
-
+export class Role extends BaseEntity {
   @Column({ unique: true })
   name!: string
 
   @Column({ nullable: true })
   description!: string
 
-  // ✅ 使用字符串引用避免循环依赖
-  @ManyToMany('User', 'roles')
-  users!: any[]
-
-  // ✅ 使用字符串引用避免循环依赖
-  @ManyToMany('Permission', 'roles', { eager: true })
+  @ManyToMany(() => Permission, (permission) => permission.roles)
   @JoinTable({ name: 'role_permissions' })
-  permissions!: any[]
+  permissions!: Permission[]
+
+  @ManyToMany(() => User, (user) => user.roles)
+  users!: User[]
 }

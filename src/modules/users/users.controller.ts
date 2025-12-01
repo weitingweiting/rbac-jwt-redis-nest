@@ -43,7 +43,7 @@ export class UsersController {
     @Query() query: QueryUserDto,
     @CurrentUser() currentUser: any
   ) {
-    const users = await this.usersService.findAll(pagination, query)
+    const users = await this.usersService.findAllWithPagination(pagination, query)
     return {
       message: '获取用户列表成功',
       currentUser: currentUser.username,
@@ -58,7 +58,7 @@ export class UsersController {
   @Get(':id')
   @RequirePermissions('users:read')
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.usersService.findOne(id)
+    const user = await this.usersService.findOneUser(id)
     return {
       message: '获取用户详情成功',
       data: user

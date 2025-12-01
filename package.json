@@ -1,7 +1,7 @@
 {
-  "name": "rbac-jwt-redis-demo",
+  "name": "low-code-agile-designer-backend",
   "version": "1.0.0",
-  "description": "NestJS RBAC + JWT + Redis Demo",
+  "description": "低代码敏捷设计器后台服务",
   "scripts": {
     "prestart": "node scripts/ensure-logs-dir.js",
     "prestart:dev": "node scripts/ensure-logs-dir.js",
@@ -15,7 +15,7 @@
     "build:watch": "nest build --watch",
     "build:detail": "bash scripts/build-verbose.sh",
     "build:info": "nest build && echo '\n📦 Build Info:' && ls -la dist/",
-    "seed": "cross-env NODE_ENV=development ts-node src/seed/seed.ts",
+    "seed": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/database/seeds/seed.ts",
     "gen-hash": "node scripts/generate-password-hash.js",
     "lint": "eslint \"{src,scripts}/**/*.{ts,js}\" --fix",
     "lint:check": "eslint \"{src,scripts}/**/*.{ts,js}\"",
@@ -84,6 +84,7 @@
     "npm-check-updates": "^19.1.2",
     "prettier": "^3.7.1",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
   }
 }

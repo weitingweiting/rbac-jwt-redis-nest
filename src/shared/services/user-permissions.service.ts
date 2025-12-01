@@ -38,10 +38,10 @@ export class UserPermissionsService {
       return []
     }
 
-    // 3. 提取所有权限名称
+    // 3. 提取所有权限 code（使用 code 而不是 name）
     const permissions = user.roles
       .flatMap((role) => role.permissions || [])
-      .map((permission) => permission.name)
+      .map((permission) => permission.code)
 
     // 4. 去重（避免重复权限）
     const uniquePermissions = [...new Set(permissions)]

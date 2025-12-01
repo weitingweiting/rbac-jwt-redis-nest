@@ -1,0 +1,28 @@
+meta {
+  name: 获取权限列表 - 基础查询
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{permissionsBaseUrl}}?page=1&limit=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("获取权限列表成功", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.data).to.have.property('items');
+    expect(res.body.data).to.have.property('total');
+    expect(res.body.data.items).to.be.an('array');
+  });
+}

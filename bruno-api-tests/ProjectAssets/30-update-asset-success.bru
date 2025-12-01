@@ -1,0 +1,39 @@
+meta {
+  name: 更新项目资源 - 成功
+  type: http
+  seq: 30
+}
+
+patch {
+  url: {{projectAssetsBaseUrl}}/{{createdAssetId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "size": 2048000,
+    "meta": {
+      "width": 3840,
+      "height": 2160,
+      "format": "jpg",
+      "updated": true
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("更新项目资源成功", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.data).to.have.property('id');
+    expect(res.body.data.size).to.equal(2048000);
+  });
+}

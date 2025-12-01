@@ -45,9 +45,10 @@ export class AuthService {
   async register(registerDto: RegisterDto): Promise<MessageResponseDto> {
     const { username, password } = registerDto
 
-    // 检查用户名是否已存在
+    // 检查用户名是否已存在（排除软删除的用户）
     const existingUsername = await this.userRepository.findOne({
-      where: { username }
+      where: { username },
+      withDeleted: false
     })
 
     if (existingUsername) {
@@ -92,10 +93,11 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const { username, password } = loginDto
 
-    // 查找用户
+    // 查找用户（排除软删除的用户）
     const user = await this.userRepository.findOne({
       where: { username },
-      relations: ['roles', 'roles.permissions']
+      relations: ['roles', 'roles.permissions'],
+      withDeleted: false
     })
 
     if (!user) {
@@ -119,8 +121,7 @@ export class AuthService {
     // 生成 JWT Token
     const payload = {
       sub: user.id,
-      username: user.username,
-      email: user.email
+      username: user.username
     }
 
     const accessToken = this.jwtService.sign(payload)
@@ -140,7 +141,8 @@ export class AuthService {
   async validateToken(userId: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['roles']
+      relations: ['roles'],
+      withDeleted: false
     })
 
     if (!user) {
@@ -155,7 +157,8 @@ export class AuthService {
    */
   async refreshToken(userId: number): Promise<TokenResponseDto> {
     const user = await this.userRepository.findOne({
-      where: { id: userId }
+      where: { id: userId },
+      withDeleted: false
     })
 
     if (!user) {
@@ -168,8 +171,7 @@ export class AuthService {
 
     const payload = {
       sub: user.id,
-      username: user.username,
-      email: user.email
+      username: user.username
     }
 
     const accessToken = this.jwtService.sign(payload)

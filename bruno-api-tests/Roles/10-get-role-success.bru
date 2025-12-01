@@ -1,0 +1,29 @@
+meta {
+  name: 获取单个角色 - 成功
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{rolesBaseUrl}}/{{roleId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("获取单个角色成功", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.data).to.have.property('id');
+    expect(res.body.data).to.have.property('name');
+    expect(res.body.data).to.have.property('permissions');
+    expect(res.body.data.permissions).to.be.an('array');
+  });
+}

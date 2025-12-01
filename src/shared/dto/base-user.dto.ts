@@ -1,8 +1,16 @@
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsEmail, Matches } from 'class-validator'
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsOptional,
+  IsUrl
+} from 'class-validator'
 
 /**
  * 用户基础字段 DTO
- * 包含用户名、邮箱、密码的通用验证规则
+ * 包含用户名、密码、头像的通用验证规则
  */
 export class BaseUserDto {
   @IsString({ message: '用户名必须是字符串' })
@@ -14,16 +22,14 @@ export class BaseUserDto {
   })
   username!: string
 
-  @IsEmail({}, { message: '请输入有效的邮箱地址' })
-  @IsNotEmpty({ message: '邮箱不能为空' })
-  email!: string
-
   @IsString({ message: '密码必须是字符串' })
   @IsNotEmpty({ message: '密码不能为空' })
   @MinLength(6, { message: '密码至少需要6个字符' })
   @MaxLength(50, { message: '密码最多50个字符' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: '密码必须包含大小写字母和数字'
-  })
   password!: string
+
+  @IsOptional()
+  @IsString({ message: '头像地址必须是字符串' })
+  @IsUrl({}, { message: '头像地址必须是有效的URL' })
+  avatarUrl?: string
 }

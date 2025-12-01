@@ -1,0 +1,39 @@
+meta {
+  name: 完整流程测试 - 从注册到项目发布
+  type: http
+  seq: 100
+}
+
+post {
+  url: {{authBaseUrl}}/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "flowtest{{timestamp}}",
+    "password": "Flowtest123"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("步骤1: 用户注册成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.data).to.have.property('message');
+  });
+  
+  // 注意：这是一个多步骤流程测试
+  // 实际使用时需要依次运行以下步骤：
+  // 1. 注册用户
+  // 2. 登录获取token
+  // 3. 创建项目空间
+  // 4. 创建项目
+  // 5. 上传项目资源
+  // 6. 发布项目
+  // 7. 验证项目状态
+}

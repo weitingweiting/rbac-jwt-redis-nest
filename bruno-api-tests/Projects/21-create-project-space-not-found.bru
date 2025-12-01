@@ -1,0 +1,34 @@
+meta {
+  name: 创建项目 - 项目空间不存在
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{projectsBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "test-project-invalid",
+    "description": "测试项目",
+    "projectSpaceId": 99999
+  }
+}
+
+assert {
+  res.status: eq 404
+}
+
+tests {
+  test("项目空间不存在返回404", function() {
+    expect(res.status).to.equal(404);
+    expect(res.body).to.have.property('message');
+  });
+}

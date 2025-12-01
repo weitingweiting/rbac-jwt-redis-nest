@@ -10,9 +10,9 @@ export class UpdateUserPartialDto extends PartialType(
 ) {}
 
 /**
- * 用户信息 DTO - 只包含用户名和邮箱
+ * 用户信息 DTO - 只包含用户名
  */
-export class UserInfoOnlyDto extends PickType(BaseUserDto, ['username', 'email'] as const) {}
+export class UserInfoOnlyDto extends PickType(BaseUserDto, ['username'] as const) {}
 
 /**
  * 修改密码 DTO - 单独的密码修改接口

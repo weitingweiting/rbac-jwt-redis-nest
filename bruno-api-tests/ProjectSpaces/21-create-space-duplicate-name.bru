@@ -1,0 +1,33 @@
+meta {
+  name: 创建项目空间 - 名称重复
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{projectSpacesBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "test-space-duplicate",
+    "description": "重复的项目空间名"
+  }
+}
+
+assert {
+  res.status: eq 409
+}
+
+tests {
+  test("项目空间名称重复返回409", function() {
+    expect(res.status).to.equal(409);
+    expect(res.body).to.have.property('message');
+  });
+}

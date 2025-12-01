@@ -1,0 +1,25 @@
+meta {
+  name: 删除项目 - 成功
+  type: http
+  seq: 50
+}
+
+delete {
+  url: {{projectsBaseUrl}}/{{createdProjectId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("删除项目成功", function() {
+    expect(res.status).to.equal(200);
+  });
+}

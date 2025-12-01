@@ -1,0 +1,33 @@
+meta {
+  name: 为角色分配权限
+  type: http
+  seq: 40
+}
+
+post {
+  url: {{rolesBaseUrl}}/{{createdRoleId}}/permissions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "permissionIds": [1, 2]
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("分配权限成功", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body.data).to.have.property('permissions');
+    expect(res.body.data.permissions).to.be.an('array');
+  });
+}

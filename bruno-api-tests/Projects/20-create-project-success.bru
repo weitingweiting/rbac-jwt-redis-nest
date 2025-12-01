@@ -1,0 +1,45 @@
+meta {
+  name: 创建项目 - 成功
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{projectsBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "test-project-{{timestamp}}",
+    "description": "测试项目",
+    "projectSpaceId": 1,
+    "sceneJson": {
+      "version": "1.0.0",
+      "objects": []
+    },
+    "coverUrl": "https://example.com/cover.jpg"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("创建项目成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.data).to.have.property('id');
+    expect(res.body.data).to.have.property('name');
+    expect(res.body.data).to.have.property('status');
+    expect(res.body.data.status).to.equal('draft');
+    
+    // 保存项目ID供后续测试使用
+    bru.setVar("createdProjectId", res.body.data.id);
+  });
+}

@@ -1,0 +1,39 @@
+meta {
+  name: 创建角色 - 成功
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{rolesBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "test-role-{{timestamp}}",
+    "description": "测试角色",
+    "permissionIds": []
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("创建角色成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.data).to.have.property('id');
+    expect(res.body.data).to.have.property('name');
+    expect(res.body.data).to.have.property('description');
+    
+    // 保存角色ID供后续测试使用
+    bru.setVar("createdRoleId", res.body.data.id);
+  });
+}

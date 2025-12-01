@@ -2,6 +2,7 @@ import { Exclude, Expose, Type } from 'class-transformer'
 
 /**
  * 用户信息 DTO（用于响应）
+ * 对应 User Entity 的公开字段
  */
 @Exclude()
 export class UserInfoDto {
@@ -12,7 +13,7 @@ export class UserInfoDto {
   username!: string
 
   @Expose()
-  email!: string
+  avatarUrl?: string
 
   @Expose()
   roles?: any[]

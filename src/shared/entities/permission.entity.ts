@@ -1,9 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm'
+import { Entity, Column, ManyToMany } from 'typeorm'
+import { BaseEntity } from './base.entity'
+import { Role } from './role.entity'
 
 @Entity('permissions')
-export class Permission {
-  @PrimaryGeneratedColumn()
-  id!: number
+export class Permission extends BaseEntity {
+  @Column({ unique: true })
+  code: string // e.g. 'project.create'
 
   @Column({ unique: true })
   name!: string
@@ -11,7 +13,6 @@ export class Permission {
   @Column({ nullable: true })
   description!: string
 
-  // ✅ 使用字符串引用避免循环依赖
-  @ManyToMany('Role', 'permissions')
-  roles!: any[]
+  @ManyToMany(() => Role, (role) => role.permissions)
+  roles!: Role[]
 }

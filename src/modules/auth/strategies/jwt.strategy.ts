@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(request: any, payload: any) {
-    // payload 包含 JWT 中的数据：{ sub: userId, username, email, iat }
+    // payload 包含 JWT 中的数据：{ sub: userId, username, iat }
     const token = request.headers.authorization?.replace('Bearer ', '')
 
     if (!payload || !payload.sub || !payload.username) {
@@ -53,7 +53,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       id: user.id,
       username: user.username,
-      email: user.email,
       tokenIssuedAt: payload.iat // 保存 Token 签发时间
     }
   }

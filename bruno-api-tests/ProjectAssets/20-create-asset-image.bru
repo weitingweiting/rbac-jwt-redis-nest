@@ -1,0 +1,46 @@
+meta {
+  name: 创建项目资源 - 成功 (image)
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{projectAssetsBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "projectId": 1,
+    "url": "https://example.com/assets/image-{{timestamp}}.jpg",
+    "type": "image",
+    "size": 1024000,
+    "meta": {
+      "width": 1920,
+      "height": 1080,
+      "format": "jpg"
+    }
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("创建项目资源成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.data).to.have.property('id');
+    expect(res.body.data).to.have.property('url');
+    expect(res.body.data).to.have.property('type');
+    expect(res.body.data.type).to.equal('image');
+    
+    // 保存资源ID供后续测试使用
+    bru.setVar("createdAssetId", res.body.data.id);
+  });
+}

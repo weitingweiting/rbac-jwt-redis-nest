@@ -1,11 +1,10 @@
-import { BaseUserDto } from '@/shared/dto/base-user.dto'
-import { OmitType } from '@nestjs/mapped-types'
+import { BaseUserDto } from '../../../shared/dto/base-user.dto'
 
 /**
  * 用户注册 DTO
  * 继承基础用户字段验证
  */
-export class RegisterDto extends OmitType(BaseUserDto, ['email'] as const) {
+export class RegisterDto extends BaseUserDto {
   // 如果注册需要特殊字段，可以在这里添加
   // 例如：验证码、邀请码等
 }

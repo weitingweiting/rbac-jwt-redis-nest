@@ -1,0 +1,44 @@
+meta {
+  name: RBAC完整流程 - 角色权限管理
+  type: http
+  seq: 100
+}
+
+post {
+  url: {{permissionsBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "code": "project.space.create",
+    "name": "创建项目空间",
+    "description": "允许创建新的项目空间"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+tests {
+  test("步骤1: 创建权限成功", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.data).to.have.property('id');
+    bru.setVar("flowPermissionId", res.body.data.id);
+  });
+  
+  // 完整的RBAC流程：
+  // 1. 创建权限
+  // 2. 创建角色
+  // 3. 为角色分配权限
+  // 4. 为用户分配角色
+  // 5. 验证用户权限
+  // 6. 清除用户权限缓存
+  // 7. 重新验证权限
+}

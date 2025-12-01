@@ -15,11 +15,6 @@ export class CurrentUserDto {
   username!: string
 
   /**
-   * 邮箱
-   */
-  email!: string
-
-  /**
    * Token 签发时间戳
    */
   tokenIssuedAt!: number

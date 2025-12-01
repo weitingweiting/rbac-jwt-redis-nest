@@ -17,8 +17,7 @@ async function testRegisterDto() {
   // 测试用例1：有效数据
   const validData = {
     username: 'testUser123',
-    password: 'Test@123456',
-    email: 'test@example.com'
+    password: 'Test123'
   }
 
   const dto1 = plainToClass(RegisterDto, validData)
@@ -28,45 +27,29 @@ async function testRegisterDto() {
   // 测试用例2：用户名太短
   const invalidUsername = {
     username: 'ab',
-    password: 'Test@123456',
-    email: 'test@example.com'
+    password: 'Test123'
   }
 
   const dto2 = plainToClass(RegisterDto, invalidUsername)
   const errors2 = await validate(dto2 as object)
   console.log('❌ 用户名太短测试:', errors2.length > 0 ? '通过' : '失败')
   if (errors2.length > 0 && errors2[0]) {
-    console.log('　　 错误信息:', Object.values(errors2[0].constraints || {}))
+    console.log('   错误信息:', Object.values(errors2[0].constraints || {}))
   }
 
-  // 测试用例3：密码不符合要求
-  const invalidPassword = {
+  // 测试用例3：密码太短
+  const shortPassword = {
     username: 'testUser123',
-    password: 'weak',
-    email: 'test@example.com'
+    password: '12345'
   }
 
-  const dto3 = plainToClass(RegisterDto, invalidPassword)
+  const dto3 = plainToClass(RegisterDto, shortPassword)
   const errors3 = await validate(dto3 as object)
-  console.log('❌ 弱密码测试:', errors3.length > 0 ? '通过' : '失败')
+  console.log('❌ 密码太短测试:', errors3.length > 0 ? '通过' : '失败')
   if (errors3.length > 0) {
     errors3.forEach((error) => {
       console.log('   错误信息:', Object.values(error.constraints || {}))
     })
-  }
-
-  // 测试用例4：邮箱格式错误
-  const invalidEmail = {
-    username: 'testUser123',
-    password: 'Test@123456',
-    email: 'invalid-email'
-  }
-
-  const dto4 = plainToClass(RegisterDto, invalidEmail)
-  const errors4 = await validate(dto4 as object)
-  console.log('❌ 邮箱格式错误测试:', errors4.length > 0 ? '通过' : '失败')
-  if (errors4.length > 0 && errors4[0]) {
-    console.log('　　 错误信息:', Object.values(errors4[0].constraints || {}))
   }
 }
 

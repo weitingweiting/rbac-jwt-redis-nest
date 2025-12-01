@@ -1,0 +1,34 @@
+meta {
+  name: 创建权限 - code重复
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{permissionsBaseUrl}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "code": "user.read",
+    "name": "重复的code",
+    "description": "测试code重复"
+  }
+}
+
+assert {
+  res.status: eq 409
+}
+
+tests {
+  test("权限code重复返回409", function() {
+    expect(res.status).to.equal(409);
+    expect(res.body).to.have.property('message');
+  });
+}

@@ -1,0 +1,25 @@
+meta {
+  name: 验证用户访问权限 - 成功
+  type: http
+  seq: 42
+}
+
+get {
+  url: {{projectSpacesBaseUrl}}/{{createdSpaceId}}/access
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("验证用户访问权限成功", function() {
+    expect(res.status).to.equal(200);
+  });
+}

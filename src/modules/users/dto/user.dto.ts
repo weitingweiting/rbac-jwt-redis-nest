@@ -29,7 +29,7 @@ export class UserResponseDto {
   username!: string
 
   @Expose()
-  email!: string
+  avatarUrl?: string
 
   @Expose()
   roles!: string[]

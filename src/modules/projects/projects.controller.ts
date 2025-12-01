@@ -1,0 +1,126 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+  UseGuards
+} from '@nestjs/common'
+import { ProjectsService } from './projects.service'
+import {
+  CreateProjectDto,
+  UpdateProjectDto,
+  QueryProjectDto,
+  PublishProjectDto
+} from './dto/project.dto'
+import { PaginationDto } from '../../shared/dto/pagination.dto'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
+import { PermissionsGuard } from '../../shared/guards/permissions.guard'
+
+@Controller('projects')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+export class ProjectsController {
+  constructor(private readonly projectsService: ProjectsService) {}
+
+  /**
+   * 获取项目列表
+   * GET /api/projects?page=1&limit=10&name=xxx&status=draft&projectSpaceId=1
+   */
+  @Get()
+  @RequirePermissions('project.read')
+  async findAll(@Query() pagination: PaginationDto, @Query() query: QueryProjectDto) {
+    const projects = await this.projectsService.findAllWithPagination(pagination, query)
+    return {
+      message: '获取项目列表成功',
+      ...projects
+    }
+  }
+
+  /**
+   * 获取单个项目详情
+   * GET /api/projects/:id
+   */
+  @Get(':id')
+  @RequirePermissions('project.read')
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const project = await this.projectsService.findOneProject(id)
+    return {
+      message: '获取项目详情成功',
+      data: project
+    }
+  }
+
+  /**
+   * 创建项目
+   * POST /api/projects
+   */
+  @Post()
+  @RequirePermissions('project.create')
+  async create(@Body() createDto: CreateProjectDto) {
+    const project = await this.projectsService.createProject(createDto)
+    return {
+      message: '创建项目成功',
+      data: project
+    }
+  }
+
+  /**
+   * 更新项目
+   * PUT /api/projects/:id
+   */
+  @Put(':id')
+  @RequirePermissions('project.update')
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateDto: UpdateProjectDto) {
+    const project = await this.projectsService.updateProject(id, updateDto)
+    return {
+      message: '更新项目成功',
+      data: project
+    }
+  }
+
+  /**
+   * 发布项目
+   * PUT /api/projects/:id/publish
+   */
+  @Put(':id/publish')
+  @RequirePermissions('project.publish')
+  async publish(@Param('id', ParseIntPipe) id: number, @Body() publishDto: PublishProjectDto) {
+    const project = await this.projectsService.publishProject(id, publishDto.publishUrl)
+    return {
+      message: '发布项目成功',
+      data: project
+    }
+  }
+
+  /**
+   * 归档项目
+   * PUT /api/projects/:id/archive
+   */
+  @Put(':id/archive')
+  @RequirePermissions('project.update')
+  async archive(@Param('id', ParseIntPipe) id: number) {
+    const project = await this.projectsService.archiveProject(id)
+    return {
+      message: '归档项目成功',
+      data: project
+    }
+  }
+
+  /**
+   * 删除项目（软删除）
+   * DELETE /api/projects/:id
+   */
+  @Delete(':id')
+  @RequirePermissions('project.delete')
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    await this.projectsService.deleteProject(id)
+    return {
+      message: '删除项目成功'
+    }
+  }
+}

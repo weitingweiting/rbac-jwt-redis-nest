@@ -1,0 +1,25 @@
+meta {
+  name: 删除项目资源 - 成功
+  type: http
+  seq: 40
+}
+
+delete {
+  url: {{projectAssetsBaseUrl}}/{{createdAssetId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("删除项目资源成功", function() {
+    expect(res.status).to.equal(200);
+  });
+}

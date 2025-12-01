@@ -1,0 +1,26 @@
+meta {
+  name: 获取单个角色 - 不存在
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{rolesBaseUrl}}/99999
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 404
+}
+
+tests {
+  test("角色不存在返回404", function() {
+    expect(res.status).to.equal(404);
+    expect(res.body).to.have.property('message');
+  });
+}
