@@ -5,9 +5,9 @@ import { Repository } from 'typeorm'
 import { User } from '@/shared/entities/user.entity'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
-import { createHash } from 'crypto'
 import { TokenBlacklistService } from '@/shared/services/token-blacklist.service'
 import { UserPermissionsService } from '@/shared/services/user-permissions.service'
+import { PasswordUtil } from '@/common/utils/password.util'
 import {
   RegisterDto,
   LoginDto,
@@ -24,21 +24,6 @@ export class AuthService {
     private tokenBlacklistService: TokenBlacklistService,
     private userPermissionsService: UserPermissionsService
   ) {}
-
-  /**
-   * 使用 SHA-256 哈希密码
-   */
-  private hashPassword(password: string): string {
-    return createHash('sha256').update(password).digest('hex')
-  }
-
-  /**
-   * 验证密码
-   */
-  private verifyPassword(password: string, hashedPassword: string): boolean {
-    const inputHash = createHash('sha256').update(password).digest('hex')
-    return inputHash === hashedPassword
-  }
 
   /**
    * 用户注册
@@ -61,7 +46,7 @@ export class AuthService {
     }
 
     // 密码加密
-    const hashedPassword = this.hashPassword(password)
+    const hashedPassword = PasswordUtil.hashPassword(password)
 
     // 创建用户（默认不分配角色，需要管理员分配）
     const user = this.userRepository.create({
@@ -96,7 +81,7 @@ export class AuthService {
     }
 
     // 验证密码
-    const isPasswordValid = this.verifyPassword(password, user.password)
+    const isPasswordValid = PasswordUtil.verifyPassword(password, user.password)
     if (!isPasswordValid) {
       throw new BusinessException(
         '用户名或密码错误',

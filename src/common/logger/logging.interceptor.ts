@@ -51,15 +51,7 @@ export class LoggingInterceptor implements NestInterceptor {
           timestamp: new Date().toISOString(),
           path: request.url,
           method: request.method,
-          data: data,
-          // 添加分页信息（如果需要）
-          ...(this.isPaginatedData(data) && {
-            pagination: {
-              total: data.total,
-              page: data.page,
-              limit: data.limit
-            }
-          })
+          data: data
         }
 
         return wrappedResponse
@@ -122,9 +114,5 @@ export class LoggingInterceptor implements NestInterceptor {
     })
 
     return sanitized
-  }
-
-  private isPaginatedData(data: any): boolean {
-    return data && typeof data === 'object' && 'total' in data && 'page' in data && 'limit' in data
   }
 }

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { createHash } from 'crypto'
 import { User } from '../../shared/entities/user.entity'
 import { Role } from '../../shared/entities/role.entity'
 import { Permission } from '../../shared/entities/permission.entity'
 import { ProjectSpace } from '../../shared/entities/project-space.entity'
 import { Project } from '../../shared/entities/project.entity'
 import { ProjectAsset } from '../../shared/entities/project-asset.entity'
+import { PasswordUtil } from '../../common/utils/password.util'
 
 @Injectable()
 export class SeedService {
@@ -25,13 +25,6 @@ export class SeedService {
     @InjectRepository(ProjectAsset)
     private projectAssetRepository: Repository<ProjectAsset>
   ) {}
-
-  /**
-   * 使用 SHA-256 哈希密码
-   */
-  private hashPassword(password: string): string {
-    return createHash('sha256').update(password).digest('hex')
-  }
 
   async seed() {
     console.log('🌱 Starting seed...')
@@ -217,7 +210,7 @@ export class SeedService {
   ): Promise<{ admin: User; editor: User; viewer: User }> {
     const admin = this.userRepository.create({
       username: 'admin',
-      password: this.hashPassword('Admin123'),
+      password: PasswordUtil.hashPassword('Admin123'),
       avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
       roles: [adminRole]
     })
@@ -225,7 +218,7 @@ export class SeedService {
 
     const editor = this.userRepository.create({
       username: 'editor',
-      password: this.hashPassword('Editor123'),
+      password: PasswordUtil.hashPassword('Editor123'),
       avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=editor',
       roles: [editorRole]
     })
@@ -233,7 +226,7 @@ export class SeedService {
 
     const viewer = this.userRepository.create({
       username: 'viewer',
-      password: this.hashPassword('Viewer123'),
+      password: PasswordUtil.hashPassword('Viewer123'),
       avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=viewer',
       roles: [viewerRole]
     })
