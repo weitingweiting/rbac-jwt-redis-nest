@@ -1,6 +1,7 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, MaxLength, IsInt } from 'class-validator'
 import { PartialType } from '@nestjs/mapped-types'
 import { Type } from 'class-transformer'
+import { PaginationDto } from '@/shared/dto/pagination.dto'
 
 /**
  * 创建项目空间 DTO
@@ -38,7 +39,7 @@ export class AddUsersToSpaceDto {
 /**
  * 查询项目空间 DTO
  */
-export class QueryProjectSpaceDto {
+export class QueryProjectSpaceDto extends PaginationDto {
   @IsOptional()
   @IsString()
   name?: string

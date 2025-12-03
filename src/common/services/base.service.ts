@@ -1,8 +1,8 @@
 import { Repository, FindOptionsWhere, FindManyOptions, FindOneOptions } from 'typeorm'
-import { BaseEntity } from '../../shared/entities/base.entity'
-import { BusinessException } from '../../shared/exceptions/business.exception'
+import { BaseEntity } from '@/shared/entities/base.entity'
+import { BusinessException } from '@/shared/exceptions/business.exception'
 import { HttpStatus } from '@nestjs/common'
-import { ERROR_CODES } from '../../shared/constants/error-codes.constant'
+import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 
 /**
  * 基础服务类，提供通用的 CRUD 操作和软删除支持

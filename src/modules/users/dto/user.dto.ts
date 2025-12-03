@@ -46,3 +46,4 @@ export class UserResponseDto {
 
 // 导出所有 DTO
 export * from './query-user.dto'
+export * from './assign-roles.dto'

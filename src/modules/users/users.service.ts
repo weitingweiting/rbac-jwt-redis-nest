@@ -1,19 +1,24 @@
 import { Injectable, HttpStatus } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, In } from 'typeorm'
 import { User } from '../../shared/entities/user.entity'
+import { Role } from '../../shared/entities/role.entity'
 import { BusinessException } from '../../shared/exceptions/business.exception'
 import { ERROR_CODES } from '../../shared/constants/error-codes.constant'
 import { CreateUserDto, UpdateUserDto, QueryUserDto } from './dto/user.dto'
 import { PaginationDto } from '../../shared/dto/pagination.dto'
 import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto'
 import { BaseService } from '../../common/services/base.service'
+import { UserPermissionsService } from '../../shared/services/user-permissions.service'
 
 @Injectable()
 export class UsersService extends BaseService<User> {
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>
+    private userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
+    private userPermissionsService: UserPermissionsService
   ) {
     super(userRepository)
   }
@@ -147,5 +152,35 @@ export class UsersService extends BaseService<User> {
 
     // 使用软删除
     await this.userRepository.softDelete(id)
+  }
+
+  /**
+   * 为用户分配角色
+   */
+  async assignRoles(userId: number, roleIds: number[]): Promise<User> {
+    const user = await this.findOneUser(userId)
+
+    // 验证角色是否存在
+    const roles = await this.roleRepository.find({
+      where: { id: In(roleIds) }
+    })
+
+    if (roles.length !== roleIds.length) {
+      throw new BusinessException(
+        '部分角色ID不存在',
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.RESOURCE_NOT_FOUND
+      )
+    }
+
+    // 分配角色
+    user.roles = roles
+    const updatedUser = await this.userRepository.save(user)
+
+    // 清空用户权限缓存
+    await this.userPermissionsService.clearUserCache(userId)
+    console.log(`🔄 用户 ID ${userId} 的角色已更新，已清空权限缓存`)
+
+    return updatedUser
   }
 }

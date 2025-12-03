@@ -38,6 +38,7 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
       .leftJoinAndSelect('space.owner', 'owner')
       .leftJoinAndSelect('space.users', 'users')
       .leftJoinAndSelect('space.projects', 'projects')
+      // .leftJoinAndSelect('projects.assets', 'assets')
       .where('space.deletedAt IS NULL')
 
     if (query.name) {

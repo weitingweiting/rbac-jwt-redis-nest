@@ -21,6 +21,6 @@ export class ProjectSpace extends BaseEntity {
   @ManyToMany(() => User, (user) => user.projectSpaces)
   users: User[]
 
-  @OneToMany(() => Project, (p) => p.projectSpace, { cascade: true })
+  @OneToMany(() => Project, (p) => p.projectSpace, { cascade: true, eager: true }) // eager=true 查询时自动加载关联的 projects
   projects: Project[]
 }

@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
 import { Role } from '../../shared/entities/role.entity'
 import { Permission } from '../../shared/entities/permission.entity'
+import { User } from '../../shared/entities/user.entity'
 import { BaseService } from '../../common/services/base.service'
 import { BusinessException } from '../../shared/exceptions/business.exception'
 import { ERROR_CODES } from '../../shared/constants/error-codes.constant'
 import { CreateRoleDto, UpdateRoleDto, QueryRoleDto } from './dto/role.dto'
 import { PaginationDto } from '../../shared/dto/pagination.dto'
 import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto'
+import { UserPermissionsService } from '../../shared/services/user-permissions.service'
 
 @Injectable()
 export class RolesService extends BaseService<Role> {
@@ -16,7 +18,10 @@ export class RolesService extends BaseService<Role> {
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
     @InjectRepository(Permission)
-    private permissionRepository: Repository<Permission>
+    private permissionRepository: Repository<Permission>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    private userPermissionsService: UserPermissionsService
   ) {
     super(roleRepository)
   }
@@ -132,8 +137,12 @@ export class RolesService extends BaseService<Role> {
       }
     }
 
+    // 标记是否需要清空缓存
+    let needClearCache = false
+
     // 更新权限关联
     if (permissionIds !== undefined) {
+      needClearCache = true // 权限变更，需要清空缓存
       if (permissionIds.length > 0) {
         const permissions = await this.permissionRepository.find({
           where: { id: In(permissionIds) }
@@ -155,7 +164,14 @@ export class RolesService extends BaseService<Role> {
 
     // 更新角色基本信息
     Object.assign(role, roleData)
-    return this.roleRepository.save(role)
+    const updatedRole = await this.roleRepository.save(role)
+
+    // 如果权限发生变更，清空所有拥有该角色的用户的缓存
+    if (needClearCache) {
+      await this.clearAffectedUsersCache(id)
+    }
+
+    return updatedRole
   }
 
   /**
@@ -177,7 +193,32 @@ export class RolesService extends BaseService<Role> {
     }
 
     role.permissions = permissions
-    return this.roleRepository.save(role)
+    const updatedRole = await this.roleRepository.save(role)
+
+    // 清空所有拥有该角色的用户的缓存
+    await this.clearAffectedUsersCache(id)
+
+    return updatedRole
+  }
+
+  /**
+   * 清空所有拥有指定角色的用户的权限缓存
+   */
+  private async clearAffectedUsersCache(roleId: number): Promise<void> {
+    // 查询所有拥有该角色的用户
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .innerJoin('user.roles', 'role')
+      .where('role.id = :roleId', { roleId })
+      .andWhere('user.deletedAt IS NULL')
+      .select('user.id')
+      .getMany()
+
+    if (users.length > 0) {
+      const userIds = users.map((user) => user.id)
+      await this.userPermissionsService.clearMultipleUsersCache(userIds)
+      console.log(`🔄 角色 ID ${roleId} 的权限已更新，已清空 ${userIds.length} 个用户的缓存`)
+    }
   }
 
   /**

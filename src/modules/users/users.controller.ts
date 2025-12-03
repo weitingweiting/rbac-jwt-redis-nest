@@ -20,7 +20,7 @@ import { RolesGuard } from '../../shared/guards/roles.guard'
 import { UserPermissionsService } from '../../shared/services/user-permissions.service'
 import { AuthService } from '../auth/auth.service'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
-import { CreateUserDto, QueryUserDto, UpdateUserDto } from './dto/user.dto'
+import { CreateUserDto, QueryUserDto, UpdateUserDto, AssignRolesDto } from './dto/user.dto'
 import { UsersService } from './users.service'
 
 @Controller('users')
@@ -102,6 +102,20 @@ export class UsersController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id', ParseIntPipe) id: number) {
     await this.usersService.delete(id)
+  }
+
+  /**
+   * 为用户分配角色
+   * PUT /api/users/:id/roles
+   */
+  @Put(':id/roles')
+  @RequirePermissions('users:update')
+  async assignRoles(@Param('id', ParseIntPipe) id: number, @Body() assignRolesDto: AssignRolesDto) {
+    const user = await this.usersService.assignRoles(id, assignRolesDto.roleIds)
+    return {
+      message: '分配角色成功',
+      data: user
+    }
   }
 
   @Get('admin')
