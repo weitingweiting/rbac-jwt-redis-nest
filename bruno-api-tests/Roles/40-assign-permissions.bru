@@ -4,8 +4,8 @@ meta {
   seq: 40
 }
 
-post {
-  url: {{rolesBaseUrl}}/{{createdRoleId}}/permissions
+put {
+  url: {{rolesBaseUrl}}/7/permissions
   body: json
   auth: bearer
 }
@@ -16,7 +16,16 @@ auth:bearer {
 
 body:json {
   {
-    "permissionIds": [1, 2]
+    "permissionIds": [
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41
+    ]
   }
 }
 
@@ -26,8 +35,9 @@ assert {
 
 tests {
   test("分配权限成功", function() {
+    console.log( res )
     expect(res.status).to.equal(200);
-    expect(res.body.data).to.have.property('permissions');
-    expect(res.body.data.permissions).to.be.an('array');
+    expect(res.body.data.data).to.have.property('permissions');
+    expect(res.body.data.data.permissions).to.be.an('array');
   });
 }

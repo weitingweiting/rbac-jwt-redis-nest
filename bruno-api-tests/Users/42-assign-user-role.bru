@@ -1,11 +1,11 @@
 meta {
-  name: 更新用户 - 成功
+  name: 给用户赋角色 - 成功
   type: http
-  seq: 30
+  seq: 42
 }
 
 put {
-  url: {{usersBaseUrl}}/2
+  url: {{usersBaseUrl}}/14/roles
   body: json
   auth: bearer
 }
@@ -16,7 +16,7 @@ auth:bearer {
 
 body:json {
   {
-    "username": "updatedUser"
+    "roleIds": [7]
   }
 }
 
@@ -27,6 +27,6 @@ assert {
 tests {
   test("更新用户成功", function() {
     expect(res.status).to.equal(200);
-    expect(res.body).to.have.property('username', 'updatedUser');
+    expect(res.body).to.have.property('message', '分配角色成功');
   });
 }

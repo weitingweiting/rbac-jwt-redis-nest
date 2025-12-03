@@ -29,9 +29,9 @@ assert {
 tests {
   test("创建项目空间成功", function() {
     expect(res.status).to.equal(201);
-    expect(res.body.data).to.have.property('id');
-    expect(res.body.data).to.have.property('name');
-    expect(res.body.data).to.have.property('owner');
+    expect(res.body.data.data).to.have.property('id');
+    expect(res.body.data.data).to.have.property('name');
+    expect(res.body.data.data).to.have.property('owner');
     
     // 保存项目空间ID供后续测试使用
     bru.setVar("createdSpaceId", res.body.data.id);

@@ -176,10 +176,10 @@ export class UsersService extends BaseService<User> {
     // 分配角色
     user.roles = roles
     const updatedUser = await this.userRepository.save(user)
+    console.log('🚀 ~ UsersService ~ assignRoles ~ user:', user)
 
     // 清空用户权限缓存
     await this.userPermissionsService.clearUserCache(userId)
-    console.log(`🔄 用户 ID ${userId} 的角色已更新，已清空权限缓存`)
 
     return updatedUser
   }

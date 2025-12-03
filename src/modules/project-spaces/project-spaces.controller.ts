@@ -18,10 +18,11 @@ import {
   AddUsersToSpaceDto
 } from './dto/project-space.dto'
 import { PaginationDto } from '../../shared/dto/pagination.dto'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
-import { PermissionsGuard } from '../../shared/guards/permissions.guard'
-import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
+import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
+import { PermissionsGuard } from '@/shared/guards/permissions.guard'
+import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 
 @Controller('project-spaces')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -37,7 +38,7 @@ export class ProjectSpacesController {
   async findAll(
     @Query() pagination: PaginationDto,
     @Query() query: QueryProjectSpaceDto,
-    @CurrentUser() user: any
+    @CurrentUser() user: CurrentUserDto
   ) {
     const spaces = await this.projectSpacesService.findAllWithPagination(pagination, query, user.id)
     return {

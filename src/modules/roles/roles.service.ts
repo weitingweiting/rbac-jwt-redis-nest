@@ -168,7 +168,7 @@ export class RolesService extends BaseService<Role> {
 
     // 如果权限发生变更，清空所有拥有该角色的用户的缓存
     if (needClearCache) {
-      await this.clearAffectedUsersCache(id)
+      await this.clearAffectedUsersCacheByRoleId(id)
     }
 
     return updatedRole
@@ -193,10 +193,12 @@ export class RolesService extends BaseService<Role> {
     }
 
     role.permissions = permissions
+    console.log('🚀 ~ RolesService ~ assignPermissions ~ permissions:', role)
+
     const updatedRole = await this.roleRepository.save(role)
 
     // 清空所有拥有该角色的用户的缓存
-    await this.clearAffectedUsersCache(id)
+    await this.clearAffectedUsersCacheByRoleId(id)
 
     return updatedRole
   }
@@ -204,7 +206,7 @@ export class RolesService extends BaseService<Role> {
   /**
    * 清空所有拥有指定角色的用户的权限缓存
    */
-  private async clearAffectedUsersCache(roleId: number): Promise<void> {
+  private async clearAffectedUsersCacheByRoleId(roleId: number): Promise<void> {
     // 查询所有拥有该角色的用户
     const users = await this.userRepository
       .createQueryBuilder('user')

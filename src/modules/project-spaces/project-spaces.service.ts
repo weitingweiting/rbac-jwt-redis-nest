@@ -1,18 +1,18 @@
 import { Injectable, HttpStatus } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
-import { ProjectSpace } from '../../shared/entities/project-space.entity'
-import { User } from '../../shared/entities/user.entity'
-import { BaseService } from '../../common/services/base.service'
-import { BusinessException } from '../../shared/exceptions/business.exception'
-import { ERROR_CODES } from '../../shared/constants/error-codes.constant'
+import { BaseService } from '@/common/services/base.service'
+import { PaginationDto } from '@/shared/dto/pagination.dto'
+import { PaginatedResponseDto } from '@/shared/dto/paginated-response.dto'
+import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
+import { BusinessException } from '@/shared/exceptions/business.exception'
+import { User } from '@/shared/entities/user.entity'
+import { ProjectSpace } from '@/shared/entities/project-space.entity'
 import {
   CreateProjectSpaceDto,
   UpdateProjectSpaceDto,
   QueryProjectSpaceDto
 } from './dto/project-space.dto'
-import { PaginationDto } from '../../shared/dto/pagination.dto'
-import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto'
 
 @Injectable()
 export class ProjectSpacesService extends BaseService<ProjectSpace> {
