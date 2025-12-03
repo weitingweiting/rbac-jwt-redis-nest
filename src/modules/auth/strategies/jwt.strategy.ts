@@ -23,6 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(request: any, payload: any) {
     // payload 包含 JWT 中的数据：{ sub: userId, username, iat }
+    // 为满足jwt规范.在登陆成功后，手动设置的 sub 字段，表示用户的唯一标识符（通常是用户ID）。
     const token = request.headers.authorization?.replace('Bearer ', '')
 
     if (!payload || !payload.sub || !payload.username) {
@@ -53,6 +54,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       id: user.id,
       username: user.username,
+      roles: user.roles,
+      avatarUrl: user.avatarUrl,
       tokenIssuedAt: payload.iat // 保存 Token 签发时间
     }
   }

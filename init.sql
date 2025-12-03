@@ -288,7 +288,6 @@ WHERE p.name = '示例项目';
 SELECT 
   u.id,
   u.username,
-  u.email,
   GROUP_CONCAT(r.name) AS roles
 FROM users u
 LEFT JOIN user_roles ur ON u.id = ur.usersId

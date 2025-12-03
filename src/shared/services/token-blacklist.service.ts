@@ -9,7 +9,6 @@ export class TokenBlacklistService {
   constructor(
     @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
-
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
   ) {}
 
@@ -37,7 +36,9 @@ export class TokenBlacklistService {
   }
 
   /**
-   * 将用户的所有 Token 加入黑名单（强制登出）
+   * admin专用，将用户加入黑名单
+   * 和token加入黑名单不同，这里是将用户的所有Token都加入黑名单。
+   * 意味着用户多处的登录状态都会被强制登出。（假设用户多端多处登录）
    * @param userId 用户 ID
    * @param expiresIn Token 有效期（秒）
    */
@@ -45,6 +46,16 @@ export class TokenBlacklistService {
     const key = `blacklist:user:${userId}`
     await this.cacheManager.set(key, Date.now().toString(), expiresIn * 1000)
     this.logger.info(`🚫 用户 ${userId} 的所有 Token 已加入黑名单，剩余有效期 ${expiresIn} 秒`)
+  }
+
+  /**
+   * 移除用户黑名单（允许用户重新登录）
+   * @param userId 用户 ID
+   */
+  async removeUserFromBlacklist(userId: number): Promise<void> {
+    const key = `blacklist:user:${userId}`
+    await this.cacheManager.del(key)
+    this.logger.info(`✅ 用户 ${userId} 已从黑名单中移除，允许重新登录`)
   }
 
   /**
@@ -57,22 +68,15 @@ export class TokenBlacklistService {
     const key = `blacklist:user:${userId}`
     const blacklistTime = await this.cacheManager.get<string>(key)
 
+    // 如果没有黑名单时间，表示用户未被强制登出。
+    // 或者是者黑名单已过期，即用户可以重新登录。
     if (!blacklistTime) {
       return false
     }
 
-    // 如果 Token 签发时间早于黑名单时间，则视为已失效
+    // 如果有黑名单时间，比较 Token 签发时间和黑名单时间
+    // tokenIssuedAt 处于黑名单时间之前，表示用户被强制登出
     const blacklistTimestamp = parseInt(blacklistTime)
     return tokenIssuedAt * 1000 < blacklistTimestamp
-  }
-
-  /**
-   * 移除用户黑名单（允许用户重新登录）
-   * @param userId 用户 ID
-   */
-  async removeUserFromBlacklist(userId: number): Promise<void> {
-    const key = `blacklist:user:${userId}`
-    await this.cacheManager.del(key)
-    this.logger.info(`✅ 用户 ${userId} 已从黑名单中移除，允许重新登录`)
   }
 }

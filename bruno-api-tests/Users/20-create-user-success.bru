@@ -17,7 +17,6 @@ auth:bearer {
 body:json {
   {
     "username": "newUser123",
-    "email": "newuser@example.com",
     "password": "Test@123456"
   }
 }
@@ -31,6 +30,5 @@ tests {
     expect(res.status).to.equal(201);
     expect(res.body).to.have.property('id');
     expect(res.body).to.have.property('username');
-    expect(res.body).to.have.property('email');
   });
 }

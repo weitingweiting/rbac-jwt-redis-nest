@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { Cache } from 'cache-manager'
-import { User } from '../entities/user.entity'
+import { User } from '@/shared/entities/user.entity'
 
 @Injectable()
 export class UserPermissionsService {
@@ -23,12 +23,12 @@ export class UserPermissionsService {
     // 1. 尝试从缓存读取
     const cached = await this.cacheManager.get<string[]>(cacheKey)
     if (cached) {
-      console.log(`✅ Cache hit for user ${userId} permissions`)
+      console.log(`✅ 缓存命中，用户 ${userId} 权限`)
       return cached
     }
 
     // 2. 缓存未命中，从数据库加载
-    console.log(`❌ Cache miss for user ${userId} permissions, loading from DB`)
+    console.log(`❌ 缓存未命中，用户 ${userId} 权限，从数据库加载`)
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['roles', 'roles.permissions']
@@ -60,11 +60,11 @@ export class UserPermissionsService {
 
     const cached = await this.cacheManager.get<string[]>(cacheKey)
     if (cached) {
-      console.log(`✅ Cache hit for user ${userId} roles`)
+      console.log(`✅ 缓存命中，用户 ${userId} 角色`)
       return cached
     }
 
-    console.log(`❌ Cache miss for user ${userId} roles, loading from DB`)
+    console.log(`❌ 缓存未命中，用户 ${userId} 角色，从数据库加载`)
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['roles']
@@ -86,7 +86,7 @@ export class UserPermissionsService {
   async clearUserCache(userId: number): Promise<void> {
     await this.cacheManager.del(`user:${userId}:permissions`)
     await this.cacheManager.del(`user:${userId}:roles`)
-    console.log(`🗑️  Cache cleared for user ${userId}`)
+    console.log(`🗑️  已清除用户 ${userId} 的权限缓存`)
   }
 
   /**
@@ -95,6 +95,6 @@ export class UserPermissionsService {
   async clearMultipleUsersCache(userIds: number[]): Promise<void> {
     const keys = userIds.flatMap((id) => [`user:${id}:permissions`, `user:${id}:roles`])
     await Promise.all(keys.map((key) => this.cacheManager.del(key)))
-    console.log(`🗑️  Cache cleared for users: ${userIds.join(', ')}`)
+    console.log(`🗑️  已清除用户 ${userIds.join(', ')} 的权限缓存`)
   }
 }

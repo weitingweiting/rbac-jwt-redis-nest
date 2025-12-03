@@ -12,14 +12,14 @@ import {
   Query,
   UseGuards
 } from '@nestjs/common'
-import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
-import { RequireRoles } from '../../shared/decorators/roles.decorator'
-import { PaginationDto } from '../../shared/dto/pagination.dto'
-import { PermissionsGuard } from '../../shared/guards/permissions.guard'
-import { RolesGuard } from '../../shared/guards/roles.guard'
-import { UserPermissionsService } from '../../shared/services/user-permissions.service'
-import { AuthService } from '../auth/auth.service'
-import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
+import { RequireRoles } from '@/shared/decorators/roles.decorator'
+import { PaginationDto } from '@/shared/dto/pagination.dto'
+import { PermissionsGuard } from '@/shared/guards/permissions.guard'
+import { RolesGuard } from '@/shared/guards/roles.guard'
+import { UserPermissionsService } from '@/shared/services/user-permissions.service'
+import { AuthService } from '@/modules/auth/auth.service'
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
 import { CreateUserDto, QueryUserDto, UpdateUserDto, AssignRolesDto } from './dto/user.dto'
 import { UsersService } from './users.service'
 
@@ -118,15 +118,23 @@ export class UsersController {
     }
   }
 
+  /**
+   * 仅限管理员访问的路由示例
+   * GET /api/users/admin
+   * */
   @Get('admin')
   @RequireRoles('admin')
   adminOnly(@CurrentUser() user: any) {
     return {
-      message: 'Admin only route - Welcome to admin dashboard',
+      message: '仅限管理员访问的路由 - 欢迎来到管理员仪表盘',
       currentUser: user
     }
   }
 
+  /**
+   * 需要特定权限的路由示例
+   * GET /api/users/profile
+   * */
   @Get('profile')
   @RequirePermissions('profile:read')
   getProfile(@CurrentUser() user: any) {
@@ -136,42 +144,59 @@ export class UsersController {
     }
   }
 
+  /**
+   * 需要多个角色中的一个即可访问的路由示例
+   * GET /api/users/editor
+   * */
   @Get('editor')
   @RequireRoles('admin', 'editor')
   editorRoute(@CurrentUser() user: any) {
     return {
-      message: 'This route is accessible by admin or editor',
+      message: '此路由可由管理员或编辑访问',
       currentUser: user
     }
   }
 
+  /**
+   * 需要多个权限全部满足才能访问的路由示例
+   * GET /api/users/advanced
+   * */
   @Get('advanced')
   @RequirePermissions('users:read', 'users:write')
   advancedRoute(@CurrentUser() user: any) {
     return {
-      message: 'This route requires both users:read AND users:write permissions',
+      message: '此路由同时需要 users:read AND users:write 权限',
       currentUser: user
     }
   }
 
+  /**
+   * 清除指定用户的权限缓存
+   * POST /api/users/cache/clear/:userId
+   */
   @Post('cache/clear/:userId')
   @RequireRoles('admin')
   async clearUserCache(@Param('userId', ParseIntPipe) userId: number) {
     await this.userPermissionsService.clearUserCache(userId)
     return {
-      message: `Cache cleared for user ${userId}`,
+      message: `已清除用户 ${userId} 的权限缓存`,
       success: true
     }
   }
 
+  /**
+   * 强制指定用户登出，admin 角色专用
+   * POST /api/users/force-logout/:userId
+   */
   @Post('force-logout/:userId')
   @RequireRoles('admin')
   async forceLogoutUser(@Param('userId', ParseIntPipe) userId: number) {
+    // 调用 AuthService 的 forceLogout 方法，强制用户登出
     await this.authService.forceLogout(userId)
     // 同时清除权限缓存
     await this.userPermissionsService.clearUserCache(userId)
     return {
-      message: `User ${userId} has been forcefully logged out`,
+      message: `用户 ${userId} 已被强制登出`,
       success: true
     }
   }

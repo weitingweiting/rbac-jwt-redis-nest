@@ -2,11 +2,12 @@ import { Injectable, UnauthorizedException, HttpStatus } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { User } from '../../shared/entities/user.entity'
-import { BusinessException } from '../../shared/exceptions/business.exception'
-import { ERROR_CODES } from '../../shared/constants/error-codes.constant'
+import { User } from '@/shared/entities/user.entity'
+import { BusinessException } from '@/shared/exceptions/business.exception'
+import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 import { createHash } from 'crypto'
-import { TokenBlacklistService } from '../../shared/services/token-blacklist.service'
+import { TokenBlacklistService } from '@/shared/services/token-blacklist.service'
+import { UserPermissionsService } from '@/shared/services/user-permissions.service'
 import {
   RegisterDto,
   LoginDto,
@@ -14,14 +15,14 @@ import {
   TokenResponseDto,
   MessageResponseDto
 } from './dto'
-
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private jwtService: JwtService,
-    private tokenBlacklistService: TokenBlacklistService
+    private tokenBlacklistService: TokenBlacklistService,
+    private userPermissionsService: UserPermissionsService
   ) {}
 
   /**
@@ -104,6 +105,9 @@ export class AuthService {
       )
     }
 
+    // 登录成功，清除该用户的权限缓存
+    await this.userPermissionsService.clearUserCache(user.id)
+
     // 生成 JWT Token
     const payload = {
       sub: user.id,
@@ -128,7 +132,7 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['roles'],
-      withDeleted: false
+      withDeleted: false // 不返回软删除的用户
     })
 
     if (!user) {
@@ -172,6 +176,7 @@ export class AuthService {
     try {
       // 解码 Token 获取过期时间
       const decoded = this.jwtService.decode(token)
+      console.log('🚀 ~ AuthService ~ logout ~ decoded:', decoded)
       if (!decoded || !decoded.exp) {
         throw new BusinessException(
           'Token格式无效',
@@ -188,6 +193,10 @@ export class AuthService {
         // 将 Token 加入黑名单
         await this.tokenBlacklistService.addToBlacklist(token, expiresIn)
       }
+
+      // 清除该用户的权限缓存
+      const userId = (decoded as any).sub
+      await this.userPermissionsService.clearUserCache(userId)
 
       return { message: '登出成功' }
     } catch (error) {
@@ -210,5 +219,14 @@ export class AuthService {
     const maxTokenLifetime = 24 * 60 * 60 // 24 小时（秒）
     await this.tokenBlacklistService.blacklistUser(userId, maxTokenLifetime)
     return { message: `用户 ${userId} 已被强制登出` }
+  }
+
+  /**
+   * 恢复用户登录状态（将用户从黑名单放出）
+   */
+  async restoreLogin(userId: number): Promise<MessageResponseDto> {
+    // 将用户的黑名单记录删除
+    await this.tokenBlacklistService.removeUserFromBlacklist(userId)
+    return { message: `用户 ${userId} 允许重新登录` }
   }
 }
