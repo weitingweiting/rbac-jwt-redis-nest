@@ -14,17 +14,24 @@ import {
 } from '@nestjs/common'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { RequireRoles } from '@/shared/decorators/roles.decorator'
-import { PaginationDto } from '@/shared/dto/pagination.dto'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 import { RolesGuard } from '@/shared/guards/roles.guard'
 import { UserPermissionsService } from '@/shared/services/user-permissions.service'
 import { AuthService } from '@/modules/auth/auth.service'
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
-import { CreateUserDto, QueryUserDto, UpdateUserDto, AssignRolesDto } from './dto/user.dto'
+import {
+  CreateUserDto,
+  QueryUserDto,
+  UpdateUserDto,
+  AssignRolesDto,
+  ChangePasswordDto,
+  ResetPasswordDto
+} from './dto'
 import { UsersService } from './users.service'
+import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 
 @Controller('users')
-@UseGuards(PermissionsGuard, RolesGuard)
+@UseGuards(RolesGuard, PermissionsGuard)
 export class UsersController {
   constructor(
     private usersService: UsersService,
@@ -37,16 +44,12 @@ export class UsersController {
    * GET /api/users?page=1&limit=10&username=admin
    */
   @Get()
-  @RequirePermissions('users:read')
-  async findAll(
-    @Query() pagination: PaginationDto,
-    @Query() query: QueryUserDto,
-    @CurrentUser() currentUser: any
-  ) {
-    const users = await this.usersService.findAllWithPagination(pagination, query)
+  @RequirePermissions('user.read')
+  async findAll(@Query() queryParams: QueryUserDto, @CurrentUser() currentUser: CurrentUserDto) {
+    const users = await this.usersService.findAllWithPagination(queryParams)
     return {
       message: '获取用户列表成功',
-      currentUser: currentUser.username,
+      currentUser,
       ...users
     }
   }
@@ -56,12 +59,12 @@ export class UsersController {
    * GET /api/users/:id
    */
   @Get(':id')
-  @RequirePermissions('users:read')
+  @RequirePermissions('user.read')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const user = await this.usersService.findOneUser(id)
     return {
       message: '获取用户详情成功',
-      data: user
+      user
     }
   }
 
@@ -70,9 +73,9 @@ export class UsersController {
    * POST /api/users
    */
   @Post()
-  @RequirePermissions('users:create')
+  @RequirePermissions('user.create')
   async create(@Body() createUserDto: CreateUserDto) {
-    const user = await this.usersService.create(createUserDto)
+    const user = await this.usersService.createUser(createUserDto)
     return {
       message: '创建用户成功',
       data: user
@@ -80,13 +83,13 @@ export class UsersController {
   }
 
   /**
-   * 更新用户
+   * 更新用户 - 改名、头像。参考 updateUserDto
    * PUT /api/users/:id
    */
   @Put(':id')
-  @RequirePermissions('users:update')
+  @RequirePermissions('user.update')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
-    const user = await this.usersService.update(id, updateUserDto)
+    const user = await this.usersService.updateUser(id, updateUserDto)
     return {
       message: '更新用户成功',
       data: user
@@ -98,10 +101,11 @@ export class UsersController {
    * DELETE /api/users/:id
    */
   @Delete(':id')
-  @RequirePermissions('users:delete')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions('user.delete')
+  @HttpCode(HttpStatus.OK)
   async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.usersService.delete(id)
+    await this.usersService.deleteUser(id)
+    return { message: '删除用户成功' }
   }
 
   /**
@@ -109,7 +113,7 @@ export class UsersController {
    * PUT /api/users/:id/roles
    */
   @Put(':id/roles')
-  @RequirePermissions('users:update')
+  @RequirePermissions('user.update')
   async assignRoles(@Param('id', ParseIntPipe) id: number, @Body() assignRolesDto: AssignRolesDto) {
     const user = await this.usersService.assignRoles(id, assignRolesDto.roleIds)
     return {
@@ -124,10 +128,10 @@ export class UsersController {
    * */
   @Get('admin')
   @RequireRoles('admin')
-  adminOnly(@CurrentUser() user: any) {
+  adminOnly(@CurrentUser() currentUser: CurrentUserDto) {
     return {
       message: '仅限管理员访问的路由 - 欢迎来到管理员仪表盘',
-      currentUser: user
+      currentUser
     }
   }
 
@@ -137,10 +141,10 @@ export class UsersController {
    * */
   @Get('profile')
   @RequirePermissions('profile:read')
-  getProfile(@CurrentUser() user: any) {
+  getProfile(@CurrentUser() currentUser: CurrentUserDto) {
     return {
       message: 'User profile',
-      user
+      currentUser
     }
   }
 
@@ -150,10 +154,10 @@ export class UsersController {
    * */
   @Get('editor')
   @RequireRoles('admin', 'editor')
-  editorRoute(@CurrentUser() user: any) {
+  editorRoute(@CurrentUser() currentUser: CurrentUserDto) {
     return {
       message: '此路由可由管理员或编辑访问',
-      currentUser: user
+      currentUser
     }
   }
 
@@ -162,11 +166,11 @@ export class UsersController {
    * GET /api/users/advanced
    * */
   @Get('advanced')
-  @RequirePermissions('users:read', 'users:write')
-  advancedRoute(@CurrentUser() user: any) {
+  @RequirePermissions('user.read', 'user.write')
+  advancedRoute(@CurrentUser() currentUser: CurrentUserDto) {
     return {
-      message: '此路由同时需要 users:read AND users:write 权限',
-      currentUser: user
+      message: '此路由同时需要 user.read AND user.write 权限',
+      currentUser
     }
   }
 
@@ -189,7 +193,7 @@ export class UsersController {
    * POST /api/users/force-logout/:userId
    */
   @Post('force-logout/:userId')
-  @RequireRoles('admin')
+  @RequireRoles('admin-test')
   async forceLogoutUser(@Param('userId', ParseIntPipe) userId: number) {
     // 调用 AuthService 的 forceLogout 方法，强制用户登出
     await this.authService.forceLogout(userId)
@@ -198,6 +202,44 @@ export class UsersController {
     return {
       message: `用户 ${userId} 已被强制登出`,
       success: true
+    }
+  }
+
+  /**
+   * 修改当前用户密码
+   * PUT /api/users/change-password
+   */
+  @Put('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @CurrentUser() currentUser: CurrentUserDto,
+    @Body() changePasswordDto: ChangePasswordDto
+  ) {
+    await this.usersService.changePassword(
+      currentUser.id,
+      changePasswordDto.oldPassword,
+      changePasswordDto.newPassword
+    )
+    return {
+      message: '密码修改成功，请重新登录'
+    }
+  }
+
+  /**
+   * 管理员重置用户密码
+   * PUT /api/users/:id/reset-password
+   */
+  @Put(':id/reset-password')
+  @RequirePermissions('user.update')
+  @RequireRoles('admin')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() resetPasswordDto: ResetPasswordDto
+  ) {
+    await this.usersService.resetPassword(id, resetPasswordDto.newPassword)
+    return {
+      message: `用户 ${id} 的密码已重置`
     }
   }
 }

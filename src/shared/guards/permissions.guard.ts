@@ -34,6 +34,7 @@ export class PermissionsGuard implements CanActivate {
 
     // 从缓存或数据库获取用户权限
     const userPermissions = await this.userPermissionsService.getUserPermissions(user.id)
+    console.log('🚀 ~ PermissionsGuard ~ canActivate ~ userPermissions:', userPermissions)
 
     // 检查是否拥有所有必需权限（AND 逻辑）
     // return requiredPermissions.every(permission =>

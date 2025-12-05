@@ -1,11 +1,11 @@
 meta {
-  name: 创建用户 - 成功
+  name: 强制用户登出
   type: http
   seq: 20
 }
 
 post {
-  url: {{usersBaseUrl}}
+  url: {{usersBaseUrl}}/force-logout/18
   body: json
   auth: bearer
 }
@@ -14,19 +14,12 @@ auth:bearer {
   token: {{token}}
 }
 
-body:json {
-  {
-    "username": "newUser1234",
-    "password": "Test@123456"
-  }
-}
-
 assert {
   res.status: eq 201
 }
 
 tests {
-  test("创建用户成功", function() {
+  test("强制用户登出成功", function() {
     expect(res.status).to.equal(201);
     expect(res.body).to.have.property('id');
     expect(res.body).to.have.property('username');

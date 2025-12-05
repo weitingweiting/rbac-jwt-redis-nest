@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core'
+import { NestFactory, Reflector } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston'
-import { ValidationPipe, VersioningType } from '@nestjs/common'
+import { ClassSerializerInterceptor, ValidationPipe, VersioningType } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
 async function bootstrap() {
@@ -11,6 +11,9 @@ async function bootstrap() {
 
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER)
   app.useLogger(logger)
+
+  // 全局启用 ClassSerializerInterceptor，自动应用 @Exclude 装饰器
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
 
   // 全局验证管道配置
   app.useGlobalPipes(

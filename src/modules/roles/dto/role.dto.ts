@@ -1,5 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsArray, IsInt, MaxLength } from 'class-validator'
 import { PartialType } from '@nestjs/mapped-types'
+import { PaginationDto } from '@/shared/dto/pagination.dto'
 
 /**
  * 创建角色 DTO
@@ -38,7 +39,7 @@ export class AssignPermissionsDto {
 /**
  * 查询角色 DTO
  */
-export class QueryRoleDto {
+export class QueryRoleDto extends PaginationDto {
   @IsOptional()
   @IsString()
   name?: string

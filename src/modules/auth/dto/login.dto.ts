@@ -1,9 +1,10 @@
-import { BaseUserDto } from '@/shared/dto/base-user.dto'
 import { PickType } from '@nestjs/mapped-types'
-import { IsNotEmpty, IsString } from 'class-validator'
+import { BaseUserDto } from '../../users/dto/user.dto'
 
+/**
+ * 用户登录 DTO
+ * 只需要用户名和密码
+ */
 export class LoginDto extends PickType(BaseUserDto, ['username', 'password'] as const) {
-  @IsString({ message: '密码必须是字符串' })
-  @IsNotEmpty({ message: '密码不能为空' })
-  password!: string
+  // 仅包含用户名和密码字段
 }
