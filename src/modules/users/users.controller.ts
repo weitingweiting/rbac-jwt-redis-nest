@@ -83,6 +83,27 @@ export class UsersController {
   }
 
   /**
+   * 修改当前用户密码
+   * PUT /api/users/me/password
+   * 使用 'me' 作为特殊标识符，避免与 :id 路由冲突
+   */
+  @Put('me/change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser() currentUser: CurrentUserDto
+  ) {
+    await this.usersService.changePassword(
+      currentUser.id,
+      changePasswordDto.oldPassword,
+      changePasswordDto.newPassword
+    )
+    return {
+      message: '密码修改成功，请重新登录'
+    }
+  }
+
+  /**
    * 更新用户 - 改名、头像。参考 updateUserDto
    * PUT /api/users/:id
    */
@@ -189,11 +210,11 @@ export class UsersController {
   }
 
   /**
-   * 强制指定用户登出，admin 角色专用
+   * 强制指定用户登出，用户可以重新登录。admin 角色专用
    * POST /api/users/force-logout/:userId
    */
   @Post('force-logout/:userId')
-  @RequireRoles('admin-test')
+  @RequireRoles('admin')
   async forceLogoutUser(@Param('userId', ParseIntPipe) userId: number) {
     // 调用 AuthService 的 forceLogout 方法，强制用户登出
     await this.authService.forceLogout(userId)
@@ -202,26 +223,6 @@ export class UsersController {
     return {
       message: `用户 ${userId} 已被强制登出`,
       success: true
-    }
-  }
-
-  /**
-   * 修改当前用户密码
-   * PUT /api/users/change-password
-   */
-  @Put('change-password')
-  @HttpCode(HttpStatus.OK)
-  async changePassword(
-    @CurrentUser() currentUser: CurrentUserDto,
-    @Body() changePasswordDto: ChangePasswordDto
-  ) {
-    await this.usersService.changePassword(
-      currentUser.id,
-      changePasswordDto.oldPassword,
-      changePasswordDto.newPassword
-    )
-    return {
-      message: '密码修改成功，请重新登录'
     }
   }
 

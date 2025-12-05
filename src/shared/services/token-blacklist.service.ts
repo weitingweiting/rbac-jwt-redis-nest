@@ -68,14 +68,20 @@ export class TokenBlacklistService {
     const key = `blacklist:user:${userId}`
     const blacklistTime = await this.cacheManager.get<string>(key)
 
-    // 如果没有黑名单时间，表示用户未被强制登出。
-    // 或者是者黑名单已过期，即用户可以重新登录。
+    // 如果没有黑名单时间，表示用户未被强制登出
+    // 或者是者黑名单已过期
     if (!blacklistTime) {
       return false
     }
 
-    // 如果有黑名单时间，比较 Token 签发时间和黑名单时间
-    // tokenIssuedAt 处于黑名单时间之前，表示用户被强制登出
+    // 必须等待黑名单过期模式
+    // if (blacklistTime) {
+    //   return true
+    // }
+
+    // 踢出用户，用户可以重新登录模式
+    // 会比较用户重新签发的 Token
+    // 如果最新的 Token 签发时间在黑名单之后，则表示用户重新登录，允许访问
     const blacklistTimestamp = parseInt(blacklistTime)
     return tokenIssuedAt * 1000 < blacklistTimestamp
   }

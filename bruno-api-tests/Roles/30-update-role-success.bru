@@ -4,8 +4,8 @@ meta {
   seq: 30
 }
 
-patch {
-  url: {{rolesBaseUrl}}/{{createdRoleId}}
+put {
+  url: {{rolesBaseUrl}}/4
   body: json
   auth: bearer
 }
@@ -16,7 +16,7 @@ auth:bearer {
 
 body:json {
   {
-    "description": "更新后的描述"
+    "description": "更新后的描述,admin的测试角色"
   }
 }
 

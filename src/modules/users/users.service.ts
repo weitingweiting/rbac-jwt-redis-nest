@@ -17,6 +17,7 @@ import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto'
 import { BaseService } from '../../common/services/base.service'
 import { UserPermissionsService } from '../../shared/services/user-permissions.service'
 import { PasswordUtil } from '../../common/utils/password.util'
+import { AuthService } from '../auth/auth.service'
 
 @Injectable()
 export class UsersService extends BaseService<User> {
@@ -25,7 +26,8 @@ export class UsersService extends BaseService<User> {
     private userRepository: Repository<User>,
     @InjectRepository(Role)
     private roleRepository: Repository<Role>,
-    private userPermissionsService: UserPermissionsService
+    private userPermissionsService: UserPermissionsService,
+    private authService: AuthService
   ) {
     super(userRepository)
   }
@@ -149,7 +151,7 @@ export class UsersService extends BaseService<User> {
    * 软删除用户
    */
   async deleteUser(id: number): Promise<void> {
-    const user = await this.findOneUser(id) // 获取 DTO 用于验证
+    const user = await this.findOneUser(id)
 
     // 检查是否是最后一个管理员
     const userRoles = user.roles || []
@@ -219,8 +221,8 @@ export class UsersService extends BaseService<User> {
     // 更新密码
     await this.userRepository.update(userId, { password: hashedPassword })
 
-    // 清空用户权限缓存，强制重新登录
-    await this.userPermissionsService.clearUserCache(userId)
+    // 将用户踢出登录状态，要求重新登录
+    await this.authService.forceLogout(userId)
   }
 
   /**
@@ -236,8 +238,8 @@ export class UsersService extends BaseService<User> {
     // 更新密码
     await this.userRepository.update(userId, { password: hashedPassword })
 
-    // 清空用户权限缓存
-    await this.userPermissionsService.clearUserCache(userId)
+    // 将用户踢出登录状态，要求重新登录
+    await this.authService.forceLogout(userId)
   }
 
   /**
