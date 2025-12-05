@@ -18,6 +18,7 @@ import { BaseService } from '../../common/services/base.service'
 import { UserPermissionsService } from '../../shared/services/user-permissions.service'
 import { PasswordUtil } from '../../common/utils/password.util'
 import { AuthService } from '../auth/auth.service'
+import { MessageResponseDto } from '../auth/dto'
 
 @Injectable()
 export class UsersService extends BaseService<User> {
@@ -228,7 +229,7 @@ export class UsersService extends BaseService<User> {
   /**
    * 管理员重置用户密码
    */
-  async resetPassword(userId: number, newPassword: string): Promise<void> {
+  async resetPassword(userId: number, newPassword: string): Promise<MessageResponseDto> {
     // 验证用户是否存在
     await this.findOneUser(userId)
 
@@ -239,7 +240,7 @@ export class UsersService extends BaseService<User> {
     await this.userRepository.update(userId, { password: hashedPassword })
 
     // 将用户踢出登录状态，要求重新登录
-    await this.authService.forceLogout(userId)
+    return await this.authService.forceLogout(userId)
   }
 
   /**

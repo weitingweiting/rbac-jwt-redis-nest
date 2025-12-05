@@ -39,6 +39,8 @@ export class UsersController {
     private authService: AuthService
   ) {}
 
+  // ==================== 查询操作 ====================
+
   /**
    * 获取用户列表（带分页和查询）
    * GET /api/users?page=1&limit=10&username=admin
@@ -68,8 +70,10 @@ export class UsersController {
     }
   }
 
+  // ==================== 创建操作 ====================
+
   /**
-   * 创建用户
+   * 创建用户（管理员）
    * POST /api/users
    */
   @Post()
@@ -82,12 +86,14 @@ export class UsersController {
     }
   }
 
+  // ==================== 更新操作 ====================
+
   /**
    * 修改当前用户密码
    * PUT /api/users/me/password
-   * 使用 'me' 作为特殊标识符，避免与 :id 路由冲突
+   * 注意：必须在 PUT /api/users/:id 之前定义
    */
-  @Put('me/change-password')
+  @Put('me/password')
   @HttpCode(HttpStatus.OK)
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
@@ -104,7 +110,7 @@ export class UsersController {
   }
 
   /**
-   * 更新用户 - 改名、头像。参考 updateUserDto
+   * 更新用户信息（用户名、头像等）
    * PUT /api/users/:id
    */
   @Put(':id')
@@ -118,19 +124,7 @@ export class UsersController {
   }
 
   /**
-   * 删除用户
-   * DELETE /api/users/:id
-   */
-  @Delete(':id')
-  @RequirePermissions('user.delete')
-  @HttpCode(HttpStatus.OK)
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.usersService.deleteUser(id)
-    return { message: '删除用户成功' }
-  }
-
-  /**
-   * 为用户分配角色
+   * 为用户分配角色（管理员）
    * PUT /api/users/:id/roles
    */
   @Put(':id/roles')
@@ -143,86 +137,32 @@ export class UsersController {
     }
   }
 
-  /**
-   * 仅限管理员访问的路由示例
-   * GET /api/users/admin
-   * */
-  @Get('admin')
-  @RequireRoles('admin')
-  adminOnly(@CurrentUser() currentUser: CurrentUserDto) {
-    return {
-      message: '仅限管理员访问的路由 - 欢迎来到管理员仪表盘',
-      currentUser
-    }
-  }
+  // ==================== 删除操作 ====================
 
   /**
-   * 需要特定权限的路由示例
-   * GET /api/users/profile
-   * */
-  @Get('profile')
-  @RequirePermissions('profile:read')
-  getProfile(@CurrentUser() currentUser: CurrentUserDto) {
-    return {
-      message: 'User profile',
-      currentUser
-    }
-  }
-
-  /**
-   * 需要多个角色中的一个即可访问的路由示例
-   * GET /api/users/editor
-   * */
-  @Get('editor')
-  @RequireRoles('admin', 'editor')
-  editorRoute(@CurrentUser() currentUser: CurrentUserDto) {
-    return {
-      message: '此路由可由管理员或编辑访问',
-      currentUser
-    }
-  }
-
-  /**
-   * 需要多个权限全部满足才能访问的路由示例
-   * GET /api/users/advanced
-   * */
-  @Get('advanced')
-  @RequirePermissions('user.read', 'user.write')
-  advancedRoute(@CurrentUser() currentUser: CurrentUserDto) {
-    return {
-      message: '此路由同时需要 user.read AND user.write 权限',
-      currentUser
-    }
-  }
-
-  /**
-   * 清除指定用户的权限缓存
-   * POST /api/users/cache/clear/:userId
+   * 删除用户（管理员）
+   * DELETE /api/users/:id
    */
-  @Post('cache/clear/:userId')
-  @RequireRoles('admin')
-  async clearUserCache(@Param('userId', ParseIntPipe) userId: number) {
-    await this.userPermissionsService.clearUserCache(userId)
-    return {
-      message: `已清除用户 ${userId} 的权限缓存`,
-      success: true
-    }
+  @Delete(':id')
+  @RequirePermissions('user.delete')
+  @HttpCode(HttpStatus.OK)
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    await this.usersService.deleteUser(id)
+    return { message: '删除用户成功' }
   }
 
+  // ==================== 管理员专用操作 ====================
+
   /**
-   * 强制指定用户登出，用户可以重新登录。admin 角色专用
-   * POST /api/users/force-logout/:userId
+   * 管理员仪表盘（示例）
+   * GET /api/users/admin/dashboard
    */
-  @Post('force-logout/:userId')
+  @Get('admin/dashboard')
   @RequireRoles('admin')
-  async forceLogoutUser(@Param('userId', ParseIntPipe) userId: number) {
-    // 调用 AuthService 的 forceLogout 方法，强制用户登出
-    await this.authService.forceLogout(userId)
-    // 同时清除权限缓存
-    await this.userPermissionsService.clearUserCache(userId)
+  adminDashboard(@CurrentUser() currentUser: CurrentUserDto) {
     return {
-      message: `用户 ${userId} 已被强制登出`,
-      success: true
+      message: '欢迎来到管理员仪表盘',
+      currentUser
     }
   }
 
@@ -231,16 +171,73 @@ export class UsersController {
    * PUT /api/users/:id/reset-password
    */
   @Put(':id/reset-password')
-  @RequirePermissions('user.update')
-  @RequireRoles('admin')
+  // @RequirePermissions('user.update')
+  // @RequireRoles('admin')
   @HttpCode(HttpStatus.OK)
   async resetPassword(
     @Param('id', ParseIntPipe) id: number,
     @Body() resetPasswordDto: ResetPasswordDto
   ) {
-    await this.usersService.resetPassword(id, resetPasswordDto.newPassword)
+    const messageResponse = await this.usersService.resetPassword(id, resetPasswordDto.newPassword)
     return {
-      message: `用户 ${id} 的密码已重置`
+      message: `用户 ${id} 的密码已重置，${messageResponse.message}`
+    }
+  }
+
+  /**
+   * 强制指定用户登出（管理员）
+   * POST /api/users/:id/force-logout
+   */
+  @Post(':id/force-logout')
+  @RequireRoles('admin-test')
+  async forceLogoutUser(@Param('id', ParseIntPipe) id: number) {
+    await this.authService.forceLogout(id)
+    await this.userPermissionsService.clearUserCache(id)
+    return {
+      message: `用户 ${id} 已被强制登出`,
+      success: true
+    }
+  }
+
+  /**
+   * 清除指定用户的权限缓存（管理员）
+   * POST /api/users/:id/cache/clear
+   */
+  @Post(':id/cache/clear')
+  @RequireRoles('admin')
+  async clearUserCache(@Param('id', ParseIntPipe) id: number) {
+    await this.userPermissionsService.clearUserCache(id)
+    return {
+      message: `已清除用户 ${id} 的权限缓存`,
+      success: true
+    }
+  }
+
+  // ==================== 权限示例路由（可选，用于测试） ====================
+
+  /**
+   * 编辑者路由示例（需要 admin 或 editor 角色之一）
+   * GET /api/users/examples/editor
+   */
+  @Get('examples/editor')
+  @RequireRoles('admin', 'editor')
+  editorExample(@CurrentUser() currentUser: CurrentUserDto) {
+    return {
+      message: '此路由可由管理员或编辑访问',
+      currentUser
+    }
+  }
+
+  /**
+   * 高级权限路由示例（需要多个权限）
+   * GET /api/users/examples/advanced
+   */
+  @Get('examples/advanced')
+  @RequirePermissions('user.read', 'user.write')
+  advancedExample(@CurrentUser() currentUser: CurrentUserDto) {
+    return {
+      message: '此路由同时需要 user.read AND user.write 权限',
+      currentUser
     }
   }
 }

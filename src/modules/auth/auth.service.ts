@@ -183,7 +183,7 @@ export class AuthService {
       const userId = (decoded as any).sub
       await this.userPermissionsService.clearUserCache(userId)
 
-      return { message: '登出成功' }
+      return { message: `用户 ${userId} 已成功登出` }
     } catch (error) {
       if (error instanceof BusinessException) {
         throw error
