@@ -13,26 +13,29 @@ export const getRedisConfig = () =>
       const password = configService.get<string>('redis.password')
       const db = configService.get<number>('redis.db', 0)
 
-      // 构建 Redis URL
-      const redisUrl = `redis://${password ? `:${password}@` : ''}${host}:${port}/${db}`
-
-      console.log('🔧 Redis 配置:', {
+      const redisConfig = {
         host,
         port,
+        password,
         db,
-        hasPassword: !!password,
-        // url: redisUrl.replace(/:[^:@]*@/, ':****@') // 隐藏密码
-        url: redisUrl
-      })
+        connectTimeout: 10000,
+        retryStrategy: (times) => Math.min(times * 100, 3000)
+      }
 
-      // 直接使用 KeyvRedis，NestJS @nestjs/cache-manager v3 + cache-manager v6 的官方推荐方式
-      const store = new KeyvRedis(redisUrl)
+      console.log(
+        '🔧 Redis 配置:',
+        `redis://${password ? `:${password}@` : ''}${host}:${port}/${db}`
+      )
 
-      console.log('✅ Redis Store (KeyvRedis) 创建成功')
+      // 官方推荐方式：
+      // @nestjs/cache-manager v3 + cache-manager v6 + Keyv 生态(@keyv/redis、@keyv/sqlite、@keyv/mongo) + ioredis + redisServer
+      // cache-manager -> 使用 keyv 做统一存储接口。配器连接不同存储 (Redis、MongoDB、SQLite 等)
+      const redisStore = new KeyvRedis(redisConfig)
 
       return {
-        stores: [store],
-        ttl: 3600 * 1000 // 毫秒
+        stores: [redisStore],
+        ttl: 3600 * 1000,
+        isCacheableValue: (val) => val !== undefined && val !== null // 过滤 undefined 和 null
       }
     }
   })
