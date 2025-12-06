@@ -17,12 +17,11 @@ import {
   QueryProjectAssetDto
 } from './dto/project-asset.dto'
 import { PaginationDto } from '../../shared/dto/pagination.dto'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '../../shared/guards/permissions.guard'
 
 @Controller('project-assets')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(PermissionsGuard)
 export class ProjectAssetsController {
   constructor(private readonly projectAssetsService: ProjectAssetsService) {}
 

@@ -13,12 +13,11 @@ import {
 import { PermissionsService } from './permissions.service'
 import { CreatePermissionDto, UpdatePermissionDto, QueryPermissionDto } from './dto/permission.dto'
 import { PaginationDto } from '../../shared/dto/pagination.dto'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '../../shared/guards/permissions.guard'
 
 @Controller('permissions')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(PermissionsGuard)
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 

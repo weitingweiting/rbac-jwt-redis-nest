@@ -17,7 +17,6 @@ import {
   QueryProjectSpaceDto,
   AddUsersToSpaceDto
 } from './dto/project-space.dto'
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
@@ -25,7 +24,7 @@ import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 
 @Controller('project-spaces')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(PermissionsGuard)
 export class ProjectSpacesController {
   constructor(private readonly projectSpacesService: ProjectSpacesService) {}
 

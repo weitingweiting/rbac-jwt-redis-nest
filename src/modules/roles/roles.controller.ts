@@ -12,12 +12,11 @@ import {
 } from '@nestjs/common'
 import { RolesService } from './roles.service'
 import { CreateRoleDto, UpdateRoleDto, QueryRoleDto, AssignPermissionsDto } from './dto/role.dto'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 
 @Controller('roles')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(PermissionsGuard)
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 

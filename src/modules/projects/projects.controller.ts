@@ -17,13 +17,12 @@ import {
   QueryProjectDto,
   PublishProjectDto
 } from './dto/project.dto'
-import { PaginationDto } from '../../shared/dto/pagination.dto'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
-import { PermissionsGuard } from '../../shared/guards/permissions.guard'
+import { PaginationDto } from '@/shared/dto/pagination.dto'
+import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
+import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 
 @Controller('projects')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(PermissionsGuard)
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
