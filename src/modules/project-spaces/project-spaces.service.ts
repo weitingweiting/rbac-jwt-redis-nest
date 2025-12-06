@@ -2,7 +2,6 @@ import { Injectable, HttpStatus } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
 import { BaseService } from '@/common/services/base.service'
-import { PaginationDto } from '@/shared/dto/pagination.dto'
 import { PaginatedResponseDto } from '@/shared/dto/paginated-response.dto'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 import { BusinessException } from '@/shared/exceptions/business.exception'
@@ -29,7 +28,6 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
    * 获取项目空间列表（带分页和查询）
    */
   async findAllWithPagination(
-    pagination: PaginationDto,
     query: QueryProjectSpaceDto,
     userId?: number
   ): Promise<PaginatedResponseDto<ProjectSpace>> {
@@ -56,26 +54,26 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
       queryBuilder.andWhere('(space.owner.id = :userId OR users.id = :userId)', { userId })
     }
 
-    queryBuilder.skip(pagination.skip).take(pagination.take)
+    queryBuilder.skip(query.skip).take(query.take)
 
     const [spaces, total] = await queryBuilder.getManyAndCount()
 
-    return new PaginatedResponseDto(spaces, total, pagination.page ?? 1, pagination.limit ?? 10)
+    return new PaginatedResponseDto(spaces, total, query.page ?? 1, query.limit ?? 10)
   }
 
   /**
-   * 根据 ID 查找单个项目空间
+   * 根据 ID 查找单个项目空间(默认只查找公开空间)
    */
-  async findOneSpace(id: number): Promise<ProjectSpace> {
+  async findOneSpace(id: number, isOpen: boolean = true): Promise<ProjectSpace> {
     const space = await this.projectSpaceRepository.findOne({
-      where: { id },
+      where: { id, isOpen },
       relations: ['owner', 'users', 'projects'],
       withDeleted: false
     })
 
     if (!space) {
       throw new BusinessException(
-        `项目空间 ID ${id} 不存在`,
+        `项目空间 ID ${id} 不存在,或未公开`,
         HttpStatus.NOT_FOUND,
         ERROR_CODES.RESOURCE_NOT_FOUND
       )
@@ -91,7 +89,7 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
     // 检查空间名是否已存在
     const existingSpace = await this.projectSpaceRepository.findOne({
       where: { name: createDto.name },
-      withDeleted: false
+      withDeleted: true
     })
 
     if (existingSpace) {
@@ -105,7 +103,7 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
     // 查找所有者
     const owner = await this.userRepository.findOne({
       where: { id: ownerId },
-      withDeleted: false
+      withDeleted: true
     })
 
     if (!owner) {
@@ -166,9 +164,9 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
     }
 
     // 合并现有用户和新用户，去重
-    const existingUserIds = (space.users || []).map((u) => u.id)
+    const existingUserIds = (space?.users ?? []).map((u) => u.id)
     const newUsers = users.filter((u) => !existingUserIds.includes(u.id))
-    space.users = [...(space.users || []), ...newUsers]
+    space.users = [...(space?.users ?? []), ...newUsers]
 
     return this.projectSpaceRepository.save(space)
   }
@@ -179,7 +177,17 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
   async removeUserFromSpace(id: number, userId: number): Promise<ProjectSpace> {
     const space = await this.findOneSpace(id)
 
-    space.users = (space.users || []).filter((u) => u.id !== userId)
+    const existingUser = (space?.users ?? []).filter((u) => u.id === userId)
+
+    if (existingUser.length === 0) {
+      throw new BusinessException(
+        '用户不在该项目空间中',
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.OPERATION_NOT_ALLOWED
+      )
+    }
+
+    space.users = (space?.users ?? []).filter((u) => u.id !== userId)
 
     return this.projectSpaceRepository.save(space)
   }
@@ -188,7 +196,7 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
    * 软删除项目空间
    */
   async deleteSpace(id: number): Promise<void> {
-    await this.findOneSpace(id)
+    await this.findOneSpace(id, false) // false is_open 未公开的空间也能删除
     await this.projectSpaceRepository.softDelete(id)
   }
 
@@ -199,7 +207,7 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
     const space = await this.findOneSpace(spaceId)
 
     const isOwner = space.owner.id === userId
-    const isMember = (space.users || []).some((u) => u.id === userId)
+    const isMember = (space?.users ?? []).some((u) => u.id === userId)
 
     return isOwner || isMember
   }

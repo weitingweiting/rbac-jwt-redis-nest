@@ -12,10 +12,9 @@ export class CreateProjectSpaceDto {
   @MaxLength(100, { message: '空间名称最多100个字符' })
   name!: string
 
-  @IsOptional()
   @IsString({ message: '空间描述必须是字符串' })
   @MaxLength(500, { message: '空间描述最多500个字符' })
-  description?: string
+  description!: string
 
   @IsOptional()
   @IsBoolean({ message: 'isOpen必须是布尔值' })

@@ -14,13 +14,13 @@ export class User extends BaseEntity {
   password!: string
 
   @Column({ nullable: true })
-  avatarUrl: string
+  avatarUrl?: string
 
   @ManyToMany(() => Role, (role) => role.users)
   @JoinTable({ name: 'user_roles' })
-  roles!: Role[]
+  roles?: Role[]
 
   @ManyToMany(() => ProjectSpace, (space) => space.users)
   @JoinTable({ name: 'user_project_spaces' })
-  projectSpaces: ProjectSpace[]
+  projectSpaces?: ProjectSpace[]
 }

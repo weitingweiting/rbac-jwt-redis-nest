@@ -17,12 +17,12 @@ import {
   QueryProjectSpaceDto,
   AddUsersToSpaceDto
 } from './dto/project-space.dto'
-import { PaginationDto } from '@/shared/dto/pagination.dto'
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 import { CurrentUserDto } from '@/shared/dto/current-user.dto'
+import { BusinessException } from '@/shared/exceptions/business.exception'
 
 @Controller('project-spaces')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -35,12 +35,8 @@ export class ProjectSpacesController {
    */
   @Get()
   @RequirePermissions('project-space.read')
-  async findAll(
-    @Query() pagination: PaginationDto,
-    @Query() query: QueryProjectSpaceDto,
-    @CurrentUser() user: CurrentUserDto
-  ) {
-    const spaces = await this.projectSpacesService.findAllWithPagination(pagination, query, user.id)
+  async findAll(@Query() query: QueryProjectSpaceDto, @CurrentUser() user: CurrentUserDto) {
+    const spaces = await this.projectSpacesService.findAllWithPagination(query, user.id)
     return {
       message: '获取项目空间列表成功',
       ...spaces
@@ -67,7 +63,7 @@ export class ProjectSpacesController {
    */
   @Post()
   @RequirePermissions('project-space.create')
-  async create(@Body() createDto: CreateProjectSpaceDto, @CurrentUser() user: any) {
+  async create(@Body() createDto: CreateProjectSpaceDto, @CurrentUser() user: CurrentUserDto) {
     const space = await this.projectSpacesService.createSpace(createDto, user.id)
     return {
       message: '创建项目空间成功',
@@ -95,7 +91,14 @@ export class ProjectSpacesController {
    */
   @Put(':id/users')
   @RequirePermissions('project-space.update')
-  async addUsers(@Param('id', ParseIntPipe) id: number, @Body() addUsersDto: AddUsersToSpaceDto) {
+  async addUsers(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() addUsersDto: AddUsersToSpaceDto,
+    @CurrentUser() user: CurrentUserDto
+  ) {
+    if (addUsersDto.userIds.includes(user.id)) {
+      throw new BusinessException('不能将自己添加到项目空间')
+    }
     const space = await this.projectSpacesService.addUsersToSpace(id, addUsersDto.userIds)
     return {
       message: '添加用户成功',

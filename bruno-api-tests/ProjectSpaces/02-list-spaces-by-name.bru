@@ -5,9 +5,15 @@ meta {
 }
 
 get {
-  url: {{projectSpacesBaseUrl}}?name=测试&page=1&limit=10
+  url: {{projectSpacesBaseUrl}}?name=test-space-9&page=1&limit=10
   body: none
   auth: bearer
+}
+
+params:query {
+  name: test-space-9
+  page: 1
+  limit: 10
 }
 
 auth:bearer {
