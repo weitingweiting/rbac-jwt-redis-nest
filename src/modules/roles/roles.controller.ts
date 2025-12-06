@@ -12,10 +12,9 @@ import {
 } from '@nestjs/common'
 import { RolesService } from './roles.service'
 import { CreateRoleDto, UpdateRoleDto, QueryRoleDto, AssignPermissionsDto } from './dto/role.dto'
-import { PaginationDto } from '../../shared/dto/pagination.dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { RequirePermissions } from '../../shared/decorators/permissions.decorator'
-import { PermissionsGuard } from '../../shared/guards/permissions.guard'
+import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
+import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 
 @Controller('roles')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -28,8 +27,8 @@ export class RolesController {
    */
   @Get()
   @RequirePermissions('role.read')
-  async findAll(@Query() pagination: PaginationDto, @Query() query: QueryRoleDto) {
-    const roles = await this.rolesService.findAllWithPagination(pagination, query)
+  async findAll(@Query() queryRoleDto: QueryRoleDto) {
+    const roles = await this.rolesService.findAllWithPagination(queryRoleDto)
     return {
       message: '获取角色列表成功',
       ...roles

@@ -17,7 +17,7 @@ import {
   QueryProjectSpaceDto,
   AddUsersToSpaceDto
 } from './dto/project-space.dto'
-import { PaginationDto } from '../../shared/dto/pagination.dto'
+import { PaginationDto } from '@/shared/dto/pagination.dto'
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'

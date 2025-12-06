@@ -1,16 +1,15 @@
 import { Injectable, HttpStatus } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
-import { Role } from '../../shared/entities/role.entity'
-import { Permission } from '../../shared/entities/permission.entity'
-import { User } from '../../shared/entities/user.entity'
-import { BaseService } from '../../common/services/base.service'
-import { BusinessException } from '../../shared/exceptions/business.exception'
-import { ERROR_CODES } from '../../shared/constants/error-codes.constant'
+import { Role } from '@/shared/entities/role.entity'
+import { Permission } from '@/shared/entities/permission.entity'
+import { User } from '@/shared/entities/user.entity'
+import { BaseService } from '@/common/services/base.service'
+import { BusinessException } from '@/shared/exceptions/business.exception'
+import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 import { CreateRoleDto, UpdateRoleDto, QueryRoleDto } from './dto/role.dto'
-import { PaginationDto } from '../../shared/dto/pagination.dto'
-import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto'
-import { UserPermissionsService } from '../../shared/services/user-permissions.service'
+import { PaginatedResponseDto } from '@/shared/dto/paginated-response.dto'
+import { UserPermissionsService } from '@/shared/services/user-permissions.service'
 
 @Injectable()
 export class RolesService extends BaseService<Role> {
@@ -29,10 +28,7 @@ export class RolesService extends BaseService<Role> {
   /**
    * 获取角色列表（带分页和查询）
    */
-  async findAllWithPagination(
-    pagination: PaginationDto,
-    query: QueryRoleDto
-  ): Promise<PaginatedResponseDto<Role>> {
+  async findAllWithPagination(query: QueryRoleDto): Promise<PaginatedResponseDto<Role>> {
     const queryBuilder = this.roleRepository
       .createQueryBuilder('role')
       .leftJoinAndSelect('role.permissions', 'permission')
@@ -44,11 +40,11 @@ export class RolesService extends BaseService<Role> {
       })
     }
 
-    queryBuilder.skip(pagination.skip).take(pagination.take)
+    queryBuilder.skip(query.skip).take(query.take)
 
     const [roles, total] = await queryBuilder.getManyAndCount()
 
-    return new PaginatedResponseDto(roles, total, pagination.page ?? 1, pagination.limit ?? 10)
+    return new PaginatedResponseDto(roles, total, query.page ?? 1, query.limit ?? 10)
   }
 
   /**
@@ -81,7 +77,7 @@ export class RolesService extends BaseService<Role> {
     // 检查角色名是否已存在
     const existingRole = await this.roleRepository.findOne({
       where: { name: roleData.name },
-      withDeleted: false
+      withDeleted: true
     })
 
     if (existingRole) {
