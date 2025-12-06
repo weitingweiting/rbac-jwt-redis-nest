@@ -1,14 +1,13 @@
 import { Injectable, HttpStatus } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Project } from '../../shared/entities/project.entity'
-import { ProjectSpace } from '../../shared/entities/project-space.entity'
-import { BaseService } from '../../common/services/base.service'
-import { BusinessException } from '../../shared/exceptions/business.exception'
-import { ERROR_CODES } from '../../shared/constants/error-codes.constant'
+import { Project } from '@/shared/entities/project.entity'
+import { ProjectSpace } from '@/shared/entities/project-space.entity'
+import { BaseService } from '@/common/services/base.service'
+import { BusinessException } from '@/shared/exceptions/business.exception'
+import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 import { CreateProjectDto, UpdateProjectDto, QueryProjectDto } from './dto/project.dto'
-import { PaginationDto } from '../../shared/dto/pagination.dto'
-import { PaginatedResponseDto } from '../../shared/dto/paginated-response.dto'
+import { PaginatedResponseDto } from '@/shared/dto/paginated-response.dto'
 
 @Injectable()
 export class ProjectsService extends BaseService<Project> {
@@ -24,10 +23,7 @@ export class ProjectsService extends BaseService<Project> {
   /**
    * 获取项目列表（带分页和查询）
    */
-  async findAllWithPagination(
-    pagination: PaginationDto,
-    query: QueryProjectDto
-  ): Promise<PaginatedResponseDto<Project>> {
+  async findAllWithPagination(query: QueryProjectDto): Promise<PaginatedResponseDto<Project>> {
     const queryBuilder = this.projectRepository
       .createQueryBuilder('project')
       .leftJoinAndSelect('project.projectSpace', 'space')
@@ -48,11 +44,11 @@ export class ProjectsService extends BaseService<Project> {
       queryBuilder.andWhere('space.id = :spaceId', { spaceId: query.projectSpaceId })
     }
 
-    queryBuilder.skip(pagination.skip).take(pagination.take)
+    queryBuilder.skip(query.skip).take(query.take)
 
     const [projects, total] = await queryBuilder.getManyAndCount()
 
-    return new PaginatedResponseDto(projects, total, pagination.page ?? 1, pagination.limit ?? 10)
+    return new PaginatedResponseDto(projects, total, query.page ?? 1, query.limit ?? 10)
   }
 
   /**

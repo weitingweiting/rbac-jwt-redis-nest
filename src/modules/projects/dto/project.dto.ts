@@ -10,7 +10,8 @@ import {
 } from 'class-validator'
 import { PartialType } from '@nestjs/mapped-types'
 import { Type } from 'class-transformer'
-import { ProjectStatus } from '../../../shared/entities/project.entity'
+import { ProjectStatus } from '@/shared/entities/project.entity'
+import { PaginationDto } from '@/shared/dto/pagination.dto'
 
 /**
  * 创建项目 DTO
@@ -62,7 +63,7 @@ export class PublishProjectDto {
 /**
  * 查询项目 DTO
  */
-export class QueryProjectDto {
+export class QueryProjectDto extends PaginationDto {
   @IsOptional()
   @IsString()
   name?: string

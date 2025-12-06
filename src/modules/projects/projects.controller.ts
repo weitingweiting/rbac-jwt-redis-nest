@@ -17,7 +17,6 @@ import {
   QueryProjectDto,
   PublishProjectDto
 } from './dto/project.dto'
-import { PaginationDto } from '@/shared/dto/pagination.dto'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 
@@ -32,8 +31,8 @@ export class ProjectsController {
    */
   @Get()
   @RequirePermissions('project.read')
-  async findAll(@Query() pagination: PaginationDto, @Query() query: QueryProjectDto) {
-    const projects = await this.projectsService.findAllWithPagination(pagination, query)
+  async findAll(@Query() query: QueryProjectDto) {
+    const projects = await this.projectsService.findAllWithPagination(query)
     return {
       message: '获取项目列表成功',
       ...projects
