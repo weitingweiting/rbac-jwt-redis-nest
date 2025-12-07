@@ -22,13 +22,13 @@ export class CreateProjectDto {
   @MaxLength(100, { message: '项目名称最多100个字符' })
   name!: string
 
+  @IsInt({ message: '项目空间ID必须是整数' })
+  projectSpaceId!: number
+
   @IsOptional()
   @IsString({ message: '项目描述必须是字符串' })
   @MaxLength(500, { message: '项目描述最多500个字符' })
   description?: string
-
-  @IsInt({ message: '项目空间ID必须是整数' })
-  projectSpaceId!: number
 
   @IsOptional()
   @IsObject({ message: 'sceneJson必须是对象' })

@@ -6,21 +6,22 @@ import { Project } from './project.entity'
 @Entity('project_spaces')
 export class ProjectSpace extends BaseEntity {
   @Column({ unique: true })
-  name: string
+  name!: string
 
   @Column({ nullable: true })
-  description: string
+  description?: string
 
   @Column({ default: true, name: 'is_open' })
-  isOpen: boolean
+  isOpen!: boolean
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'owner_id', referencedColumnName: 'id' }) // project_spaces.owner_id -> users.id
-  owner: User
+  owner?: User
 
   @ManyToMany(() => User, (user) => user.projectSpaces)
-  users: User[]
+  users?: User[]
 
-  @OneToMany(() => Project, (p) => p.projectSpace, { cascade: true, eager: true }) // eager=true 查询时自动加载关联的 projects
-  projects: Project[]
+  // @OneToMany(() => Project, (p) => p.projectSpace, { cascade: true, eager: true }) // eager=true 查询时自动加载关联的 projects
+  @OneToMany(() => Project, (p) => p.projectSpace)
+  projects?: Project[]
 }

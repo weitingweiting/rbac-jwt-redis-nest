@@ -23,9 +23,13 @@ export class ProjectsService extends BaseService<Project> {
   /**
    * 获取项目列表（带分页和查询）
    */
-  async findAllWithPagination(query: QueryProjectDto): Promise<PaginatedResponseDto<Project>> {
+  async findAllWithPagination(
+    query: QueryProjectDto,
+    userId?: number
+  ): Promise<PaginatedResponseDto<Project>> {
     const queryBuilder = this.projectRepository
       .createQueryBuilder('project')
+      .leftJoinAndSelect('project.owner', 'owner')
       .leftJoinAndSelect('project.projectSpace', 'space')
       .leftJoinAndSelect('project.assets', 'assets')
       .where('project.deletedAt IS NULL')
@@ -41,7 +45,13 @@ export class ProjectsService extends BaseService<Project> {
     }
 
     if (query.projectSpaceId) {
+      // 如果提供了 projectSpaceId，只返回该空间下的项目
       queryBuilder.andWhere('space.id = :spaceId', { spaceId: query.projectSpaceId })
+    } else if (userId) {
+      // 如果提供了 userId，只返回该用户拥有或参与的项目（告诉前端不要传递projectSpaceId）
+      queryBuilder
+        .leftJoin('space.users', 'spaceUser')
+        .andWhere('(owner.id = :userId OR spaceUser.id = :userId)', { userId })
     }
 
     queryBuilder.skip(query.skip).take(query.take)
@@ -75,7 +85,7 @@ export class ProjectsService extends BaseService<Project> {
   /**
    * 创建项目
    */
-  async createProject(createDto: CreateProjectDto): Promise<Project> {
+  async createProject(createDto: CreateProjectDto, userId: number): Promise<Project> {
     const { projectSpaceId, ...projectData } = createDto
 
     // 检查项目空间是否存在
@@ -92,9 +102,23 @@ export class ProjectsService extends BaseService<Project> {
       )
     }
 
+    const projectNameExists = await this.projectRepository.findOne({
+      where: { name: createDto.name, projectSpace: { id: projectSpaceId } },
+      withDeleted: false
+    })
+
+    if (projectNameExists) {
+      throw new BusinessException(
+        '同一项目空间下已存在相同名称的项目',
+        HttpStatus.CONFLICT,
+        ERROR_CODES.RESOURCE_ALREADY_EXISTS
+      )
+    }
+
     const project = this.projectRepository.create({
       ...projectData,
-      projectSpace
+      projectSpace,
+      owner: { id: userId }
     })
 
     return this.projectRepository.save(project)

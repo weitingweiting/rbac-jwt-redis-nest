@@ -1,8 +1,9 @@
-import { Entity, Column, ManyToMany, JoinTable } from 'typeorm'
+import { Entity, Column, ManyToMany, JoinTable, OneToMany } from 'typeorm'
 import { Exclude } from 'class-transformer'
 import { BaseEntity } from './base.entity'
 import { Role } from './role.entity'
 import { ProjectSpace } from './project-space.entity'
+import { Project } from './project.entity'
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -23,4 +24,7 @@ export class User extends BaseEntity {
   @ManyToMany(() => ProjectSpace, (space) => space.users)
   @JoinTable({ name: 'user_project_spaces' })
   projectSpaces?: ProjectSpace[]
+
+  @OneToMany(() => Project, (project) => project.owner)
+  projects?: Project[]
 }

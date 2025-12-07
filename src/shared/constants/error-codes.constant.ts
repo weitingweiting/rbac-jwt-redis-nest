@@ -28,7 +28,10 @@ export const ERROR_CODES = {
   INVALID_OPERATION: 'INVALID_OPERATION',
 
   // 路由相关
-  ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND'
+  ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND',
+
+  // 资源相关
+  RESOURCE_ALREADY_EXISTS: 'RESOURCE_ALREADY_EXISTS'
 } as const
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]

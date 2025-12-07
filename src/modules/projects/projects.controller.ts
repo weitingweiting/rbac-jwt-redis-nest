@@ -19,6 +19,8 @@ import {
 } from './dto/project.dto'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
+import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 
 @Controller('projects')
 @UseGuards(PermissionsGuard)
@@ -31,8 +33,8 @@ export class ProjectsController {
    */
   @Get()
   @RequirePermissions('project.read')
-  async findAll(@Query() query: QueryProjectDto) {
-    const projects = await this.projectsService.findAllWithPagination(query)
+  async findAll(@Query() query: QueryProjectDto, @CurrentUser() currentUser: CurrentUserDto) {
+    const projects = await this.projectsService.findAllWithPagination(query, currentUser.id)
     return {
       message: '获取项目列表成功',
       ...projects
@@ -59,8 +61,8 @@ export class ProjectsController {
    */
   @Post()
   @RequirePermissions('project.create')
-  async create(@Body() createDto: CreateProjectDto) {
-    const project = await this.projectsService.createProject(createDto)
+  async create(@Body() createDto: CreateProjectDto, @CurrentUser() currentUser: CurrentUserDto) {
+    const project = await this.projectsService.createProject(createDto, currentUser.id)
     return {
       message: '创建项目成功',
       data: project
