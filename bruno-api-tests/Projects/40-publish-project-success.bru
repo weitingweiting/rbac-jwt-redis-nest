@@ -4,8 +4,8 @@ meta {
   seq: 40
 }
 
-post {
-  url: {{projectsBaseUrl}}/{{createdProjectId}}/publish
+put {
+  url: {{projectsBaseUrl}}/2/publish
   body: json
   auth: bearer
 }
