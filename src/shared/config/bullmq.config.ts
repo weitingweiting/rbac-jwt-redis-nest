@@ -2,7 +2,12 @@ import { BullModule } from '@nestjs/bullmq'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 
 /**
- * BullMQ 队列配置工厂函数
+ * BullMQ 队列配置
+ * 使用 ioredis 作为 Redis 客户端
+ * 配置说明：
+ * - maxRetriesPerRequest: null - 不限制单个请求的重试次数
+ * - enableReadyCheck: false - 禁用就绪检查，加快启动速度
+ * - retryStrategy - 自定义重连策略，防止连接失败时无限重连
  */
 export const getBullMQConfig = () =>
   BullModule.forRootAsync({
@@ -13,20 +18,30 @@ export const getBullMQConfig = () =>
         host: configService.get<string>('redis.host'),
         port: configService.get<number>('redis.port'),
         maxRetriesPerRequest: null,
-        enableReadyCheck: false
+        enableReadyCheck: false,
+        // 重连策略：指数退避，最多重连10次
+        retryStrategy: (times: number) => {
+          if (times > 10) {
+            console.error('❌ BullMQ Redis 连接失败，已达到最大重试次数')
+            return null // 停止重连
+          }
+          const delay = Math.min(times * 200, 3000)
+          console.log(`🔄 BullMQ Redis 重连中... (${times}/10) 延迟 ${delay}ms`)
+          return delay
+        }
       },
       defaultJobOptions: {
-        attempts: 3, // 任务失败重试次数
+        attempts: 3,
         backoff: {
-          type: 'exponential', // 使用指数退避算法。每次重试的等待时间会指数级增长，减少系统压力
-          delay: 1000 // 初始延迟 1 秒
+          type: 'exponential',
+          delay: 1000
         },
         removeOnComplete: {
-          age: 3600, // 1小时后删除已完成的任务
-          count: 20 // 保留最近 20 个已完成的任务
+          age: 3600,
+          count: 20
         },
         removeOnFail: {
-          age: 24 * 3600 // 24小时后删除失败的任务
+          age: 24 * 3600
         }
       }
     })

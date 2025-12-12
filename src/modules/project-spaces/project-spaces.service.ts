@@ -49,9 +49,16 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
       queryBuilder.andWhere('space.isOpen = :isOpen', { isOpen: query.isOpen })
     }
 
-    // 如果提供了 userId，只返回该用户拥有或参与的空间
     if (userId) {
-      queryBuilder.andWhere('(space.owner.id = :userId OR users.id = :userId)', { userId })
+      if (query?.belong === 'owner') {
+        queryBuilder.andWhere('space.owner.id = :userId', { userId })
+      } else if (query?.belong === 'member') {
+        queryBuilder.andWhere('users.id = :userId', { userId })
+      } else if (query?.belong === 'all') {
+        queryBuilder.andWhere('(space.owner.id = :userId OR users.id = :userId)', { userId })
+      } else {
+        queryBuilder.andWhere('(space.owner.id = :userId OR users.id = :userId)', { userId })
+      }
     }
 
     queryBuilder.skip(query.skip).take(query.take)
@@ -64,16 +71,16 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
   /**
    * 根据 ID 查找单个项目空间(默认只查找公开空间)
    */
-  async findOneSpace(id: number, isOpen: boolean = true): Promise<ProjectSpace> {
+  async findOneSpace(id: number): Promise<ProjectSpace> {
     const space = await this.projectSpaceRepository.findOne({
-      where: { id, isOpen },
+      where: { id },
       relations: ['owner', 'users', 'projects'],
       withDeleted: false
     })
 
     if (!space) {
       throw new BusinessException(
-        `项目空间 ID ${id} 不存在,或未公开`,
+        `项目空间 ID ${id} 不存在`,
         HttpStatus.NOT_FOUND,
         ERROR_CODES.RESOURCE_NOT_FOUND
       )
@@ -196,7 +203,7 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
    * 软删除项目空间
    */
   async deleteSpace(id: number): Promise<void> {
-    await this.findOneSpace(id, false) // false is_open 未公开的空间也能删除
+    await this.findOneSpace(id)
     await this.projectSpaceRepository.softDelete(id)
   }
 

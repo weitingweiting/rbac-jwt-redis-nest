@@ -22,8 +22,13 @@ help:
 	@echo "  make backup      - 备份数据目录"
 	@echo "  make install     - 安装 npm 依赖"
 	@echo "  make seed        - 初始化数据库种子数据"
-	@echo "  make dev         - 启动开发服务器"
+	@echo "  make dev         - 启动开发服务器（直接运行）"
 	@echo "  make build       - 构建生产版本"
+	@echo "  make start       - 启动生产服务器（PM2）"
+	@echo "  make stop        - 停止生产服务器"
+	@echo "  make restart     - 重启生产服务器"
+	@echo "  make status      - 查看 PM2 进程状态"
+	@echo "  make logs-app    - 查看应用日志"
 	@echo "  make health      - 检查服务健康状态"
 	@echo "  make backup-db   - 备份数据库"
 	@echo "  make restore-db  - 恢复数据库（需要 backup.sql）"
@@ -110,15 +115,40 @@ seed:
 	@echo "🌱 初始化数据库种子数据..."
 	npm run seed
 
-# 开发
+# 开发环境
 dev:
-	@echo "🔨 启动开发服务器..."
-	npm run start:dev
+	@echo "🔨 启动开发服务器（直接运行）..."
+	pnpm start:dev
 
 # 构建
 build:
 	@echo "📦 构建生产版本..."
-	npm run build
+	pnpm build
+
+# 生产环境 - PM2 管理
+start:
+	@echo "🚀 启动生产服务器（PM2）..."
+	@npx pm2 start ecosystem.config.js
+
+stop:
+	@echo "🛑 停止生产服务器..."
+	@npx pm2 stop rbac-nest-prod
+
+restart:
+	@echo "🔄 重启生产服务器..."
+	@npx pm2 restart rbac-nest-prod
+
+status:
+	@echo "📊 PM2 进程状态："
+	@npx pm2 status
+
+logs-app:
+	@echo "📋 应用日志："
+	@npx pm2 logs rbac-nest-prod --lines 50
+
+delete:
+	@echo "🗑️  删除 PM2 进程..."
+	@npx pm2 delete rbac-nest-prod
 
 # 健康检查
 health:

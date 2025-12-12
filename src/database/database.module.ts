@@ -7,12 +7,14 @@ import { ProjectSpace } from '@/shared/entities/project-space.entity'
 import { Project } from '@/shared/entities/project.entity'
 import { ProjectAsset } from '@/shared/entities/project-asset.entity'
 import { getDatabaseConfig } from '@/shared/config/database.config'
+import { DatabaseHealthService } from '@/shared/services/database-health.service'
 
 @Module({
   imports: [
     getDatabaseConfig(),
     TypeOrmModule.forFeature([User, Role, Permission, ProjectSpace, Project, ProjectAsset])
   ],
+  providers: [DatabaseHealthService],
   exports: [TypeOrmModule]
 })
 export class DatabaseModule {}

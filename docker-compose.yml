@@ -49,7 +49,7 @@ services:
     networks:
       - rbac-network
 
-  # 可选：RedisInsight (Redis 可视化管理工具，支持 ARM64)
+  # 可选：RedisInsight (Redis 可视化管理工具)
   redis-insight:
     image: redislabs/redisinsight:latest
     container_name: rbac-demo-redis-insight

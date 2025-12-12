@@ -55,7 +55,7 @@ import { ProjectAssetsModule } from './modules/project-assets/project-assets.mod
     LoggerModule,
     FiltersModule,
     getRedisConfig(),
-    getBullMQConfig(), // BullMQ 队列全局配置
+    getBullMQConfig(),
     DatabaseModule,
     QueueModule,
     AuthModule,

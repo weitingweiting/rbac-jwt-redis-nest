@@ -8,7 +8,7 @@ import {
   MaxLength,
   IsObject
 } from 'class-validator'
-import { PartialType } from '@nestjs/mapped-types'
+import { PickType } from '@nestjs/mapped-types'
 import { Type } from 'class-transformer'
 import { ProjectStatus } from '@/shared/entities/project.entity'
 import { PaginationDto } from '@/shared/dto/pagination.dto'
@@ -48,7 +48,11 @@ export class CreateProjectDto {
 /**
  * 更新项目 DTO
  */
-export class UpdateProjectDto extends PartialType(CreateProjectDto) {}
+export class UpdateProjectDto extends PickType(CreateProjectDto, [
+  'name',
+  'description',
+  'coverUrl'
+] as const) {}
 
 /**
  * 发布项目 DTO
