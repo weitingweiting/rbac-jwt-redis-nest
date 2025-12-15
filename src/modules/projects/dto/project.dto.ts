@@ -19,7 +19,7 @@ import { PaginationDto } from '@/shared/dto/pagination.dto'
 export class CreateProjectDto {
   @IsString({ message: '项目名称必须是字符串' })
   @IsNotEmpty({ message: '项目名称不能为空' })
-  @MaxLength(100, { message: '项目名称最多100个字符' })
+  @MaxLength(30, { message: '项目名称最多30个字符' })
   name!: string
 
   @IsInt({ message: '项目空间ID必须是整数' })
@@ -27,7 +27,7 @@ export class CreateProjectDto {
 
   @IsOptional()
   @IsString({ message: '项目描述必须是字符串' })
-  @MaxLength(500, { message: '项目描述最多500个字符' })
+  @MaxLength(200, { message: '项目描述最多200个字符' })
   description?: string
 
   @IsOptional()
@@ -49,6 +49,7 @@ export class CreateProjectDto {
  * 更新项目 DTO
  */
 export class UpdateProjectDto extends PickType(CreateProjectDto, [
+  // 'projectSpaceId',
   'name',
   'description',
   'coverUrl'

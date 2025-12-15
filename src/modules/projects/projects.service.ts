@@ -86,6 +86,7 @@ export class ProjectsService extends BaseService<Project> {
    * 创建项目
    */
   async createProject(createDto: CreateProjectDto, userId: number): Promise<Project> {
+    console.log('🚀 ~ ProjectsService ~ createProject ~ createDto:', createDto)
     const { projectSpaceId, ...projectData } = createDto
 
     // 检查项目空间是否存在
@@ -129,27 +130,27 @@ export class ProjectsService extends BaseService<Project> {
    */
   async updateProject(id: number, updateDto: UpdateProjectDto): Promise<Project> {
     const project = await this.findOneProject(id)
-    const { projectSpaceId, ...projectData } = updateDto
 
-    // 如果要更新项目空间
-    if (projectSpaceId && projectSpaceId !== project.projectSpace.id) {
-      const projectSpace = await this.projectSpaceRepository.findOne({
-        where: { id: projectSpaceId },
-        withDeleted: false
-      })
+    // const { projectSpaceId, ...projectData } = updateDto
+    // // 如果要更新项目空间
+    // if (projectSpaceId && projectSpaceId !== project.projectSpace.id) {
+    //   const projectSpace = await this.projectSpaceRepository.findOne({
+    //     where: { id: projectSpaceId },
+    //     withDeleted: false
+    //   })
 
-      if (!projectSpace) {
-        throw new BusinessException(
-          '项目空间不存在',
-          HttpStatus.NOT_FOUND,
-          ERROR_CODES.RESOURCE_NOT_FOUND
-        )
-      }
+    //   if (!projectSpace) {
+    //     throw new BusinessException(
+    //       '项目空间不存在',
+    //       HttpStatus.NOT_FOUND,
+    //       ERROR_CODES.RESOURCE_NOT_FOUND
+    //     )
+    //   }
 
-      project.projectSpace = projectSpace
-    }
+    //   project.projectSpace = projectSpace
+    // }
 
-    Object.assign(project, projectData)
+    Object.assign(project, updateDto)
     return this.projectRepository.save(project)
   }
 
