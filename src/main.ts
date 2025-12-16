@@ -69,7 +69,6 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
 })
 
 // 捕获未捕获的异常
-// 注意：
 // - Redis 缓存错误由 KeyvRedis 的 throwOnErrors: false 处理
 // - BullMQ 错误由 ioredis 的 retryStrategy 处理
 // - 此处只捕获真正的程序错误

@@ -44,7 +44,7 @@ export const getDatabaseConfig = () =>
         },
         poolSize, // TypeORM 连接池大小
         maxQueryExecutionTime: maxQueryTime, // 慢查询警告阈值
-        logging: isProduction ? ['error'] : ['error', 'warn', 'query'], // 生产仅错误
+        logging: isProduction ? ['error'] : ['error', 'warn'], // 生产仅错误
         logger: 'advanced-console',
         entities: [User, Role, Permission, ProjectSpace, Project, ProjectAsset],
         // 🔥 自动重连配置

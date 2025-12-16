@@ -37,3 +37,32 @@ export const jwtConfig = registerAs('jwt', () => ({
   expiresIn: process.env.JWT_EXPIRES_IN || '24h',
   refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
 }))
+
+/**
+ * 阿里云 OSS 配置
+ */
+export const ossConfig = registerAs('oss', () => {
+  // ⚠️ 重要：OSS endpoint 必须使用 https，无论是本地开发还是生产环境
+  const endpoint = process.env.OSS_ENDPOINT || ''
+  return {
+    region: process.env.OSS_REGION || 'oss-cn-shanghai',
+    accessKeyId: process.env.OSS_ACCESS_KEY_ID!,
+    accessKeySecret: process.env.OSS_ACCESS_KEY_SECRET!,
+    bucket: process.env.OSS_BUCKET!,
+    // 如果配置了 endpoint，确保使用 https 协议
+    endpoint: endpoint
+      ? endpoint.startsWith('http')
+        ? endpoint
+        : `https://${endpoint}`
+      : undefined,
+    internal: process.env.OSS_INTERNAL === 'true',
+    timeout: parseInt(process.env.OSS_TIMEOUT || '60000', 10),
+    // ⚠️ 注意：callback URL 必须是 https 且公网可访问
+    // 本地开发模式（OSS_LOCAL_MODE=true）不使用回调，此值不重要
+    // 生产环境必须配置为 https 公网地址，如：https://api.example.com/api/oss/callback
+    callbackUrl: process.env.OSS_CALLBACK_URL || 'https://localhost:3000/api/oss/callback',
+    acl: process.env.OSS_ACL || 'public-read',
+    authorizationV4: process.env.OSS_AUTH_V4 === 'true',
+    localMode: process.env.OSS_LOCAL_MODE === 'true'
+  }
+})
