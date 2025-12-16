@@ -29,7 +29,7 @@ export const createOSSClient = (configService: ConfigService): OSS => {
  * OSS 文件类型枚举
  */
 export enum OSSFileType {
-  IMAGE = 'imgs',
+  IMAGE = 'images',
   VIDEO = 'videos',
   ASSET = 'assets',
   DOCUMENT = 'documents',

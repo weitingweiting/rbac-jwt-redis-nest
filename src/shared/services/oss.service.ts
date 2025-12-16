@@ -10,7 +10,7 @@ import {
   getOSSDirectory,
   OSS_CONFIG,
   OSSFileType
-} from '../config/oss.config'
+} from '@/shared/config/oss.config'
 
 /**
  * OSS 签名参数接口

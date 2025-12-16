@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
   Query,
@@ -10,13 +11,13 @@ import {
   Inject,
   Req
 } from '@nestjs/common'
-import { OSSService } from '../../shared/services/oss.service'
-import { GetOSSSignatureDto, OSSCallbackDto } from '../../shared/dto/oss.dto'
-import { Public } from '../auth/decorators/public.decorator'
+import { OSSService } from '@/shared/services/oss.service'
+import { GetOSSSignatureDto, OSSCallbackDto } from '@/shared/dto/oss.dto'
+import { Public } from '@/modules/auth/decorators/public.decorator'
 import { Request } from 'express'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Project } from '../../shared/entities/project.entity'
+import { Project } from '@/shared/entities/project.entity'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { ConfigService } from '@nestjs/config'
@@ -37,9 +38,9 @@ export class OSSController {
 
   /**
    * 获取 OSS 上传签名
-   * GET /api/oss/signature?fileType=imgs&fileName=test.jpg&mimeType=image/jpeg
+   * GET /api/oss/signature?fileType=images&fileName=test.jpg&mimeType=image/jpeg
    */
-  @Post('signature')
+  @Get('signature')
   async getUploadSignature(@Query() query: GetOSSSignatureDto) {
     this.logger.info('获取上传签名', { query })
     return await this.ossService.getUploadSignature(query.fileType, query.fileName, query.mimeType)
@@ -99,7 +100,7 @@ export class OSSController {
     // 步骤 2：构建完整的文件 URL
     // ============================================
     // ⚠️ 重要说明：
-    // 1. OSS 只返回 object key（如 imgs/xxx.jpg），不返回完整URL
+    // 1. OSS 只返回 object key（如 images/xxx.jpg），不返回完整URL
     // 2. 后端需要根据 bucket + region + object 构建完整访问地址
     // 3. 必须使用 https 协议（OSS 服务器强制要求，与本地开发环境无关）
     // 4. 如果不使用回调（本地模式），前端需要自己构建URL：
@@ -186,12 +187,14 @@ export class OSSController {
   }
 
   /**
-   * 更新项目封面 URL
+   * 更新项目封面 URL 和场景 JSON
    * POST /api/oss/update-project-cover
    */
   @Post('update-project-cover')
-  async updateProjectCover(@Body() body: { projectId: string; coverUrl: string }) {
-    const { projectId, coverUrl } = body
+  async updateProjectCover(
+    @Body() body: { projectId: string; coverUrl: string; sceneJson?: string }
+  ) {
+    const { projectId, coverUrl, sceneJson } = body
 
     // 查找项目
     const project = await this.projectRepository.findOne({ where: { id: parseInt(projectId) } })
@@ -211,15 +214,22 @@ export class OSSController {
       }
     }
 
-    // 更新封面 URL
+    // 更新封面 URL 和场景 JSON
     project.coverUrl = coverUrl
+    if (sceneJson !== undefined) {
+      project.sceneJson = JSON.parse(sceneJson)
+    }
     await this.projectRepository.save(project)
 
-    this.logger.info('更新项目封面成功', { projectId })
+    this.logger.info('更新项目封面成功', {
+      projectId,
+      hasCoverUrl: !!coverUrl,
+      hasSceneJson: !!sceneJson
+    })
     return {
       success: true,
       message: '封面更新成功',
-      data: { coverUrl }
+      data: { coverUrl, sceneJson }
     }
   }
 

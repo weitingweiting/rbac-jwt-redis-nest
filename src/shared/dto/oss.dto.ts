@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional, IsString, IsMimeType } from 'class-validator'
-import { OSSFileType } from '../config/oss.config'
+import { OSSFileType } from '@/shared/config/oss.config'
 
 /**
  * 获取 OSS 上传签名 DTO
@@ -49,15 +49,4 @@ export class OSSCallbackDto {
   @IsOptional()
   @IsString()
   'imageInfo.format'?: string
-}
-
-/**
- * 更新项目封面 URL DTO
- */
-export class UpdateProjectCoverDto {
-  @IsString()
-  projectId!: string
-
-  @IsString()
-  coverUrl!: string
 }
