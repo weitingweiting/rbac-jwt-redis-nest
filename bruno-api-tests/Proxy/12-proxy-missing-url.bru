@@ -1,0 +1,31 @@
+meta {
+  name: 12-代理请求-缺少targetUrl失败
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{base_url}}/proxy
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "targetMethod": "GET"
+  }
+}
+
+tests {
+  test("状态码应为 400", function() {
+    expect(res.status).to.equal(400)
+  })
+  
+  test("应返回验证错误", function() {
+    expect(res.body.message).to.exist
+  })
+}

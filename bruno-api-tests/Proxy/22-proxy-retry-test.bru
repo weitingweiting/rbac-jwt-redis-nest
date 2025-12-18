@@ -1,0 +1,39 @@
+meta {
+  name: 22-测试重试机制-不稳定接口
+  type: http
+  seq: 22
+}
+
+post {
+  url: {{base_url}}/proxy
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "targetUrl": "{{base_url}}/proxy-test/unstable",
+    "targetMethod": "GET"
+  }
+}
+
+tests {
+  test("应该返回结果（可能成功或失败）", function() {
+    // 50% 概率成功，50% 概率失败
+    expect([200, 503]).to.include(res.status)
+  })
+}
+
+docs {
+  此接口有 50% 概率失败，用于测试重试机制。
+  
+  如果启用了重试（PROXY_MAX_RETRIES > 0），可能会在重试后成功。
+  
+  建议：
+  - 多次运行此测试观察成功/失败的比例
+  - 查看日志中的重试信息
+}

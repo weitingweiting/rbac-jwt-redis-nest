@@ -53,5 +53,29 @@ export const validationSchema = Joi.object({
     }),
   OSS_ACL: Joi.string().valid('private', 'public-read', 'public-read-write').default('public-read'),
   OSS_AUTH_V4: Joi.string().valid('true', 'false').default('true'),
-  OSS_LOCAL_MODE: Joi.string().valid('true', 'false').default('false')
+  OSS_LOCAL_MODE: Joi.string().valid('true', 'false').default('false'),
+
+  // 代理服务配置
+  PROXY_ALLOWED_DOMAINS: Joi.string()
+    .optional()
+    .allow('')
+    .custom((value, helpers) => {
+      if (value && process.env.NODE_ENV === 'production') {
+        // 生产环境建议配置白名单
+        if (!value.trim()) {
+          return helpers.warn('proxy.emptyWhitelist', {
+            message: '⚠️  生产环境建议配置 PROXY_ALLOWED_DOMAINS 白名单'
+          })
+        }
+      }
+      return value
+    }),
+  PROXY_TIMEOUT: Joi.number().min(1000).max(300000).default(30000).messages({
+    'number.min': 'PROXY_TIMEOUT 不能少于 1000 毫秒（1秒）',
+    'number.max': 'PROXY_TIMEOUT 不能超过 300000 毫秒（5分钟）'
+  }),
+  PROXY_MAX_RETRIES: Joi.number().min(0).max(5).default(0).messages({
+    'number.min': 'PROXY_MAX_RETRIES 不能为负数',
+    'number.max': 'PROXY_MAX_RETRIES 不建议超过 5 次'
+  })
 })

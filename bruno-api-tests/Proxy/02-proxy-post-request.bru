@@ -1,0 +1,41 @@
+meta {
+  name: 02-代理POST请求-成功
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/proxy
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "targetUrl": "https://jsonplaceholder.typicode.com/posts",
+    "targetMethod": "POST",
+    "targetData": {
+      "title": "Test Post",
+      "body": "This is a test post from proxy service",
+      "userId": 1
+    },
+    "targetHeaders": {
+      "Content-Type": "application/json"
+    }
+  }
+}
+
+tests {
+  test("状态码应为 200 或 201", function() {
+    expect([200, 201]).to.include(res.status)
+  })
+  
+  test("应返回创建的数据", function() {
+    expect(res.body).to.have.property('id')
+    expect(res.body.title).to.equal('Test Post')
+  })
+}

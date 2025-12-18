@@ -1,0 +1,28 @@
+meta {
+  name: 10-代理请求-无Token失败
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{base_url}}/proxy
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "targetUrl": "https://api.github.com/users/octocat",
+    "targetMethod": "GET"
+  }
+}
+
+tests {
+  test("状态码应为 401", function() {
+    expect(res.status).to.equal(401)
+  })
+  
+  test("应返回未授权错误", function() {
+    expect(res.body.message).to.exist
+  })
+}

@@ -16,7 +16,8 @@ import {
   databaseConfig,
   redisConfig,
   jwtConfig,
-  ossConfig
+  ossConfig,
+  proxyConfig
 } from './shared/config/env.config'
 import { validationSchema } from './shared/config/env.validation'
 import { getRedisConfig } from './shared/config/redis.config'
@@ -44,6 +45,7 @@ import { ProjectSpacesModule } from './modules/project-spaces/project-spaces.mod
 import { ProjectsModule } from './modules/projects/projects.module'
 import { ProjectAssetsModule } from './modules/project-assets/project-assets.module'
 import { OSSModule } from './modules/oss/oss.module'
+import { ProxyModule } from './modules/proxy/proxy.module'
 
 @Module({
   imports: [
@@ -51,7 +53,7 @@ import { OSSModule } from './modules/oss/oss.module'
       isGlobal: true,
       envFilePath: ['.env.local', '.env'], // 支持多个环境文件，优先级从左到右
       validationSchema, // 先用Joi 验证 envFilePath 指定的环境变量
-      load: [appConfig, databaseConfig, redisConfig, jwtConfig, ossConfig], // joi 验证通过后加载配置
+      load: [appConfig, databaseConfig, redisConfig, jwtConfig, ossConfig, proxyConfig], // joi 验证通过后，使用registerAs分配命名空间，并加载配置
       cache: true, // 缓存环境变量以提高性能
       expandVariables: true, // 支持变量展开 ${VAR}
       validationOptions: {
@@ -72,7 +74,8 @@ import { OSSModule } from './modules/oss/oss.module'
     ProjectSpacesModule,
     ProjectsModule,
     ProjectAssetsModule,
-    OSSModule
+    OSSModule,
+    ProxyModule
   ],
   controllers: [AppController],
   providers: [

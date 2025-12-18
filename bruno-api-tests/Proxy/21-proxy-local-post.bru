@@ -1,0 +1,36 @@
+meta {
+  name: 21-代理到本地POST接口-回显
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{base_url}}/proxy
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "targetUrl": "{{base_url}}/proxy-test/echo",
+    "targetMethod": "POST",
+    "targetData": {
+      "message": "Hello from proxy",
+      "timestamp": 1234567890
+    }
+  }
+}
+
+tests {
+  test("状态码应为 200", function() {
+    expect(res.status).to.equal(200)
+  })
+  
+  test("应回显请求数据", function() {
+    expect(res.body.data.receivedData.message).to.equal("Hello from proxy")
+  })
+}

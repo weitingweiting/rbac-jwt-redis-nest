@@ -39,6 +39,22 @@ export const jwtConfig = registerAs('jwt', () => ({
 }))
 
 /**
+ * 代理服务配置
+ */
+export const proxyConfig = registerAs('proxy', () => ({
+  // 允许的目标域名白名单（多个域名用逗号分隔）
+  // 支持精确匹配：api.example.com
+  // 支持通配符：*.example.com
+  // 留空表示允许所有域名（仅用于开发环境）
+  allowedDomains: process.env.PROXY_ALLOWED_DOMAINS || '',
+  // 请求超时时间（毫秒）
+  timeout: parseInt(process.env.PROXY_TIMEOUT || '30000', 10),
+  // 最大重试次数
+  // 注意：如果前端已配置定时刷新，建议设为 0，避免请求堆积造成雪崩
+  maxRetries: parseInt(process.env.PROXY_MAX_RETRIES || '0', 10)
+}))
+
+/**
  * 阿里云 OSS 配置
  */
 export const ossConfig = registerAs('oss', () => {

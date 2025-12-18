@@ -1,0 +1,36 @@
+meta {
+  name: 01-代理GET请求-成功
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/proxy
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "targetUrl": "https://api.github.com/users/octocat",
+    "targetMethod": "GET",
+    "targetHeaders": {
+      "Accept": "application/vnd.github.v3+json",
+      "User-Agent": "Bruno-Test"
+    }
+  }
+}
+
+tests {
+  test("状态码应为 200", function() {
+    expect(res.status).to.equal(200)
+  })
+  
+  test("应返回用户数据", function() {
+    expect(res.body).to.have.property('login')
+  })
+}
