@@ -309,6 +309,7 @@ export class ProxyService {
           errorMessage += ` - ${errorBody}`
         }
       } catch (e) {
+        console.log('🚀 ~ ProxyService ~ handleResponse ~ e:', e)
         // 忽略解析错误
       }
       throw new HttpException(errorMessage, response.status)

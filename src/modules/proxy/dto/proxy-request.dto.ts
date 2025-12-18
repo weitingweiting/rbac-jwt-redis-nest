@@ -24,7 +24,7 @@ export class ProxyRequestDto {
    * @example 'https://api.example.com/users'
    */
   @IsNotEmpty({ message: '目标URL不能为空' })
-  // @IsUrl({}, { message: '目标URL格式不正确' })
+  @IsUrl({ require_tld: false }, { message: '目标URL格式不正确' })
   targetUrl: string
 
   /**
