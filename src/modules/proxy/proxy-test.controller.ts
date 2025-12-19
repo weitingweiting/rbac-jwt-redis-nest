@@ -15,29 +15,65 @@ import { Public } from '@/modules/auth/decorators/public.decorator'
 @Public() // 测试接口不需要认证
 export class ProxyTestController {
   /**
-   * 测试成功响应
+   * 测试成功响应 - GET
    * GET /api/v1/proxy-test/success
    */
   @Get('success')
-  testSuccess() {
+  testSuccessGet() {
     return {
-      code: 0,
+      code: 200,
       message: '成功',
+      success: true,
       data: {
-        id: 1,
-        name: 'Test User',
-        email: 'test@example.com',
-        timestamp: Date.now()
+        dimensions: ['product', 'data1', 'data2'],
+        source: [
+          { product: 'Mon', data1: 120, data2: 130 },
+          { product: 'Tue', data1: 200, data2: 130 },
+          { product: 'Wed', data1: 150, data2: 312 },
+          { product: 'Thu', data1: 80, data2: 268 },
+          { product: 'Fri', data1: 70, data2: 155 },
+          { product: 'Sat', data1: 110, data2: 117 },
+          { product: 'Sun', data1: 130, data2: 160 },
+          { product: 'SunS', data1: 333, data2: 666 }
+        ]
       }
     }
   }
 
   /**
-   * 测试列表数据
+   * 测试成功响应 - POST
+   * POST /api/v1/proxy-test/success
+   */
+  @Post('success')
+  testSuccessPost(@Body() body?: any) {
+    console.log('🚀 ~ ProxyTestController ~ testSuccessPost ~ body:', body)
+
+    // 生成随机数据
+    const days = ['Mon1', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'SunS']
+    const randomSource = days.map((day) => ({
+      product: day,
+      data1: Math.floor(Math.random() * 300) + 50, // 50-350 之间的随机数
+      data2: Math.floor(Math.random() * 500) + 100 // 100-600 之间的随机数
+    }))
+
+    return {
+      code: 200,
+      message: '成功',
+      success: true,
+      data: {
+        dimensions: ['product', 'data1', 'data2'],
+        source: randomSource,
+        timestamp: Date.now() // 添加时间戳，方便确认每次请求都是新数据
+      }
+    }
+  }
+
+  /**
+   * 测试列表数据 - GET
    * GET /api/v1/proxy-test/list
    */
   @Get('list')
-  testList() {
+  testListGet() {
     return {
       code: 0,
       message: '成功',
@@ -45,6 +81,28 @@ export class ProxyTestController {
         total: 100,
         page: 1,
         pageSize: 10,
+        items: Array.from({ length: 10 }, (_, i) => ({
+          id: i + 1,
+          name: `User ${i + 1}`,
+          status: i % 2 === 0 ? 'active' : 'inactive'
+        }))
+      }
+    }
+  }
+
+  /**
+   * 测试列表数据 - POST
+   * POST /api/v1/proxy-test/list
+   */
+  @Post('list')
+  testListPost(@Body() body?: any) {
+    return {
+      code: 0,
+      message: '成功（POST）',
+      data: {
+        total: 100,
+        page: body?.page || 1,
+        pageSize: body?.pageSize || 10,
         items: Array.from({ length: 10 }, (_, i) => ({
           id: i + 1,
           name: `User ${i + 1}`,
