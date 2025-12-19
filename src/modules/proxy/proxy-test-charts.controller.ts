@@ -6,17 +6,17 @@ import { Public } from '@/modules/auth/decorators/public.decorator'
  * 用于开发阶段测试代理转发功能，模拟第三方服务的各种响应
  *
  * 使用方式：
- * 1. 前端配置 targetUrl: 'http://localhost:3000/api/v1/proxy-test/xxx'
+ * 1. 前端配置 targetUrl: 'http://localhost:3000/api/v1/proxy-test-charts/xxx'
  * 2. 通过代理服务转发到这些测试接口
  *
  * 注意：生产环境可以删除此控制器
  */
-@Controller('proxy-test')
+@Controller('proxy-test-charts')
 @Public() // 测试接口不需要认证
-export class ProxyTestController {
+export class ProxyTestChartsController {
   /**
    * 测试成功响应 - GET
-   * GET /api/v1/proxy-test/success
+   * GET /api/v1/proxy-test-charts/success
    */
   @Get('success')
   testSuccessGet() {
@@ -42,7 +42,7 @@ export class ProxyTestController {
 
   /**
    * 测试成功响应 - POST
-   * POST /api/v1/proxy-test/success
+   * POST /api/v1/proxy-test-charts/success
    */
   @Post('success')
   testSuccessPost(@Body() body?: any) {
@@ -70,12 +70,12 @@ export class ProxyTestController {
 
   /**
    * 测试列表数据 - GET
-   * GET /api/v1/proxy-test/list
+   * GET /api/v1/proxy-test-charts/list
    */
   @Get('list')
   testListGet() {
     return {
-      code: 0,
+      code: 200,
       message: '成功',
       data: {
         total: 100,
@@ -92,7 +92,7 @@ export class ProxyTestController {
 
   /**
    * 测试列表数据 - POST
-   * POST /api/v1/proxy-test/list
+   * POST /api/v1/proxy-test-charts/list
    */
   @Post('list')
   testListPost(@Body() body?: any) {
@@ -114,7 +114,7 @@ export class ProxyTestController {
 
   /**
    * 测试慢响应（5秒）
-   * GET /api/v1/proxy-test/slow
+   * GET /api/v1/proxy-test-charts/slow
    * 用于测试超时机制
    */
   @Get('slow')
@@ -129,7 +129,7 @@ export class ProxyTestController {
 
   /**
    * 测试极慢响应（40秒）
-   * GET /api/v1/proxy-test/very-slow
+   * GET /api/v1/proxy-test-charts/very-slow
    * 用于测试超时和重试机制
    */
   @Get('very-slow')
@@ -144,7 +144,7 @@ export class ProxyTestController {
 
   /**
    * 测试服务器错误
-   * GET /api/v1/proxy-test/error
+   * GET /api/v1/proxy-test-charts/error
    */
   @Get('error')
   testError() {
@@ -153,7 +153,7 @@ export class ProxyTestController {
 
   /**
    * 测试客户端错误
-   * GET /api/v1/proxy-test/bad-request
+   * GET /api/v1/proxy-test-charts/bad-request
    */
   @Get('bad-request')
   testBadRequest() {
@@ -162,7 +162,7 @@ export class ProxyTestController {
 
   /**
    * 测试未授权错误
-   * GET /api/v1/proxy-test/unauthorized
+   * GET /api/v1/proxy-test-charts/unauthorized
    */
   @Get('unauthorized')
   testUnauthorized() {
@@ -171,7 +171,7 @@ export class ProxyTestController {
 
   /**
    * 测试 POST 请求和数据回显
-   * POST /api/v1/proxy-test/echo
+   * POST /api/v1/proxy-test-charts/echo
    */
   @Post('echo')
   testEcho(@Body() body: any) {
@@ -190,7 +190,7 @@ export class ProxyTestController {
 
   /**
    * 测试创建资源
-   * POST /api/v1/proxy-test/create
+   * POST /api/v1/proxy-test-charts/create
    */
   @Post('create')
   testCreate(@Body() body: any) {
@@ -207,7 +207,7 @@ export class ProxyTestController {
 
   /**
    * 测试随机响应时间
-   * GET /api/v1/proxy-test/random
+   * GET /api/v1/proxy-test-charts/random
    * 响应时间：1-10秒
    */
   @Get('random')
@@ -226,7 +226,7 @@ export class ProxyTestController {
 
   /**
    * 测试大数据响应
-   * GET /api/v1/proxy-test/large-data
+   * GET /api/v1/proxy-test-charts/large-data
    * 用于测试大数据传输
    */
   @Get('large-data')
@@ -255,7 +255,7 @@ export class ProxyTestController {
 
   /**
    * 测试随机失败（50% 概率）
-   * GET /api/v1/proxy-test/unstable
+   * GET /api/v1/proxy-test-charts/unstable
    * 用于测试重试机制
    */
   @Get('unstable')
@@ -272,7 +272,7 @@ export class ProxyTestController {
 
   /**
    * 测试分页数据
-   * GET /api/v1/proxy-test/paginated?page=1&pageSize=10
+   * GET /api/v1/proxy-test-charts/paginated?page=1&pageSize=10
    */
   @Get('paginated')
   testPaginated() {

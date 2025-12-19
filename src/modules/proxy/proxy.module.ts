@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { ProxyController } from './proxy.controller'
-import { ProxyTestController } from './proxy-test.controller'
+import { ProxyTestChartsController } from './proxy-test-charts.controller'
 import { ProxyService } from './proxy.service'
 
 /**
@@ -8,7 +8,7 @@ import { ProxyService } from './proxy.service'
  * 提供统一的代理转发功能，用于将前端请求转发到第三方服务
  */
 @Module({
-  controllers: [ProxyController, ProxyTestController],
+  controllers: [ProxyController, ProxyTestChartsController],
   providers: [ProxyService],
   exports: [ProxyService]
 })
