@@ -123,4 +123,37 @@ export class ProjectsController {
       message: '删除项目成功'
     }
   }
+
+  /**
+   * 更新项目封面
+   * PUT /api/projects/:id/cover
+   */
+  @Put(':id/cover')
+  @RequirePermissions('project.update')
+  async updateCover(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { coverUrl: string; sceneJson?: string }
+  ) {
+    const project = await this.projectsService.updateCover(id, body.coverUrl, body.sceneJson)
+    return {
+      message: '更新封面成功',
+      data: {
+        coverUrl: project.coverUrl,
+        sceneJson: project.sceneJson
+      }
+    }
+  }
+
+  /**
+   * 删除项目封面
+   * DELETE /api/projects/:id/cover
+   */
+  @Delete(':id/cover')
+  @RequirePermissions('project.update')
+  async deleteCover(@Param('id', ParseIntPipe) id: number) {
+    await this.projectsService.deleteCover(id)
+    return {
+      message: '删除封面成功'
+    }
+  }
 }

@@ -271,4 +271,86 @@ export class OSSService {
       throw new BadRequestException('无效的 URL 格式')
     }
   }
+
+  /**
+   * 上传文件到 OSS
+   * @param objectKey OSS 对象键名（包含路径）
+   * @param buffer 文件内容（Buffer）
+   * @param options 上传选项
+   * @returns 上传结果（包含 URL）
+   */
+  async uploadFile(
+    objectKey: string,
+    buffer: Buffer,
+    options?: {
+      contentType?: string
+      cacheControl?: string
+      headers?: Record<string, string>
+    }
+  ): Promise<{ url: string; name: string }> {
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': options?.contentType || 'application/octet-stream',
+        'Cache-Control': options?.cacheControl || 'public, max-age=31536000',
+        ...(options?.headers || {})
+      }
+
+      const result = await this.client.put(objectKey, buffer, { headers })
+
+      this.logger.info('上传文件到 OSS 成功', {
+        objectKey,
+        size: buffer.length,
+        url: result.url
+      })
+
+      return {
+        url: result.url,
+        name: result.name
+      }
+    } catch (error) {
+      this.logger.error('上传文件到 OSS 失败', { objectKey, error })
+      throw new BadRequestException(`上传文件失败: ${error.message || '未知错误'}`)
+    }
+  }
+
+  /**
+   * 批量上传文件到 OSS
+   * @param files 文件列表 { objectKey, buffer, contentType }[]
+   * @returns 上传结果列表
+   */
+  async uploadFiles(
+    files: Array<{
+      objectKey: string
+      buffer: Buffer
+      contentType?: string
+    }>
+  ): Promise<Array<{ objectKey: string; url: string }>> {
+    const results: Array<{ objectKey: string; url: string }> = []
+    const uploadedKeys: string[] = []
+
+    try {
+      for (const file of files) {
+        const result = await this.uploadFile(file.objectKey, file.buffer, {
+          contentType: file.contentType
+        })
+
+        results.push({
+          objectKey: file.objectKey,
+          url: result.url
+        })
+        uploadedKeys.push(file.objectKey)
+      }
+
+      return results
+    } catch (error) {
+      // 上传失败，清理已上传的文件
+      if (uploadedKeys.length > 0) {
+        this.logger.warn('批量上传失败，清理已上传的文件', { count: uploadedKeys.length })
+        await this.deleteFiles(uploadedKeys).catch((cleanupError) => {
+          this.logger.error('清理失败文件时出错', cleanupError)
+        })
+      }
+      throw error
+    }
+  }
 }

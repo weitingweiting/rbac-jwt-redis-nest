@@ -15,9 +15,6 @@ import { OSSService } from '@/shared/services/oss.service'
 import { GetOSSSignatureDto, OSSCallbackDto } from '@/shared/dto/oss.dto'
 import { Public } from '@/modules/auth/decorators/public.decorator'
 import { Request } from 'express'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { Project } from '@/shared/entities/project.entity'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { ConfigService } from '@nestjs/config'
@@ -29,8 +26,6 @@ import { ConfigService } from '@nestjs/config'
 export class OSSController {
   constructor(
     private readonly ossService: OSSService,
-    @InjectRepository(Project)
-    private readonly projectRepository: Repository<Project>,
     private readonly configService: ConfigService,
     @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: Logger
@@ -184,84 +179,5 @@ export class OSSController {
     // ⚠️ 重要：OSS 会将此响应原样返回给前端
     // 前端的 await fetch(ossUrl) 拿到的就是这个 JSON
     return response
-  }
-
-  /**
-   * 更新项目封面 URL 和场景 JSON
-   * POST /api/oss/update-project-cover
-   */
-  @Post('update-project-cover')
-  async updateProjectCover(
-    @Body() body: { projectId: string; coverUrl: string; sceneJson?: string }
-  ) {
-    const { projectId, coverUrl, sceneJson } = body
-
-    // 查找项目
-    const project = await this.projectRepository.findOne({ where: { id: parseInt(projectId) } })
-    if (!project) {
-      throw new BadRequestException('项目不存在')
-    }
-
-    // 如果项目已有封面，删除旧的封面文件
-    if (project.coverUrl) {
-      try {
-        const oldObjectKey = this.ossService.extractObjectKeyFromUrl(project.coverUrl)
-        await this.ossService.deleteFile(oldObjectKey)
-        this.logger.info('删除旧封面', { oldObjectKey })
-      } catch (error) {
-        this.logger.warn('删除旧封面失败', { error })
-        // 不抛出异常，继续更新
-      }
-    }
-
-    // 更新封面 URL 和场景 JSON
-    project.coverUrl = coverUrl
-    if (sceneJson !== undefined) {
-      project.sceneJson = JSON.parse(sceneJson)
-    }
-    await this.projectRepository.save(project)
-
-    this.logger.info('更新项目封面成功', {
-      projectId,
-      hasCoverUrl: !!coverUrl,
-      hasSceneJson: !!sceneJson
-    })
-    return {
-      success: true,
-      message: '封面更新成功',
-      data: { coverUrl, sceneJson }
-    }
-  }
-
-  /**
-   * 删除项目封面
-   * POST /api/oss/delete-project-cover
-   */
-  @Post('delete-project-cover')
-  async deleteProjectCover(@Body() body: { projectId: string }) {
-    const { projectId } = body
-
-    const project = await this.projectRepository.findOne({ where: { id: parseInt(projectId) } })
-    if (!project) {
-      throw new BadRequestException('项目不存在')
-    }
-
-    if (!project.coverUrl) {
-      throw new BadRequestException('项目没有封面')
-    }
-
-    // 删除 OSS 文件
-    const objectKey = this.ossService.extractObjectKeyFromUrl(project.coverUrl)
-    await this.ossService.deleteFile(objectKey)
-
-    // 清空封面 URL
-    project.coverUrl = undefined
-    await this.projectRepository.save(project)
-
-    this.logger.info('删除项目封面成功', { projectId })
-    return {
-      success: true,
-      message: '封面删除成功'
-    }
   }
 }

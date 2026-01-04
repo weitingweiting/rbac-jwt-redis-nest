@@ -5,10 +5,11 @@ import { ProjectsController } from './projects.controller'
 import { Project } from '@/shared/entities/project.entity'
 import { ProjectSpace } from '@/shared/entities/project-space.entity'
 import { SharedModule } from '@/shared/shared.module'
+import { OSSService } from '@/shared/services/oss.service'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Project, ProjectSpace]), SharedModule],
-  providers: [ProjectsService],
+  providers: [ProjectsService, OSSService],
   controllers: [ProjectsController],
   exports: [ProjectsService]
 })
