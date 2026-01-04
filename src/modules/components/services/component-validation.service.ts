@@ -1,0 +1,193 @@
+import { Injectable, HttpStatus } from '@nestjs/common'
+import { BusinessException } from '@/shared/exceptions/business.exception'
+import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
+import * as AdmZip from 'adm-zip'
+import { ComponentMetaDto } from '../dto/component-meta.dto'
+import { plainToClass } from 'class-transformer'
+import { validate } from 'class-validator'
+import { COMPONENT_FILE_UPLOAD_RULES } from '../constants/validation-rules.constant'
+
+@Injectable()
+export class ComponentValidationService {
+  /**
+   * 验证上传的 ZIP 文件
+   */
+  async validateZipFile(file: Express.Multer.File): Promise<{
+    passed: boolean
+    warnings: string[]
+  }> {
+    const warnings: string[] = []
+
+    // 1. 验证文件类型
+    if (file.mimetype !== 'application/zip' && !file.originalname.endsWith('.zip')) {
+      throw new BusinessException(
+        '只支持 .zip 格式的文件',
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.INVALID_ZIP_FILE
+      )
+    }
+
+    // 2. 验证文件大小
+    if (file.size > COMPONENT_FILE_UPLOAD_RULES.MAX_ZIP_SIZE) {
+      throw new BusinessException(
+        `ZIP 文件大小不能超过 ${COMPONENT_FILE_UPLOAD_RULES.MAX_ZIP_SIZE / 1024 / 1024}MB`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.FILE_SIZE_EXCEEDED
+      )
+    }
+
+    // 3. 验证 ZIP 文件结构
+    try {
+      const zip = new AdmZip(file.buffer)
+      const entries = zip.getEntries()
+
+      // 检查是否包含 component.meta.json
+      const metaEntry = entries.find((entry) => entry.entryName === 'component.meta.json')
+      if (!metaEntry) {
+        throw new BusinessException(
+          'ZIP 文件中缺少 component.meta.json',
+          HttpStatus.BAD_REQUEST,
+          ERROR_CODES.META_JSON_NOT_FOUND
+        )
+      }
+
+      // 验证总文件数量
+      if (entries.length > COMPONENT_FILE_UPLOAD_RULES.MAX_FILE_COUNT) {
+        warnings.push(`文件数量较多（${entries.length}），建议精简组件资源`)
+      }
+
+      // 验证是否包含必要的文件类型
+      const hasJsFile = entries.some((entry) => entry.entryName.endsWith('.js'))
+      if (!hasJsFile) {
+        throw new BusinessException(
+          'ZIP 文件中缺少 JavaScript 入口文件',
+          HttpStatus.BAD_REQUEST,
+          ERROR_CODES.MISSING_REQUIRED_FILES
+        )
+      }
+
+      return { passed: true, warnings }
+    } catch (error: any) {
+      if (error instanceof BusinessException) {
+        throw error
+      }
+      throw new BusinessException(
+        'ZIP 文件损坏或格式不正确',
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.INVALID_ZIP_FILE
+      )
+    }
+  }
+
+  /**
+   * 解析并验证 component.meta.json
+   */
+  async parseAndValidateMetaJson(zipBuffer: Buffer): Promise<ComponentMetaDto> {
+    try {
+      const zip = new AdmZip(zipBuffer)
+      const metaEntry = zip.getEntry('component.meta.json')
+
+      if (!metaEntry) {
+        throw new BusinessException(
+          'ZIP 文件中缺少 component.meta.json',
+          HttpStatus.BAD_REQUEST,
+          ERROR_CODES.META_JSON_NOT_FOUND
+        )
+      }
+
+      // 解析 JSON
+      const metaContent = metaEntry.getData().toString('utf8')
+      let metaJson: any
+
+      try {
+        metaJson = JSON.parse(metaContent)
+      } catch (error) {
+        console.log('🚀 ~ ComponentValidationService ~ parseAndValidateMetaJson ~ error:', error)
+        throw new BusinessException(
+          'component.meta.json 格式不正确，请检查 JSON 语法',
+          HttpStatus.BAD_REQUEST,
+          ERROR_CODES.META_JSON_INVALID
+        )
+      }
+
+      // 转换为 DTO 并验证
+      const metaDto = plainToClass(ComponentMetaDto, metaJson)
+      const errors = await validate(metaDto)
+
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((error) => Object.values(error.constraints || {}).join(', '))
+          .join('; ')
+
+        throw new BusinessException(
+          `component.meta.json 验证失败: ${errorMessages}`,
+          HttpStatus.BAD_REQUEST,
+          ERROR_CODES.META_JSON_INVALID
+        )
+      }
+
+      return metaDto
+    } catch (error: any) {
+      if (error instanceof BusinessException) {
+        throw error
+      }
+      throw new BusinessException(
+        '解析 component.meta.json 失败',
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.META_JSON_INVALID
+      )
+    }
+  }
+
+  /**
+   * 验证 meta.json 中声明的文件是否存在
+   */
+  async validateMetaFiles(zipBuffer: Buffer, meta: ComponentMetaDto): Promise<void> {
+    const zip = new AdmZip(zipBuffer)
+    const entries = zip.getEntries()
+    const fileNames = entries.map((entry) => entry.entryName)
+
+    // 验证主入口文件
+    if (!fileNames.includes(meta.files.entry)) {
+      throw new BusinessException(
+        `主入口文件 ${meta.files.entry} 不存在`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.MISSING_REQUIRED_FILES
+      )
+    }
+
+    // 验证样式文件（可选）
+    if (meta.files.style && !fileNames.includes(meta.files.style)) {
+      throw new BusinessException(
+        `样式文件 ${meta.files.style} 不存在`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.MISSING_DECLARED_FILES
+      )
+    }
+
+    // 验证预览图（可选）
+    if (meta.files.preview && !fileNames.includes(meta.files.preview)) {
+      throw new BusinessException(
+        `预览图 ${meta.files.preview} 不存在`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.MISSING_DECLARED_FILES
+      )
+    }
+  }
+
+  /**
+   * 获取 ZIP 文件列表（用于生成资源清单）
+   */
+  getZipFileList(zipBuffer: Buffer): string[] {
+    const zip = new AdmZip(zipBuffer)
+    return zip.getEntries().map((entry) => entry.entryName)
+  }
+
+  /**
+   * 计算 ZIP 文件总大小
+   */
+  calculateZipSize(zipBuffer: Buffer): number {
+    const zip = new AdmZip(zipBuffer)
+    return zip.getEntries().reduce((total, entry) => total + entry.header.size, 0)
+  }
+}
