@@ -129,7 +129,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
    */
   async createVersion(
     createDto: CreateComponentVersionDto,
-    userId: string
+    userId: number
   ): Promise<ComponentVersion> {
     // 验证组件是否存在
     await this.componentsService.findOneComponent(createDto.componentId)

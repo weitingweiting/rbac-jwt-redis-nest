@@ -6,6 +6,9 @@ import { Permission } from '../entities/permission.entity'
 import { ProjectSpace } from '../entities/project-space.entity'
 import { Project } from '../entities/project.entity'
 import { ProjectAsset } from '../entities/project-asset.entity'
+import { ComponentCategory } from '../entities/component-category.entity'
+import { Component } from '../entities/component.entity'
+import { ComponentVersion } from '../entities/component-version.entity'
 
 /**
  * TypeORM 数据库配置工厂函数
@@ -46,7 +49,17 @@ export const getDatabaseConfig = () =>
         maxQueryExecutionTime: maxQueryTime, // 慢查询警告阈值
         logging: isProduction ? ['error'] : ['error', 'warn'], // 生产仅错误
         logger: 'advanced-console',
-        entities: [User, Role, Permission, ProjectSpace, Project, ProjectAsset],
+        entities: [
+          User,
+          Role,
+          Permission,
+          ProjectSpace,
+          Project,
+          ProjectAsset,
+          ComponentCategory,
+          Component,
+          ComponentVersion
+        ],
         // 🔥 自动重连配置
         retryAttempts, // 开发5次，生产10次
         retryDelay: 3000, // 每次重试延迟3秒

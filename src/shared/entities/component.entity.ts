@@ -28,7 +28,6 @@ import { ComponentVersion } from '@/shared/entities/component-version.entity'
 @Index(['componentId'], { unique: true }) // 明确标注唯一索引（主键已保证唯一）
 @Index(['classificationLevel1', 'classificationLevel2'])
 @Index(['publishedVersionCount']) // 用于查询可用组件
-@Index(['type'])
 export class Component {
   /**
    * 组件唯一标识（对应 meta.json 的 id 字段）- 主键
@@ -112,10 +111,10 @@ export class Component {
   publishedVersionCount: number
 
   /**
-   * 创建人ID（支持数字ID或字符串ID）
+   * 创建人ID
    */
-  @Column({ type: 'varchar', length: 50, nullable: true, name: 'created_by' })
-  createdBy: number | string | null
+  @Column({ type: 'int', nullable: true, name: 'created_by' })
+  createdBy: number | null
 
   /**
    * 创建人关系
@@ -125,10 +124,10 @@ export class Component {
   creator: User | null
 
   /**
-   * 更新人ID（支持数字ID或字符串ID）
+   * 更新人ID
    */
-  @Column({ type: 'varchar', length: 50, nullable: true, name: 'updated_by' })
-  updatedBy: number | string | null
+  @Column({ type: 'int', nullable: true, name: 'updated_by' })
+  updatedBy: number | null
 
   /**
    * 更新人关系

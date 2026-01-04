@@ -187,10 +187,10 @@ export class ComponentVersion extends BaseEntity {
   changelog: string | null
 
   /**
-   * 创建人ID（支持数字ID或字符串ID）
+   * 创建人ID
    */
-  @Column({ type: 'varchar', length: 50, nullable: true, name: 'created_by' })
-  createdBy: number | string | null
+  @Column({ type: 'int', nullable: true, name: 'created_by' })
+  createdBy: number | null
 
   /**
    * 创建人关系
@@ -200,10 +200,10 @@ export class ComponentVersion extends BaseEntity {
   creator: User | null
 
   /**
-   * 更新人ID（支持数字ID或字符串ID）
+   * 更新人ID
    */
-  @Column({ type: 'varchar', length: 50, nullable: true, name: 'updated_by' })
-  updatedBy: number | string | null
+  @Column({ type: 'int', nullable: true, name: 'updated_by' })
+  updatedBy: number | null
 
   /**
    * 更新人关系

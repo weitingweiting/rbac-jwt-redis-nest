@@ -8,11 +8,24 @@ import { Project } from '@/shared/entities/project.entity'
 import { ProjectAsset } from '@/shared/entities/project-asset.entity'
 import { getDatabaseConfig } from '@/shared/config/database.config'
 import { DatabaseHealthService } from '@/shared/services/database-health.service'
+import { ComponentCategory } from '@/shared/entities/component-category.entity'
+import { Component } from '@/shared/entities/component.entity'
+import { ComponentVersion } from '@/shared/entities/component-version.entity'
 
 @Module({
   imports: [
     getDatabaseConfig(),
-    TypeOrmModule.forFeature([User, Role, Permission, ProjectSpace, Project, ProjectAsset])
+    TypeOrmModule.forFeature([
+      User,
+      Role,
+      Permission,
+      ProjectSpace,
+      Project,
+      ProjectAsset,
+      ComponentCategory,
+      Component,
+      ComponentVersion
+    ])
   ],
   providers: [DatabaseHealthService],
   exports: [TypeOrmModule]

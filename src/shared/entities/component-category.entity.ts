@@ -7,7 +7,6 @@ import { User } from '@/shared/entities/user.entity'
  * 用于管理后台分类配置和校验分类有效性
  */
 @Entity('component_categories')
-@Index(['code'])
 @Index(['level'])
 @Index(['parentId'])
 export class ComponentCategory extends BaseEntity {

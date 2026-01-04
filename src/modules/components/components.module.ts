@@ -14,10 +14,17 @@ import { ComponentVersionsService } from './services/component-versions.service'
 import { ComponentUploadService } from './services/component-upload.service'
 import { ComponentValidationService } from './services/component-validation.service'
 
+// Controllers
+import { ComponentsController } from './controllers/components.controller'
+
+// External modules
+import { OSSModule } from '@/modules/oss/oss.module'
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([ComponentCategory, Component, ComponentVersion]),
-    SharedModule
+    SharedModule,
+    OSSModule
   ],
   providers: [
     ComponentCategoriesService,
@@ -26,7 +33,7 @@ import { ComponentValidationService } from './services/component-validation.serv
     ComponentUploadService,
     ComponentValidationService
   ],
-  controllers: [],
+  controllers: [ComponentsController],
   exports: [
     ComponentCategoriesService,
     ComponentsService,

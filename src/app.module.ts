@@ -46,6 +46,7 @@ import { ProjectsModule } from './modules/projects/projects.module'
 import { ProjectAssetsModule } from './modules/project-assets/project-assets.module'
 import { OSSModule } from './modules/oss/oss.module'
 import { ProxyModule } from './modules/proxy/proxy.module'
+import { ComponentsModule } from './modules/components/components.module'
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { ProxyModule } from './modules/proxy/proxy.module'
     ProjectSpacesModule,
     ProjectsModule,
     ProjectAssetsModule,
+    ComponentsModule,
     OSSModule,
     ProxyModule
   ],

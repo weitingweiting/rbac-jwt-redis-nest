@@ -120,7 +120,7 @@ export class ComponentsService {
    *
    * 正常业务流程请使用 createOrUpdateFromMeta()
    */
-  async createComponent(createDto: CreateComponentDto, userId: string): Promise<Component> {
+  async createComponent(createDto: CreateComponentDto, userId: number): Promise<Component> {
     // 检查 componentId 是否已存在
     const existingComponent = await this.findByComponentId(createDto.componentId)
     if (existingComponent) {
@@ -158,7 +158,7 @@ export class ComponentsService {
    */
   async createOrUpdateFromMeta(
     meta: ComponentMetaDto,
-    userId: string
+    userId: number
   ): Promise<{ component: Component; isNew: boolean }> {
     const existingComponent = await this.findByComponentId(meta.id)
 

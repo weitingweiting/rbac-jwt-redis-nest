@@ -34,7 +34,7 @@ export class ComponentUploadService {
    */
   async processUpload(
     file: Express.Multer.File,
-    userId: string
+    userId: number
   ): Promise<{
     component: any
     version: any
