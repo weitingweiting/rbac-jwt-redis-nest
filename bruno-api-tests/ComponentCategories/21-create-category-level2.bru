@@ -1,0 +1,72 @@
+meta {
+  name: 创建二级分类
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/component-categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "code": "test-category.sub",
+    "name": "测试子分类",
+    "level": 2,
+    "parentId": {{testParentCategoryId}},
+    "description": "这是一个测试用的二级分类",
+    "sortOrder": 1,
+    "isActive": true
+  }
+}
+
+tests {
+  test("状态码应为 200 或 201", function() {
+    expect([200, 201]).to.include(res.status);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.include("创建分类成功");
+  });
+
+  test("分类应为二级分类", function() {
+    const category = res.body.data;
+    expect(category.level).to.equal(2);
+    expect(category.parentId).to.not.be.null;
+  });
+
+  test("parentId 应与请求一致", function() {
+    const category = res.body.data;
+    const requestBody = JSON.parse(req.body);
+    expect(category.parentId).to.equal(requestBody.parentId);
+  });
+}
+
+docs {
+  # 创建二级分类测试
+  
+  ## 前提条件
+  
+  需要设置环境变量 testParentCategoryId 为一个存在的一级分类ID
+  
+  ## 请求说明
+  
+  二级分类特点：
+  - level 必须为 2
+  - 必须有 parentId
+  - parentId 指向的必须是一级分类
+  - code 建议格式: `parent.child`（如 chart.bar）
+  
+  ## 验证规则
+  
+  - 二级分类必须指定 parentId
+  - parentId 必须是有效的一级分类
+  - code 不能重复
+}

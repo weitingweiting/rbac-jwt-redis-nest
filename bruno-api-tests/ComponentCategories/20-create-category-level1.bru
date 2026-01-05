@@ -1,0 +1,78 @@
+meta {
+  name: 创建一级分类
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{baseUrl}}/component-categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "code": "test-category",
+    "name": "测试分类",
+    "level": 1,
+    "description": "这是一个测试用的一级分类",
+    "sortOrder": 99,
+    "isActive": true
+  }
+}
+
+tests {
+  test("状态码应为 200 或 201", function() {
+    expect([200, 201]).to.include(res.status);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.include("创建分类成功");
+  });
+
+  test("应返回创建的分类数据", function() {
+    const body = res.body;
+    expect(body).to.have.property("data");
+    expect(body.data).to.be.an("object");
+  });
+
+  test("分类应包含正确字段", function() {
+    const category = res.body.data;
+    expect(category.code).to.equal("test-category");
+    expect(category.name).to.equal("测试分类");
+    expect(category.level).to.equal(1);
+    expect(category.parentId).to.be.null;
+  });
+
+  test("分类应有ID和时间戳", function() {
+    const category = res.body.data;
+    expect(category).to.have.property("id");
+    expect(category).to.have.property("createdAt");
+  });
+}
+
+docs {
+  # 创建一级分类测试
+  
+  ## 请求说明
+  
+  一级分类特点：
+  - level 必须为 1
+  - 不能有 parentId
+  - code 应简洁（如 chart、form、container）
+  
+  ## 验证规则
+  
+  - code 不能重复
+  - name 不能为空
+  - level 必须为 1 或 2
+  
+  ## 注意事项
+  
+  测试完成后建议删除测试数据
+}

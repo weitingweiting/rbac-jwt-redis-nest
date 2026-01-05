@@ -1,0 +1,30 @@
+meta {
+  name: 51-get-overview-with-keyword
+  type: http
+  seq: 51
+}
+
+get {
+  url: {{baseUrl}}/components/overview?keyword=DDD
+  body: none
+  auth: bearer
+}
+
+params:query {
+  keyword: DDD
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: eq 获取组件总览成功
+}
+
+docs {
+  # 获取组件总览数据（带关键词筛选）
+  
+  测试搜索功能，只返回包含 "Bar" 的组件及其父级分类。
+}

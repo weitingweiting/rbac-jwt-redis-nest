@@ -1,0 +1,26 @@
+meta {
+  name: 52-get-overview-draft-only
+  type: http
+  seq: 52
+}
+
+get {
+  url: {{baseUrl}}/components/overview?status=draft
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: eq 获取组件总览成功
+}
+
+docs {
+  # 获取组件总览数据（仅草稿版本）
+  
+  只显示草稿状态的版本，用于查看未发布的内容。
+}

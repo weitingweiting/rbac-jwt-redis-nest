@@ -1,0 +1,26 @@
+meta {
+  name: 53-get-overview-latest-only
+  type: http
+  seq: 53
+}
+
+get {
+  url: {{baseUrl}}/components/overview?status=latest
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: eq 获取组件总览成功
+}
+
+docs {
+  # 获取组件总览数据（仅最新版本）
+  
+  只显示标记为最新的版本（isLatest=true），用于快速查看推荐版本。
+}

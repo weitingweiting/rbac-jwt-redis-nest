@@ -5,11 +5,19 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { Component } from '@/shared/entities/component.entity'
 import { ComponentVersion } from '@/shared/entities/component-version.entity'
+import { ComponentCategory } from '@/shared/entities/component-category.entity'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
-import { CreateComponentDto, UpdateComponentDto, QueryComponentDto } from '../dto/component.dto'
+import { UpdateComponentDto, QueryComponentDto } from '../dto/component.dto'
 import { PaginatedResponseDto } from '@/shared/dto/paginated-response.dto'
 import { ComponentMetaDto } from '../dto/component-meta.dto'
+import {
+  ComponentOverviewDto,
+  ICategoryNode,
+  IComponentNode,
+  IVersionNode,
+  OverviewTreeNode
+} from '../dto/component-overview.dto'
 
 @Injectable()
 export class ComponentsService {
@@ -18,6 +26,8 @@ export class ComponentsService {
     private componentRepository: Repository<Component>,
     @InjectRepository(ComponentVersion)
     private versionRepository: Repository<ComponentVersion>,
+    @InjectRepository(ComponentCategory)
+    private categoryRepository: Repository<ComponentCategory>,
     @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: Logger
   ) {}
@@ -110,44 +120,6 @@ export class ComponentsService {
   }
 
   /**
-   * 创建组件（不推荐直接使用）
-   *
-   * @deprecated 不应直接使用此方法创建组件。组件应该通过 createOrUpdateFromMeta() 从 meta.json 创建。
-   * 此方法保留仅用于以下特殊场景：
-   * - 测试场景
-   * - 数据迁移
-   * - 管理后台手动修复数据
-   *
-   * 正常业务流程请使用 createOrUpdateFromMeta()
-   */
-  async createComponent(createDto: CreateComponentDto, userId: number): Promise<Component> {
-    // 检查 componentId 是否已存在
-    const existingComponent = await this.findByComponentId(createDto.componentId)
-    if (existingComponent) {
-      throw new BusinessException(
-        `组件ID ${createDto.componentId} 已存在`,
-        HttpStatus.BAD_REQUEST,
-        ERROR_CODES.COMPONENT_ALREADY_EXISTS
-      )
-    }
-
-    const component = new Component()
-    component.componentId = createDto.componentId
-    component.name = createDto.name
-    component.description = createDto.description || null
-    component.classificationLevel1 = createDto.classificationLevel1
-    component.classificationLevel2 = createDto.classificationLevel2
-    component.classificationLevel1Name = createDto.classificationLevel1Name
-    component.classificationLevel2Name = createDto.classificationLevel2Name
-    component.thumbnailUrl = createDto.thumbnailUrl || null
-    component.isOfficial = createDto.isOfficial || false
-    component.createdBy = userId
-    component.updatedBy = userId
-
-    return await this.componentRepository.save(component)
-  }
-
-  /**
    * 从 meta.json 创建或更新组件
    * 用于组件上传服务（这是创建组件的唯一正确入口）
    *
@@ -155,6 +127,7 @@ export class ComponentsService {
    * - 只更新 Component 表的共享字段（name, description, classification）
    * - type, framework, author, license 等版本专属信息存储在 ComponentVersion 表
    * - 这样可以保证不同版本可以有不同的技术栈和维护者
+   * - 会验证分类信息是否存在，不存在则上传失败
    */
   async createOrUpdateFromMeta(
     meta: ComponentMetaDto,
@@ -338,5 +311,174 @@ export class ComponentsService {
    */
   async incrementUsedCount(componentId: string): Promise<void> {
     await this.componentRepository.increment({ componentId }, 'usedCount', 1)
+  }
+
+  /**
+   * 获取组件总览数据（树形结构）
+   * 用于管理员页面的树形表格展示
+   * 返回: 分类树 → 组件 → 版本 的4层嵌套结构
+   */
+  async getComponentOverview(query: ComponentOverviewDto): Promise<OverviewTreeNode[]> {
+    this.logger.info('获取组件总览数据', { query })
+
+    // 1. 获取所有分类（两级）
+    const categories = await this.categoryRepository.find({
+      where: { deletedAt: null },
+      order: { level: 'ASC', sortOrder: 'ASC', id: 'ASC' }
+    })
+
+    // 2. 获取所有组件
+    const componentsQuery = this.componentRepository
+      .createQueryBuilder('component')
+      .where('component.deletedAt IS NULL')
+
+    // 应用筛选条件
+    if (query.keyword) {
+      componentsQuery.andWhere(
+        '(component.name LIKE :keyword OR component.componentId LIKE :keyword OR component.description LIKE :keyword)',
+        { keyword: `%${query.keyword}%` }
+      )
+    }
+
+    componentsQuery.orderBy('component.createdAt', 'DESC')
+
+    const components = await componentsQuery.getMany()
+
+    // 3. 获取所有版本
+    const versionsQuery = this.versionRepository
+      .createQueryBuilder('version')
+      .where('version.deletedAt IS NULL')
+      .orderBy('version.createdAt', 'DESC')
+
+    // 应用版本状态筛选
+    if (query.status === 'draft') {
+      versionsQuery.andWhere('version.status = :status', { status: 'draft' })
+    } else if (query.status === 'published') {
+      versionsQuery.andWhere('version.status = :status', { status: 'published' })
+    } else if (query.status === 'latest') {
+      versionsQuery.andWhere('version.isLatest = :isLatest', { isLatest: true })
+    }
+
+    const versions = await versionsQuery.getMany()
+
+    // 4. 构建组件到版本的映射
+    const componentVersionsMap = new Map<string, IVersionNode[]>()
+    for (const version of versions) {
+      if (!componentVersionsMap.has(version.componentId)) {
+        componentVersionsMap.set(version.componentId, [])
+      }
+      componentVersionsMap.get(version.componentId)!.push({
+        key: `version-${version.id}`,
+        type: 'version',
+        id: version.id,
+        version: version.version,
+        status: version.status,
+        isLatest: version.isLatest,
+        fileSize: version.fileSize,
+        entryUrl: version.entryUrl,
+        styleUrl: version.styleUrl,
+        publishedAt: version.publishedAt?.toISOString(),
+        createdAt: version.createdAt.toISOString(),
+        updatedAt: version.updatedAt.toISOString()
+      })
+    }
+
+    // 5. 构建分类到组件的映射
+    const categoryComponentsMap = new Map<string, IComponentNode[]>()
+    for (const component of components) {
+      const categoryKey = `${component.classificationLevel1}-${component.classificationLevel2}`
+      if (!categoryComponentsMap.has(categoryKey)) {
+        categoryComponentsMap.set(categoryKey, [])
+      }
+
+      const componentVersions = componentVersionsMap.get(component.componentId) || []
+
+      categoryComponentsMap.get(categoryKey)!.push({
+        key: `component-${component.componentId}`,
+        type: 'component',
+        componentId: component.componentId,
+        name: component.name,
+        displayName: component.name,
+        description: component.description || undefined,
+        classificationLevel1: component.classificationLevel1,
+        classificationLevel1Name: component.classificationLevel1Name,
+        classificationLevel2: component.classificationLevel2,
+        classificationLevel2Name: component.classificationLevel2Name,
+        createdBy: component.createdBy,
+        createdAt: component.createdAt.toISOString(),
+        updatedAt: component.updatedAt.toISOString(),
+        publishedVersionCount: component.publishedVersionCount,
+        totalVersionCount: component.versionCount,
+        children: componentVersions
+      })
+    }
+
+    // 6. 构建完整的树形结构
+    const level1Categories = categories.filter((cat) => cat.level === 1)
+    const level2Categories = categories.filter((cat) => cat.level === 2)
+
+    // 构建二级分类到一级分类的映射
+    const level2ToLevel1Map = new Map<string, string>()
+    for (const level2 of level2Categories) {
+      if (level2.parentId) {
+        const parent = categories.find((c) => c.id === level2.parentId)
+        if (parent) {
+          level2ToLevel1Map.set(level2.code, parent.code)
+        }
+      }
+    }
+
+    // 构建树形结构
+    const tree: ICategoryNode[] = []
+
+    // 正常分类树构建
+    for (const level1Cat of level1Categories) {
+      const level1Node: ICategoryNode = {
+        key: `category-${level1Cat.id}`,
+        type: 'category',
+        level: 1,
+        id: level1Cat.id,
+        code: level1Cat.code,
+        name: level1Cat.name,
+        icon: level1Cat.icon,
+        description: level1Cat.description,
+        sortOrder: level1Cat.sortOrder,
+        children: []
+      }
+
+      // 找到该一级分类下的所有二级分类
+      const childLevel2Categories = level2Categories.filter((cat) => cat.parentId === level1Cat.id)
+
+      for (const level2Cat of childLevel2Categories) {
+        const categoryKey = `${level1Cat.code}-${level2Cat.code}`
+        const componentsInCategory = categoryComponentsMap.get(categoryKey) || []
+
+        const level2Node: ICategoryNode = {
+          key: `category-${level2Cat.id}`,
+          type: 'category',
+          level: 2,
+          id: level2Cat.id,
+          code: level2Cat.code,
+          name: level2Cat.name,
+          icon: level2Cat.icon,
+          description: level2Cat.description,
+          sortOrder: level2Cat.sortOrder,
+          children: componentsInCategory as any
+        }
+
+        level1Node.children!.push(level2Node)
+      }
+
+      tree.push(level1Node)
+    }
+
+    this.logger.info('组件总览数据构建完成', {
+      categoriesCount: categories.length,
+      componentsCount: components.length,
+      versionsCount: versions.length,
+      treeNodesCount: tree.length
+    })
+
+    return tree
   }
 }

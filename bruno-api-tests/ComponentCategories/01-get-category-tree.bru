@@ -1,0 +1,103 @@
+meta {
+  name: 获取分类树
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/component-categories/tree
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("状态码应为 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.equal("获取分类树成功");
+  });
+
+  test("应返回分类树数组", function() {
+    const body = res.body;
+    expect(body.data).to.be.an("array");
+  });
+
+  test("一级分类应包含必需字段", function() {
+    const body = res.body;
+    if (body.data.length > 0) {
+      const category = body.data[0];
+      expect(category).to.have.property("id");
+      expect(category).to.have.property("code");
+      expect(category).to.have.property("name");
+      expect(category).to.have.property("level");
+      expect(category.level).to.equal(1);
+    }
+  });
+
+  test("一级分类应包含 children 数组", function() {
+    const body = res.body;
+    if (body.data.length > 0) {
+      const category = body.data[0];
+      expect(category).to.have.property("children");
+      expect(category.children).to.be.an("array");
+    }
+  });
+
+  test("二级分类应有 parentId", function() {
+    const body = res.body;
+    if (body.data.length > 0 && body.data[0].children.length > 0) {
+      const child = body.data[0].children[0];
+      expect(child).to.have.property("parentId");
+      expect(child.level).to.equal(2);
+    }
+  });
+}
+
+docs {
+  # 获取分类树测试
+  
+  ## 返回结构示例
+  
+  ```json
+  {
+    "message": "获取分类树成功",
+    "data": [
+      {
+        "id": 1,
+        "code": "chart",
+        "name": "图表",
+        "level": 1,
+        "parentId": null,
+        "children": [
+          {
+            "id": 2,
+            "code": "chart.bar",
+            "name": "柱状图",
+            "level": 2,
+            "parentId": 1
+          },
+          {
+            "id": 3,
+            "code": "chart.line",
+            "name": "折线图",
+            "level": 2,
+            "parentId": 1
+          }
+        ]
+      }
+    ]
+  }
+  ```
+  
+  ## 用途
+  
+  1. **前端组件列表筛选**: 用于显示分类下拉框
+  2. **分类管理页面**: 显示完整的分类树结构
+}

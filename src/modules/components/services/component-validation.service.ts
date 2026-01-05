@@ -1,6 +1,11 @@
-import { Injectable, HttpStatus } from '@nestjs/common'
+import { Injectable, HttpStatus, Inject } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
+import { Logger } from 'winston'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
+import { ComponentCategory } from '@/shared/entities/component-category.entity'
 import { ComponentMetaDto } from '../dto/component-meta.dto'
 import { plainToClass } from 'class-transformer'
 import { validate } from 'class-validator'
@@ -9,6 +14,12 @@ import { ZipUtil } from '../utils/zip.util'
 
 @Injectable()
 export class ComponentValidationService {
+  constructor(
+    @InjectRepository(ComponentCategory)
+    private categoryRepository: Repository<ComponentCategory>,
+    @Inject(WINSTON_MODULE_PROVIDER)
+    private readonly logger: Logger
+  ) {}
   /**
    * 验证上传的 ZIP 文件
    */
@@ -67,7 +78,6 @@ export class ComponentValidationService {
 
       return { passed: true, warnings }
     } catch (error: any) {
-      console.log('🚀 ~ ComponentValidationService ~ validateZipFile ~ error:', error)
       if (error instanceof BusinessException) {
         throw error
       }
@@ -188,5 +198,53 @@ export class ComponentValidationService {
    */
   calculateZipSize(zipBuffer: Buffer): number {
     return ZipUtil.calculateSize(zipBuffer)
+  }
+
+  /**
+   * 验证分类信息是否存在
+   * @throws BusinessException 如果分类不存在
+   */
+  async validateClassification(level1Code: string, level2Code: string): Promise<void> {
+    // 查询一级分类
+    const level1Category = await this.categoryRepository.findOne({
+      where: {
+        code: level1Code,
+        level: 1,
+        isActive: true,
+        deletedAt: null
+      }
+    })
+
+    if (!level1Category) {
+      throw new BusinessException(
+        `一级分类 "${level1Code}" 不存在或未启用，请检查组件的分类配置`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.INVALID_CLASSIFICATION
+      )
+    }
+
+    // 查询二级分类（必须是该一级分类的子分类）
+    const level2Category = await this.categoryRepository.findOne({
+      where: {
+        code: level2Code,
+        level: 2,
+        parentId: level1Category.id,
+        isActive: true,
+        deletedAt: null
+      }
+    })
+
+    if (!level2Category) {
+      throw new BusinessException(
+        `二级分类 "${level1Code}-${level2Code}" 不存在或未启用，请检查组件的分类配置`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.INVALID_CLASSIFICATION
+      )
+    }
+
+    this.logger.debug('分类验证通过', {
+      level1: { code: level1Code, name: level1Category.name },
+      level2: { code: level2Code, name: level2Category.name }
+    })
   }
 }

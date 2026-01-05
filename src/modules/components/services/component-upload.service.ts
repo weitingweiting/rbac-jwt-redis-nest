@@ -62,10 +62,21 @@ export class ComponentUploadService {
       // 3. 验证 meta 中声明的文件是否存在
       await this.validationService.validateMetaFiles(file.buffer, meta)
 
-      // 4. 检查版本状态，决定是创建还是更新
+      // 4. 验证分类信息是否存在（在上传 OSS 之前验证，避免浪费存储资源）
+      await this.validationService.validateClassification(
+        meta.classification.level1,
+        meta.classification.level2
+      )
+
+      this.logger.info('分类验证通过', {
+        level1: meta.classification.level1,
+        level2: meta.classification.level2
+      })
+
+      // 5. 检查版本状态，决定是创建还是更新
       const versionCheck = await this.checkVersionStatus(meta.id, meta.version)
 
-      // 5. 上传文件到 OSS
+      // 6. 上传文件到 OSS
       const ossBasePath = this.generateOSSPath(meta.id, meta.version)
       this.logger.info('开始上传文件到 OSS', { ossBasePath })
 
@@ -75,10 +86,10 @@ export class ComponentUploadService {
         fileCount: Object.keys(uploadedFiles).length
       })
 
-      // 6. 创建或更新组件记录
+      // 7. 创建或更新组件记录（分类验证已在步骤4完成）
       const { component, isNew } = await this.componentsService.createOrUpdateFromMeta(meta, userId)
 
-      // 7. 创建版本记录（包含版本专属信息）
+      // 8. 创建版本记录（包含版本专属信息）
       const versionDto: CreateComponentVersionDto = {
         componentId: component.componentId, // 使用组件主键 componentId（string）
         version: meta.version,

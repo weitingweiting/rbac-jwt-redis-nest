@@ -1,0 +1,91 @@
+meta {
+  name: 50-get-overview
+  type: http
+  seq: 50
+}
+
+get {
+  url: {{baseUrl}}/components/overview
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: eq 获取组件总览成功
+  res.body.data: isArray
+}
+
+docs {
+  # 获取组件总览数据（树形结构）
+  
+  ## 功能说明
+  获取完整的组件树形数据：分类（L1） → 分类（L2） → 组件 → 版本
+  
+  ## 权限要求
+  - component.read
+  
+  ## 查询参数
+  - keyword: 搜索关键词（可选，模糊匹配 name/componentId/description）
+  - status: 版本状态筛选（可选，draft/published/latest）
+  
+  ## 返回结构
+  ```json
+  {
+    "message": "获取组件总览成功",
+    "data": [
+      {
+        "key": "category-1",
+        "type": "category",
+        "level": 1,
+        "name": "图表",
+        "code": "chart",
+        "children": [
+          {
+            "key": "category-2",
+            "type": "category",
+            "level": 2,
+            "name": "柱状图",
+            "code": "bar",
+            "children": [
+              {
+                "key": "component-BarChart",
+                "type": "component",
+                "componentId": "BarChart",
+                "name": "柱状图",
+                "publishedVersionCount": 2,
+                "children": [
+                  {
+                    "key": "version-1",
+                    "type": "version",
+                    "version": "1.0.0",
+                    "status": "published",
+                    "isLatest": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+  ```
+  
+  ## 测试场景
+  - ✅ 无筛选条件：获取完整树形数据
+  - ✅ keyword 筛选：只显示匹配的组件及其父级分类
+  - ✅ status=draft：只显示草稿版本的组件
+  - ✅ status=published：只显示已发布版本的组件
+  - ✅ status=latest：只显示最新版本
+  
+  ## 设计用途
+  用于管理员页面的 n-data-table 树形表格展示，支持：
+  - 树形展开/折叠
+  - 客户端搜索筛选
+  - 行内操作（发布、设为最新、删除）
+}

@@ -16,6 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { ComponentsService } from '../services/components.service'
 import { ComponentUploadService } from '../services/component-upload.service'
 import { QueryComponentDto } from '../dto/component.dto'
+import { ComponentOverviewDto } from '../dto/component-overview.dto'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
@@ -43,10 +44,34 @@ export class ComponentsController {
   @Get()
   @RequirePermissions('component.read')
   async findAll(@Query() query: QueryComponentDto) {
+    console.log('🚀 ~ ComponentsController ~ findAll ~ query:', query)
     const result = await this.componentsService.findAllWithPagination(query)
     return {
       message: '获取组件列表成功',
       ...result
+    }
+  }
+
+  /**
+   * 获取组件总览（树形结构）
+   * GET /api/components/overview?keyword=xxx&status=draft&framework=Vue 3
+   *
+   * 用于管理员页面的树形表格展示
+   * 返回完整的分类树 → 组件 → 版本的4层嵌套结构
+   *
+   * 树形结构：
+   * - Level 1: 一级分类（如：图表）
+   * - Level 2: 二级分类（如：柱状图）
+   * - Level 3: 组件（如：BarChart）
+   * - Level 4: 版本（如：v1.2.0）
+   */
+  @Get('overview')
+  @RequirePermissions('component.read')
+  async getOverview(@Query() query: ComponentOverviewDto) {
+    const tree = await this.componentsService.getComponentOverview(query)
+    return {
+      message: '获取组件总览成功',
+      data: tree
     }
   }
 
