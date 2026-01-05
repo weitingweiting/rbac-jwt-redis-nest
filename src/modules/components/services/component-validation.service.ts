@@ -1,11 +1,11 @@
 import { Injectable, HttpStatus } from '@nestjs/common'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
-import * as AdmZip from 'adm-zip'
 import { ComponentMetaDto } from '../dto/component-meta.dto'
 import { plainToClass } from 'class-transformer'
 import { validate } from 'class-validator'
 import { COMPONENT_FILE_UPLOAD_RULES } from '../constants/validation-rules.constant'
+import { ZipUtil } from '../utils/zip.util'
 
 @Injectable()
 export class ComponentValidationService {
@@ -38,11 +38,10 @@ export class ComponentValidationService {
 
     // 3. 验证 ZIP 文件结构
     try {
-      const zip = new AdmZip(file.buffer)
-      const entries = zip.getEntries()
+      const entries = ZipUtil.getCleanEntries(file.buffer)
 
-      // 检查是否包含 component.meta.json
-      const metaEntry = entries.find((entry) => entry.entryName === 'component.meta.json')
+      // 检查是否包含 component.meta.json（可能在根目录或子目录中）
+      const metaEntry = ZipUtil.findMetaEntry(entries)
       if (!metaEntry) {
         throw new BusinessException(
           'ZIP 文件中缺少 component.meta.json',
@@ -68,6 +67,7 @@ export class ComponentValidationService {
 
       return { passed: true, warnings }
     } catch (error: any) {
+      console.log('🚀 ~ ComponentValidationService ~ validateZipFile ~ error:', error)
       if (error instanceof BusinessException) {
         throw error
       }
@@ -84,8 +84,10 @@ export class ComponentValidationService {
    */
   async parseAndValidateMetaJson(zipBuffer: Buffer): Promise<ComponentMetaDto> {
     try {
-      const zip = new AdmZip(zipBuffer)
-      const metaEntry = zip.getEntry('component.meta.json')
+      const entries = ZipUtil.getCleanEntries(zipBuffer)
+
+      // 查找 component.meta.json（可能在根目录或子目录中）
+      const metaEntry = ZipUtil.findMetaEntry(entries)
 
       if (!metaEntry) {
         throw new BusinessException(
@@ -143,12 +145,11 @@ export class ComponentValidationService {
    * 验证 meta.json 中声明的文件是否存在
    */
   async validateMetaFiles(zipBuffer: Buffer, meta: ComponentMetaDto): Promise<void> {
-    const zip = new AdmZip(zipBuffer)
-    const entries = zip.getEntries()
+    const entries = ZipUtil.getCleanEntries(zipBuffer)
     const fileNames = entries.map((entry) => entry.entryName)
 
     // 验证主入口文件
-    if (!fileNames.includes(meta.files.entry)) {
+    if (!ZipUtil.fileExists(fileNames, meta.files.entry)) {
       throw new BusinessException(
         `主入口文件 ${meta.files.entry} 不存在`,
         HttpStatus.BAD_REQUEST,
@@ -157,7 +158,7 @@ export class ComponentValidationService {
     }
 
     // 验证样式文件（可选）
-    if (meta.files.style && !fileNames.includes(meta.files.style)) {
+    if (meta.files.style && !ZipUtil.fileExists(fileNames, meta.files.style)) {
       throw new BusinessException(
         `样式文件 ${meta.files.style} 不存在`,
         HttpStatus.BAD_REQUEST,
@@ -166,7 +167,7 @@ export class ComponentValidationService {
     }
 
     // 验证预览图（可选）
-    if (meta.files.preview && !fileNames.includes(meta.files.preview)) {
+    if (meta.files.preview && !ZipUtil.fileExists(fileNames, meta.files.preview)) {
       throw new BusinessException(
         `预览图 ${meta.files.preview} 不存在`,
         HttpStatus.BAD_REQUEST,
@@ -179,15 +180,13 @@ export class ComponentValidationService {
    * 获取 ZIP 文件列表（用于生成资源清单）
    */
   getZipFileList(zipBuffer: Buffer): string[] {
-    const zip = new AdmZip(zipBuffer)
-    return zip.getEntries().map((entry) => entry.entryName)
+    return ZipUtil.getFileList(zipBuffer)
   }
 
   /**
    * 计算 ZIP 文件总大小
    */
   calculateZipSize(zipBuffer: Buffer): number {
-    const zip = new AdmZip(zipBuffer)
-    return zip.getEntries().reduce((total, entry) => total + entry.header.size, 0)
+    return ZipUtil.calculateSize(zipBuffer)
   }
 }

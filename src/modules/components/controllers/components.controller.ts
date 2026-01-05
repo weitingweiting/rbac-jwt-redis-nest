@@ -125,6 +125,7 @@ export class ComponentsController {
           framework: result.version.framework
         },
         isNewComponent: result.isNewComponent,
+        isNewVersion: result.isNewVersion,
         warnings: result.warnings
       }
     }

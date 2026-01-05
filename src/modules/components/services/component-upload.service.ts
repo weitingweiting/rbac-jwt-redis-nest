@@ -3,14 +3,13 @@ import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
-import * as AdmZip from 'adm-zip'
-import { ComponentMetaDto } from '../dto/component-meta.dto'
 import { ComponentValidationService } from './component-validation.service'
 import { ComponentsService } from './components.service'
 import { ComponentVersionsService } from './component-versions.service'
 import { CreateComponentVersionDto } from '../dto/component-version.dto'
 import { VersionStatus } from '../constants/version-status.enum'
 import { OSSService } from '@/shared/services/oss.service'
+import { ZipUtil } from '../utils/zip.util'
 
 /**
  * 组件上传服务
@@ -39,6 +38,7 @@ export class ComponentUploadService {
     component: any
     version: any
     isNewComponent: boolean
+    isNewVersion: boolean
     warnings: string[]
   }> {
     this.logger.info('开始处理组件上传', {
@@ -49,7 +49,7 @@ export class ComponentUploadService {
 
     try {
       // 1. 验证 ZIP 文件
-      const { warnings } = await this.validationService.validateZipFile(file)
+      const { passed: _passed, warnings } = await this.validationService.validateZipFile(file)
 
       // 2. 解析并验证 meta.json
       const meta = await this.validationService.parseAndValidateMetaJson(file.buffer)
@@ -62,30 +62,14 @@ export class ComponentUploadService {
       // 3. 验证 meta 中声明的文件是否存在
       await this.validationService.validateMetaFiles(file.buffer, meta)
 
-      // 4. 检查组件和版本是否已存在
-      // 注意：需要先查找组件，因为 findByComponentAndVersion 需要数据库主键 ID
-      const existingComponent = await this.componentsService.findByComponentId(meta.id)
-
-      if (existingComponent) {
-        const existingVersion = await this.versionsService.findByComponentAndVersion(
-          existingComponent.componentId, // 使用组件主键 componentId（string）
-          meta.version
-        )
-
-        if (existingVersion) {
-          throw new BusinessException(
-            `组件 ${meta.id} 的版本 ${meta.version} 已存在，请修改版本号后重新上传`,
-            HttpStatus.BAD_REQUEST,
-            ERROR_CODES.COMPONENT_VERSION_ALREADY_EXISTS
-          )
-        }
-      }
+      // 4. 检查版本状态，决定是创建还是更新
+      const versionCheck = await this.checkVersionStatus(meta.id, meta.version)
 
       // 5. 上传文件到 OSS
       const ossBasePath = this.generateOSSPath(meta.id, meta.version)
       this.logger.info('开始上传文件到 OSS', { ossBasePath })
 
-      const uploadedFiles = await this.uploadToOSS(file.buffer, ossBasePath, meta)
+      const uploadedFiles = await this.uploadToOSS(file.buffer, ossBasePath)
 
       this.logger.info('文件上传 OSS 成功', {
         fileCount: Object.keys(uploadedFiles).length
@@ -116,26 +100,50 @@ export class ComponentUploadService {
         license: meta?.license ?? 'MIT',
         // 其他字段
         fileSize: this.validationService.calculateZipSize(file.buffer),
-        assetsManifest: { files: this.validationService.getZipFileList(file.buffer) },
+        assetsManifest: { files: Object.keys(uploadedFiles) }, // 使用实际上传的文件列表（已移除 dist/ 前缀）
         metaJson: meta as any,
         status: VersionStatus.DRAFT // 默认为草稿状态
       }
 
-      const version = await this.versionsService.createVersion(versionDto, userId)
+      let version
+      if (versionCheck.isUpdate) {
+        // 更新草稿版本
+        version = await this.versionsService.updateVersion(
+          versionCheck.versionId!,
+          versionDto,
+          userId
+        )
+        this.logger.info('草稿版本更新完成', {
+          componentId: component.componentId,
+          versionId: version.id,
+          version: version.version
+        })
+      } else {
+        // 创建新版本
+        version = await this.versionsService.createVersion(versionDto, userId)
+        this.logger.info('新版本创建完成', {
+          componentId: component.componentId,
+          versionId: version.id,
+          version: version.version
+        })
+      }
 
       this.logger.info('组件上传处理完成', {
-        componentId: component.componentId, // 组件主键（如 "BarChart"）
+        componentId: component.componentId,
         versionId: version.id,
-        isNewComponent: isNew
+        isNewComponent: isNew,
+        isNewVersion: !versionCheck.isUpdate
       })
 
       return {
         component,
         version,
         isNewComponent: isNew,
+        isNewVersion: !versionCheck.isUpdate,
         warnings
       }
     } catch (error: any) {
+      console.log('🚀 ~ ComponentUploadService ~ processUpload ~ error:', error)
       this.logger.error('组件上传处理失败', {
         userId,
         fileName: file.originalname,
@@ -143,6 +151,49 @@ export class ComponentUploadService {
         stack: error.stack
       })
       throw error
+    }
+  }
+
+  /**
+   * 检查版本状态，决定是创建还是更新
+   */
+  private async checkVersionStatus(
+    componentId: string,
+    version: string
+  ): Promise<{ isUpdate: boolean; versionId?: number }> {
+    const existingComponent = await this.componentsService.findByComponentId(componentId)
+
+    // 组件不存在，返回创建操作
+    if (!existingComponent) {
+      return { isUpdate: false }
+    }
+
+    const existingVersion = await this.versionsService.findByComponentAndVersion(
+      existingComponent.componentId,
+      version
+    )
+
+    // 版本不存在，返回创建操作
+    if (!existingVersion) {
+      return { isUpdate: false }
+    }
+
+    // 版本存在，检查状态
+    if (existingVersion.status === VersionStatus.DRAFT) {
+      // 草稿状态，允许更新
+      this.logger.info('检测到草稿版本，允许更新', {
+        componentId,
+        version,
+        versionId: existingVersion.id
+      })
+      return { isUpdate: true, versionId: existingVersion.id }
+    } else {
+      // 已发布状态，不允许覆盖
+      throw new BusinessException(
+        `组件 ${componentId} 的版本 ${version} 已发布，无法覆盖。请修改版本号后重新上传`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.COMPONENT_VERSION_ALREADY_EXISTS
+      )
     }
   }
 
@@ -166,23 +217,20 @@ export class ComponentUploadService {
    */
   private async uploadToOSS(
     zipBuffer: Buffer,
-    ossBasePath: string,
-    meta: ComponentMetaDto
+    ossBasePath: string
   ): Promise<Record<string, string>> {
-    console.log('🚀 ~ ComponentUploadService ~ uploadToOSS ~ meta:', meta)
-    const zip = new AdmZip(zipBuffer)
-    const entries = zip.getEntries()
     const uploadedFiles: Record<string, string> = {}
 
     try {
+      // 获取清理后的文件列表（已移除第一层目录）
+      const cleanEntries = ZipUtil.getCleanEntriesWithoutPrefix(zipBuffer)
+
       // 准备所有待上传的文件
-      const filesToUpload = entries
-        .filter((entry) => !entry.isDirectory)
-        .map((entry) => ({
-          objectKey: `${ossBasePath}/${entry.entryName}`,
-          buffer: entry.getData(),
-          contentType: this.getMimeType(entry.entryName)
-        }))
+      const filesToUpload = cleanEntries.map(({ cleanPath, entry }) => ({
+        objectKey: `${ossBasePath}/${cleanPath}`,
+        buffer: entry.getData(),
+        contentType: this.getMimeType(entry.entryName)
+      }))
 
       this.logger.info('准备上传文件到 OSS', {
         basePath: ossBasePath,
@@ -194,7 +242,7 @@ export class ComponentUploadService {
 
       // 构建文件名到 URL 的映射
       for (const result of results) {
-        // 从完整路径中提取文件名
+        // 从完整路径中提取文件名（移除 basePath 前缀）
         const fileName = result.objectKey.replace(`${ossBasePath}/`, '')
         uploadedFiles[fileName] = result.url
       }

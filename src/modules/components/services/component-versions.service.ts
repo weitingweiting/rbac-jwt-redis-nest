@@ -166,10 +166,17 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
    * 更新版本
    * @param id - ComponentVersion.id (数据库主键 number)
    */
-  async updateVersion(id: number, updateDto: UpdateComponentVersionDto): Promise<ComponentVersion> {
+  async updateVersion(
+    id: number,
+    updateDto: UpdateComponentVersionDto,
+    userId?: number
+  ): Promise<ComponentVersion> {
     const version = await this.findOneVersion(id)
 
     Object.assign(version, updateDto)
+    if (userId) {
+      version.updatedBy = userId
+    }
     return await this.versionRepository.save(version)
   }
 
