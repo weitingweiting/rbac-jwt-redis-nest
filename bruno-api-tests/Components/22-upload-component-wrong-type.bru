@@ -1,0 +1,36 @@
+meta {
+  name: 上传组件 - 文件类型错误
+  type: http
+  seq: 22
+}
+
+post {
+  url: {{baseUrl}}/components/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(/path/to/file.txt)
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("非ZIP文件返回400", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body).to.have.property('message');
+  });
+}
+
+docs {
+  测试说明：
+  - 上传非 ZIP 格式的文件（如 .txt, .jpg 等）
+  - 验证文件类型校验是否生效
+}

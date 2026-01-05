@@ -1,0 +1,48 @@
+meta {
+  name: 上传组件 - 更新现有组件（新版本）
+  type: http
+  seq: 24
+}
+
+post {
+  url: {{baseUrl}}/components/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(/path/to/component-v2.zip)
+}
+
+assert {
+  res.status: in [200, 201]
+}
+
+tests {
+  test("上传新版本成功", function() {
+    expect(res.status).to.be.oneOf([200, 201]);
+    expect(res.body).to.have.property('data');
+  });
+  
+  test("返回数据标识为旧组件", function() {
+    const data = res.body.data;
+    expect(data.isNewComponent).to.be.false;
+    expect(data.component.versionCount).to.be.greaterThan(1);
+    
+    console.log("========== 新版本上传成功 ==========");
+    console.log("组件ID:", data.component.componentId);
+    console.log("新版本:", data.version.version);
+    console.log("总版本数:", data.component.versionCount);
+  });
+}
+
+docs {
+  测试说明：
+  - 准备同一个组件的不同版本（meta.json 中 id 相同，version 不同）
+  - 先上传 v1.0.0，再上传 v2.0.0
+  - 验证版本累加逻辑
+}

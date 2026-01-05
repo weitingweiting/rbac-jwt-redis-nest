@@ -1,0 +1,41 @@
+meta {
+  name: 获取组件列表 - 仅已发布
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/components?hasPublishedVersion=true&page=1&limit=10
+  body: none
+  auth: bearer
+}
+
+params:query {
+  hasPublishedVersion: true
+  page: 1
+  limit: 10
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("筛选已发布组件成功", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('data');
+    expect(res.body.data).to.be.an('array');
+  });
+  
+  test("所有组件都有已发布版本", function() {
+    if (res.body.data.length > 0) {
+      res.body.data.forEach(component => {
+        expect(component.publishedVersionCount).to.be.greaterThan(0);
+      });
+    }
+  });
+}

@@ -1,0 +1,37 @@
+meta {
+  name: 上传组件 - 缺少meta文件
+  type: http
+  seq: 23
+}
+
+post {
+  url: {{baseUrl}}/components/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(/path/to/component-no-meta.zip)
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("缺少meta文件返回400", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body).to.have.property('message');
+    expect(res.body.message).to.include('component.meta.json');
+  });
+}
+
+docs {
+  测试说明：
+  - 准备一个不包含 component.meta.json 的 ZIP 文件
+  - 验证必要文件检查是否生效
+}

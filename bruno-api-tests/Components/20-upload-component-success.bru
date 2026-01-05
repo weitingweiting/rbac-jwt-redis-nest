@@ -1,0 +1,94 @@
+meta {
+  name: 上传组件 - 成功（新组件）
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{baseUrl}}/components/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(/Users/weiting/code/nari-work/agile-big-design/packages/agile-big-design-remote-comps/DDD/dist 3.zip)
+}
+
+assert {
+  res.status: in [200, 201]
+}
+
+tests {
+  test("上传组件成功", function() {
+    expect(res.status).to.be.oneOf([200, 201]);
+    expect(res.body).to.have.property('message');
+    expect(res.body).to.have.property('data');
+  });
+  
+  test("返回组件和版本信息", function() {
+    const data = res.body.data;
+  
+    console.log('返回组件和版本信息:',data)
+    
+    // 组件信息
+    expect(data).to.have.property('component');
+    expect(data.component).to.have.property('componentId');
+    expect(data.component).to.have.property('name');
+    expect(data.component).to.have.property('description');
+    expect(data.component).to.have.property('classificationLevel1');
+    expect(data.component).to.have.property('classificationLevel2');
+    expect(data.component).to.have.property('versionCount');
+    expect(data.component).to.have.property('publishedVersionCount');
+    
+    // 版本信息
+    expect(data).to.have.property('version');
+    expect(data.version).to.have.property('id');
+    expect(data.version).to.have.property('version');
+    expect(data.version).to.have.property('status');
+    expect(data.version).to.have.property('type');
+    expect(data.version).to.have.property('framework');
+    
+    // 其他信息
+    expect(data).to.have.property('isNewComponent');
+    expect(data.isNewComponent).to.be.a('boolean');
+    expect(data).to.have.property('warnings');
+    expect(data.warnings).to.be.an('array');
+    
+    console.log("========== 上传成功 ==========");
+    console.log("组件ID:", data.component.componentId);
+    console.log("版本:", data.version.version);
+    console.log("是否新组件:", data.isNewComponent);
+    console.log("警告:", data.warnings);
+  });
+  
+  // 保存组件ID供后续测试使用
+  if (res.status === 200 || res.status === 201) {
+    bru.setVar("lastUploadedComponentId", res.body.data.component.componentId);
+    bru.setVar("lastUploadedVersionId", res.body.data.version.id);
+  }
+}
+
+docs {
+  上传要求：
+  1. 文件必须是 ZIP 格式
+  2. 文件大小不超过 50MB
+  3. ZIP 包根目录必须包含 component.meta.json
+  4. meta.json 必须包含以下必填字段：
+     - id (组件ID)
+     - name (组件名称)
+     - version (版本号，语义化版本)
+     - classification.level1 (一级分类)
+     - classification.level2 (二级分类)
+     - files.entry (入口文件路径)
+     - build.buildTime (构建时间)
+  
+  测试步骤：
+  1. 准备符合规范的组件 ZIP 包
+  2. 修改 body:multipart-form 中的文件路径
+  3. 确保当前用户有 component.create 权限
+  4. 执行测试
+}

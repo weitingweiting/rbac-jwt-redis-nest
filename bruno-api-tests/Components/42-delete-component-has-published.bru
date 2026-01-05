@@ -1,0 +1,33 @@
+meta {
+  name: 删除组件 - 有已发布版本（应失败）
+  type: http
+  seq: 42
+}
+
+delete {
+  url: {{baseUrl}}/components/PublishedComponent
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("有已发布版本无法删除", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body).to.have.property('message');
+    expect(res.body.message).to.include('已发布');
+  });
+}
+
+docs {
+  测试说明：
+  - 请将 'PublishedComponent' 替换为有已发布版本的组件ID
+  - 或先发布一个组件版本后再测试此接口
+}

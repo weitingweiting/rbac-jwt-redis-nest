@@ -1,0 +1,48 @@
+meta {
+  name: 获取组件列表 - 基础查询
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/components?page=1&limit=10
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  limit: 10
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("获取组件列表成功", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('message');
+    expect(res.body).to.have.property('data');
+    expect(res.body).to.have.property('total');
+    expect(res.body).to.have.property('page');
+    expect(res.body).to.have.property('limit');
+    expect(res.body.data).to.be.an('array');
+  });
+  
+  test("响应数据结构正确", function() {
+    if (res.body.data.length > 0) {
+      const component = res.body.data[0];
+      expect(component).to.have.property('componentId');
+      expect(component).to.have.property('name');
+      expect(component).to.have.property('classificationLevel1');
+      expect(component).to.have.property('classificationLevel2');
+      expect(component).to.have.property('versionCount');
+      expect(component).to.have.property('publishedVersionCount');
+    }
+  });
+}

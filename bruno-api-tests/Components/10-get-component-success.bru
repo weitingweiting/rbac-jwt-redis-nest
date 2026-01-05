@@ -1,0 +1,62 @@
+meta {
+  name: 获取组件详情 - 成功
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/components/TestComponent
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: in [200, 404]
+}
+
+tests {
+  test("请求执行成功", function() {
+    expect(res.status).to.be.oneOf([200, 404]);
+  });
+  
+  test("如果组件存在，返回完整数据", function() {
+    if (res.status === 200) {
+      expect(res.body).to.have.property('message');
+      expect(res.body).to.have.property('data');
+      
+      const component = res.body.data;
+      expect(component).to.have.property('componentId');
+      expect(component).to.have.property('name');
+      expect(component).to.have.property('description');
+      expect(component).to.have.property('classificationLevel1');
+      expect(component).to.have.property('classificationLevel2');
+      expect(component).to.have.property('classificationLevel1Name');
+      expect(component).to.have.property('classificationLevel2Name');
+      expect(component).to.have.property('versionCount');
+      expect(component).to.have.property('publishedVersionCount');
+      expect(component).to.have.property('usedCount');
+      expect(component).to.have.property('thumbnailUrl');
+      expect(component).to.have.property('isOfficial');
+      expect(component).to.have.property('versions');
+      
+      console.log("组件详情:", JSON.stringify(component, null, 2));
+    }
+  });
+  
+  test("如果组件不存在，返回404", function() {
+    if (res.status === 404) {
+      expect(res.body).to.have.property('message');
+    }
+  });
+}
+
+docs {
+  注意事项：
+  - 请将 'TestComponent' 替换为实际存在的组件ID
+  - 或者先运行上传测试创建组件后再测试此接口
+  - componentId 区分大小写
+}

@@ -1,0 +1,36 @@
+meta {
+  name: 上传组件 - 文件过大
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/components/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(/path/to/large-file.zip)
+}
+
+assert {
+  res.status: eq 413
+}
+
+tests {
+  test("文件过大返回413", function() {
+    expect(res.status).to.equal(413);
+    expect(res.body).to.have.property('message');
+  });
+}
+
+docs {
+  测试说明：
+  - 准备一个超过 50MB 的 ZIP 文件
+  - 验证文件大小限制是否生效
+}

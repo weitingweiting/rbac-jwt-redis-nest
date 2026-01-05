@@ -1,0 +1,71 @@
+meta {
+  name: 完整流程测试 - 组件管理
+  type: http
+  seq: 100
+}
+
+post {
+  url: {{baseUrl}}/components/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(/path/to/test-component.zip)
+}
+
+assert {
+  res.status: in [200, 201]
+}
+
+script:pre-request {
+  console.log("========== 开始完整流程测试 ==========");
+  console.log("1. 上传组件");
+}
+
+tests {
+  // 步骤1: 上传组件
+  test("步骤1: 上传组件成功", function() {
+    expect(res.status).to.be.oneOf([200, 201]);
+    expect(res.body.data).to.have.property('component');
+    expect(res.body.data).to.have.property('version');
+    
+    const componentId = res.body.data.component.componentId;
+    const versionId = res.body.data.version.id;
+    
+    bru.setVar("testComponentId", componentId);
+    bru.setVar("testVersionId", versionId);
+    
+    console.log("✅ 步骤1完成: 组件已上传");
+    console.log("   组件ID:", componentId);
+    console.log("   版本ID:", versionId);
+  });
+}
+
+docs {
+  完整流程测试步骤：
+  
+  1. 上传组件（当前测试）
+  2. 查询组件列表（验证出现在列表中）
+  3. 获取组件详情（验证数据完整性）
+  4. 上传新版本（验证版本累加）
+  5. 发布版本（如有发布接口）
+  6. 删除组件（验证删除逻辑）
+  
+  执行方式：
+  - 可以将此测试拆分为多个独立测试
+  - 或使用 Bruno 的测试套件功能顺序执行
+  - 建议在独立的测试环境中执行
+  
+  准备工作：
+  1. 准备测试用的组件 ZIP 包
+  2. 确保用户有所有必需权限：
+     - component.read
+     - component.create
+     - component.delete
+  3. 确保数据库为空或可以接受测试数据
+}

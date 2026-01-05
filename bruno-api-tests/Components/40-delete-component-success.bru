@@ -1,0 +1,50 @@
+meta {
+  name: 删除组件 - 成功
+  type: http
+  seq: 40
+}
+
+delete {
+  url: {{baseUrl}}/components/{{lastUploadedComponentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: in [200, 400, 404]
+}
+
+tests {
+  test("删除请求执行", function() {
+    expect(res.status).to.be.oneOf([200, 400, 404]);
+    expect(res.body).to.have.property('message');
+  });
+  
+  test("删除成功或返回合理错误", function() {
+    if (res.status === 200) {
+      console.log("✅ 删除组件成功");
+    } else if (res.status === 400) {
+      console.log("❌ 无法删除：组件可能有已发布版本");
+      expect(res.body.message).to.include('已发布');
+    } else if (res.status === 404) {
+      console.log("❌ 组件不存在");
+    }
+  });
+}
+
+docs {
+  删除限制：
+  - 只能删除没有已发布版本的组件（publishedVersionCount = 0）
+  - 删除是软删除，数据库中仍保留记录
+  - 删除会级联软删除所有关联的版本记录
+  
+  测试步骤：
+  1. 确保变量 lastUploadedComponentId 已设置
+  2. 或手动替换 URL 中的组件ID
+  3. 确保组件没有已发布的版本
+  4. 确保当前用户有 component.delete 权限
+}
