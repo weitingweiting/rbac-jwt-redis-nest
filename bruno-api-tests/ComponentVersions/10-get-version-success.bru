@@ -1,0 +1,50 @@
+meta {
+  name: 查询版本详情（成功）
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/component-versions/{{testVersionId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("状态码应为 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.equal("获取版本详情成功");
+  });
+
+  test("应包含版本数据", function() {
+    const body = res.body;
+    expect(body).to.have.property("data");
+    expect(body.data).to.be.an("object");
+  });
+
+  test("版本对象应包含完整字段", function() {
+    const version = res.body.data;
+    expect(version).to.have.property("id");
+    expect(version).to.have.property("componentId");
+    expect(version).to.have.property("version");
+    expect(version).to.have.property("status");
+    expect(version).to.have.property("isLatest");
+    expect(version).to.have.property("entryUrl");
+    expect(version).to.have.property("entryFile");
+    expect(version).to.have.property("ossBasePath");
+    expect(version).to.have.property("buildTime");
+    expect(version).to.have.property("buildHash");
+    expect(version).to.have.property("cliVersion");
+    expect(version).to.have.property("type");
+    expect(version).to.have.property("framework");
+    expect(version).to.have.property("metaJson");
+  });
+}

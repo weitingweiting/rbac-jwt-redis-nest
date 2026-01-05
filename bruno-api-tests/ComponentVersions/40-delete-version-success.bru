@@ -1,0 +1,50 @@
+meta {
+  name: 删除版本（成功）
+  type: http
+  seq: 40
+}
+
+delete {
+  url: {{baseUrl}}/component-versions/{{testVersionIdToDelete}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("状态码应为 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.include("删除成功");
+  });
+}
+
+docs {
+  # 删除版本测试
+  
+  ## 前提条件
+  
+  需要一个可删除的版本：
+  
+  ```bash
+  # 设置环境变量
+  testVersionIdToDelete=<要删除的版本ID>
+  ```
+  
+  ## 预期行为
+  
+  1. 软删除版本（设置 deleted_at）
+  2. 更新组件的版本计数
+  3. 如果是 published 版本，publishedVersionCount -1
+  
+  ## 注意事项
+  
+  - 这是软删除，数据不会真正删除
+  - 如果删除的是推荐版本，需要手动设置新的推荐版本
+}

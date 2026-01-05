@@ -1,0 +1,105 @@
+meta {
+  name: 完整流程测试（上传→发布→推荐→删除）
+  type: http
+  seq: 100
+}
+
+post {
+  url: {{baseUrl}}/component-versions/integration-test
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # 完整流程集成测试
+  
+  此测试需要手动执行以下步骤验证完整流程：
+  
+  ## 测试步骤
+  
+  ### 1. 上传组件（创建 draft 版本）
+  
+  ```bash
+  # 使用 Components 目录下的上传测试
+  # 20-upload-component-success.bru
+  POST /api/components/upload
+  ```
+  
+  记录返回的 versionId（假设为 123）
+  
+  ### 2. 查询版本详情
+  
+  ```bash
+  GET /api/component-versions/123
+  ```
+  
+  验证：
+  - status = 'draft'
+  - isLatest = false
+  - publishedAt = null
+  
+  ### 3. 发布版本
+  
+  ```bash
+  POST /api/component-versions/123/publish
+  ```
+  
+  验证：
+  - status = 'published'
+  - publishedAt 有值
+  - 组件的 publishedVersionCount +1
+  
+  ### 4. 设置为推荐版本
+  
+  ```bash
+  POST /api/component-versions/123/set-latest
+  ```
+  
+  验证：
+  - isLatest = true
+  - 同组件其他版本的 isLatest = false
+  
+  ### 5. 查询组件列表（验证推荐版本）
+  
+  ```bash
+  GET /api/components?hasPublishedVersion=true
+  ```
+  
+  验证：
+  - 返回的组件应使用刚设置的推荐版本
+  
+  ### 6. 删除版本
+  
+  ```bash
+  DELETE /api/component-versions/123
+  ```
+  
+  验证：
+  - 版本被软删除
+  - 组件的版本计数更新
+  
+  ### 7. 验证删除后状态
+  
+  ```bash
+  GET /api/component-versions/123
+  ```
+  
+  应返回 404
+  
+  ## 预期结果
+  
+  所有步骤都应成功执行，验证版本管理的完整生命周期：
+  
+  draft → published → latest → deleted
+  
+  ## 数据清理
+  
+  测试完成后，如果需要清理数据：
+  
+  1. 删除测试组件：`DELETE /api/components/{componentId}`
+  2. 这将级联删除所有版本
+}

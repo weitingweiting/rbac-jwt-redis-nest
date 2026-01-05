@@ -1,0 +1,60 @@
+meta {
+  name: 设置推荐版本（成功）
+  type: http
+  seq: 30
+}
+
+post {
+  url: {{baseUrl}}/component-versions/{{testPublishedVersionId}}/set-latest
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("状态码应为 200 或 201", function() {
+    expect([200, 201]).to.include(res.status);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.include("推荐版本设置成功");
+  });
+
+  test("应返回版本数据", function() {
+    const body = res.body;
+    expect(body).to.have.property("data");
+  });
+
+  test("isLatest 应为 true", function() {
+    const version = res.body.data;
+    expect(version.isLatest).to.equal(true);
+  });
+}
+
+docs {
+  # 设置推荐版本测试
+  
+  ## 前提条件
+  
+  需要一个 published 状态的版本：
+  
+  ```bash
+  # 设置环境变量
+  testPublishedVersionId=<published版本的ID>
+  ```
+  
+  ## 预期行为
+  
+  1. 当前版本的 is_latest 设为 true
+  2. 同组件其他版本的 is_latest 设为 false
+  3. 前端画布将使用此版本
+  
+  ## 注意事项
+  
+  - 只有 published 状态的版本才能设为推荐
+  - 同一组件只能有一个推荐版本
+}

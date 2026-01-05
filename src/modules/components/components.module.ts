@@ -16,6 +16,7 @@ import { ComponentValidationService } from './services/component-validation.serv
 
 // Controllers
 import { ComponentsController } from './controllers/components.controller'
+import { ComponentVersionsController } from './controllers/component-versions.controller'
 
 // External modules
 import { OSSModule } from '@/modules/oss/oss.module'
@@ -33,7 +34,7 @@ import { OSSModule } from '@/modules/oss/oss.module'
     ComponentUploadService,
     ComponentValidationService
   ],
-  controllers: [ComponentsController],
+  controllers: [ComponentsController, ComponentVersionsController],
   exports: [
     ComponentCategoriesService,
     ComponentsService,

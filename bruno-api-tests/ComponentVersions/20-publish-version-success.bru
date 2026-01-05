@@ -1,0 +1,62 @@
+meta {
+  name: 发布版本（成功）
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{baseUrl}}/component-versions/{{testDraftVersionId}}/publish
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("状态码应为 200 或 201", function() {
+    expect([200, 201]).to.include(res.status);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.include("发布成功");
+  });
+
+  test("应返回版本数据", function() {
+    const body = res.body;
+    expect(body).to.have.property("data");
+  });
+
+  test("版本状态应为 published", function() {
+    const version = res.body.data;
+    expect(version.status).to.equal("published");
+  });
+
+  test("应有发布时间", function() {
+    const version = res.body.data;
+    expect(version).to.have.property("publishedAt");
+    expect(version.publishedAt).to.not.be.null;
+  });
+}
+
+docs {
+  # 发布版本测试
+  
+  ## 前提条件
+  
+  需要一个 draft 状态的版本。可以通过上传组件创建：
+  
+  ```bash
+  # 设置环境变量
+  testDraftVersionId=<draft版本的ID>
+  ```
+  
+  ## 预期行为
+  
+  1. 版本状态从 draft 变为 published
+  2. 设置 publishedAt 时间戳
+  3. 组件的 publishedVersionCount +1
+  4. 版本变为可用（前端可见）
+}

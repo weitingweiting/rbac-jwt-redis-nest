@@ -1,0 +1,40 @@
+meta {
+  name: 仅查询推荐版本
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/components/{{testComponentId}}/versions?isLatest=true&page=1&limit=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("状态码应为 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.equal("获取版本列表成功");
+  });
+
+  test("所有版本的 isLatest 应为 true", function() {
+    const body = res.body;
+    if (body.data.length > 0) {
+      body.data.forEach(version => {
+        expect(version.isLatest).to.equal(true);
+      });
+    }
+  });
+
+  test("推荐版本应最多只有一个", function() {
+    const body = res.body;
+    expect(body.data.length).to.be.at.most(1);
+  });
+}

@@ -1,0 +1,52 @@
+meta {
+  name: 基础版本列表查询
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/components/{{testComponentId}}/versions?page=1&limit=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("状态码应为 200", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("应返回成功消息", function() {
+    const body = res.body;
+    expect(body.message).to.equal("获取版本列表成功");
+  });
+
+  test("应包含分页信息", function() {
+    const body = res.body;
+    expect(body).to.have.property("data");
+    expect(body).to.have.property("total");
+    expect(body).to.have.property("page");
+    expect(body).to.have.property("limit");
+  });
+
+  test("data 应为数组", function() {
+    const body = res.body;
+    expect(body.data).to.be.an("array");
+  });
+
+  test("版本对象应包含必需字段", function() {
+    const body = res.body;
+    if (body.data.length > 0) {
+      const version = body.data[0];
+      expect(version).to.have.property("id");
+      expect(version).to.have.property("componentId");
+      expect(version).to.have.property("version");
+      expect(version).to.have.property("status");
+      expect(version).to.have.property("isLatest");
+      expect(version).to.have.property("entryUrl");
+    }
+  });
+}

@@ -1,0 +1,27 @@
+meta {
+  name: 查询不存在的版本
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/component-versions/999999
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("状态码应为 404", function() {
+    expect(res.status).to.equal(404);
+  });
+
+  test("应返回错误信息", function() {
+    const body = res.body;
+    expect(body).to.have.property("message");
+    expect(body.message).to.include("找不到");
+  });
+}
