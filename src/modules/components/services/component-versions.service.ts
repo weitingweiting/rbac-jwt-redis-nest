@@ -234,6 +234,29 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         publishedCount
       })
 
+      // 3. 如果是该组件的第一个发布版本，自动设为推荐版本
+      if (publishedCount === 1) {
+        this.logger.info('检测到首个发布版本，自动设为推荐版本', {
+          componentId: version.componentId,
+          versionId: id
+        })
+
+        try {
+          await this.setLatestVersion(version.componentId, id)
+          this.logger.info('首个发布版本已自动设为推荐版本', {
+            componentId: version.componentId,
+            versionId: id
+          })
+        } catch (error: any) {
+          // 设置推荐版失败不影响发布流程，只记录警告
+          this.logger.warn('自动设置推荐版本失败', {
+            componentId: version.componentId,
+            versionId: id,
+            error: error.message
+          })
+        }
+      }
+
       return version
     } catch (error: any) {
       await queryRunner.rollbackTransaction()
@@ -245,6 +268,83 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         `发布版本失败: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
         ERROR_CODES.COMPONENT_VERSION_PUBLISH_FAILED
+      )
+    } finally {
+      await queryRunner.release()
+    }
+  }
+
+  /**
+   * 撤回发布（published → draft）
+   * 重要：需要更新 publishedVersionCount
+   * @param id - ComponentVersion.id (数据库主键 number)
+   */
+  async unpublishVersion(id: number): Promise<ComponentVersion> {
+    const version = await this.findOneVersion(id)
+
+    if (version.status === VersionStatus.DRAFT) {
+      throw new BusinessException(
+        '该版本已经是草稿状态',
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.COMPONENT_VERSION_ALREADY_DRAFT
+      )
+    }
+
+    // 检查是否是推荐版本
+    if (version.isLatest) {
+      throw new BusinessException(
+        '推荐版本不能撤回发布，请先设置其他版本为推荐版',
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.COMPONENT_VERSION_IS_LATEST
+      )
+    }
+
+    // 使用事务确保数据一致性
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+
+    try {
+      // 1. 更新版本状态
+      version.status = VersionStatus.DRAFT
+      version.publishedAt = null
+      await queryRunner.manager.save(version)
+
+      // 2. 在事务内部直接更新 Component 表的发布版本计数
+      const publishedCount = await queryRunner.manager.count(ComponentVersion, {
+        where: {
+          componentId: version.componentId,
+          status: VersionStatus.PUBLISHED,
+          deletedAt: null as any
+        }
+      })
+
+      await queryRunner.manager.update(
+        'Component',
+        { componentId: version.componentId },
+        { publishedVersionCount: publishedCount }
+      )
+
+      await queryRunner.commitTransaction()
+
+      this.logger.info('版本撤回发布成功', {
+        versionId: id,
+        componentId: version.componentId,
+        version: version.version,
+        publishedCount
+      })
+
+      return version
+    } catch (error: any) {
+      await queryRunner.rollbackTransaction()
+      this.logger.error('撤回版本发布失败', {
+        versionId: id,
+        error: error.message
+      })
+      throw new BusinessException(
+        `撤回版本发布失败: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        ERROR_CODES.COMPONENT_VERSION_UNPUBLISH_FAILED
       )
     } finally {
       await queryRunner.release()

@@ -12,8 +12,6 @@ import { ComponentVersionsService } from '../services/component-versions.service
 import { QueryComponentVersionDto } from '../dto/component-version.dto'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
-import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
-import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 
 /**
  * 组件版本管理控制器
@@ -80,22 +78,52 @@ export class ComponentVersionsController {
    * 1. 将版本状态从 draft 改为 published
    * 2. 更新组件的 publishedVersionCount
    * 3. 设置 publishedAt 时间戳
+   * 4. 如果是首个发布版本，自动设为推荐版本
    *
    * 权限要求：component.publish（需要审核权限）
    *
    * @param versionId - 版本ID（数据库主键，number）
-   * @param currentUser - 当前用户信息
    */
   @Post('component-versions/:versionId/publish')
   @RequirePermissions('component.publish')
-  async publishVersion(
-    @Param('versionId', ParseIntPipe) versionId: number,
-    @CurrentUser() currentUser: CurrentUserDto
-  ) {
+  async publishVersion(@Param('versionId', ParseIntPipe) versionId: number) {
     const version = await this.versionsService.publishVersion(versionId)
 
     return {
       message: '版本发布成功',
+      data: {
+        id: version.id,
+        componentId: version.componentId,
+        version: version.version,
+        status: version.status,
+        publishedAt: version.publishedAt
+      }
+    }
+  }
+
+  /**
+   * 撤回发布（published → draft）
+   * POST /api/component-versions/:versionId/unpublish
+   *
+   * 功能：
+   * 1. 将版本状态从 published 改回 draft
+   * 2. 更新组件的 publishedVersionCount（减1）
+   * 3. 清空 publishedAt 时间戳
+   *
+   * 限制：
+   * - 不能撤回推荐版本（isLatest=true），需先设置其他版本为推荐版
+   *
+   * 权限要求：component.publish
+   *
+   * @param versionId - 版本ID（数据库主键，number）
+   */
+  @Post('component-versions/:versionId/unpublish')
+  @RequirePermissions('component.publish')
+  async unpublishVersion(@Param('versionId', ParseIntPipe) versionId: number) {
+    const version = await this.versionsService.unpublishVersion(versionId)
+
+    return {
+      message: '版本撤回发布成功',
       data: {
         id: version.id,
         componentId: version.componentId,
@@ -121,14 +149,10 @@ export class ComponentVersionsController {
    * 权限要求：component.publish
    *
    * @param versionId - 版本ID（数据库主键，number）
-   * @param currentUser - 当前用户信息
    */
   @Post('component-versions/:versionId/set-latest')
   @RequirePermissions('component.publish')
-  async setLatestVersion(
-    @Param('versionId', ParseIntPipe) versionId: number,
-    @CurrentUser() currentUser: CurrentUserDto
-  ) {
+  async setLatestVersion(@Param('versionId', ParseIntPipe) versionId: number) {
     // 先查询版本获取 componentId
     const versionInfo = await this.versionsService.findOneVersion(versionId)
 
