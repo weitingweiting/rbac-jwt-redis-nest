@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, MaxLength, IsEnum } from 'class-validator'
 import { PartialType } from '@nestjs/mapped-types'
-import { Type } from 'class-transformer'
+import { Transform } from 'class-transformer'
 import { PaginationDto } from '@/shared/dto/pagination.dto'
 
 /**
@@ -73,13 +73,13 @@ export class QueryComponentDto extends PaginationDto {
   classificationLevel2?: string
 
   @IsOptional()
+  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : undefined))
   @IsBoolean()
-  @Type(() => Boolean)
   hasPublishedVersion?: boolean
 
   @IsOptional()
+  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : undefined))
   @IsBoolean()
-  @Type(() => Boolean)
   isOfficial?: boolean
 
   @IsOptional()

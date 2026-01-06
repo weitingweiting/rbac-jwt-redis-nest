@@ -24,9 +24,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       // 自动转换类型（例如：将字符串 "1" 转换为数字 1）
       transform: true,
-      // 启用隐式类型转换
+      // 禁用隐式类型转换，避免布尔值转换错误（'false' → true）
       transformOptions: {
-        enableImplicitConversion: true
+        enableImplicitConversion: false
       },
       // 在验证失败时禁止未知值
       forbidUnknownValues: true,

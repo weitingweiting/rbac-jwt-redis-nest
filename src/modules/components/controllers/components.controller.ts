@@ -44,7 +44,6 @@ export class ComponentsController {
   @Get()
   @RequirePermissions('component.read')
   async findAll(@Query() query: QueryComponentDto) {
-    console.log('🚀 ~ ComponentsController ~ findAll ~ query:', query)
     const result = await this.componentsService.findAllWithPagination(query)
     return {
       message: '获取组件列表成功',
