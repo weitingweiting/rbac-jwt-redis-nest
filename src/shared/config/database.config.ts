@@ -1,14 +1,15 @@
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import { User } from '../entities/user.entity'
-import { Role } from '../entities/role.entity'
-import { Permission } from '../entities/permission.entity'
-import { ProjectSpace } from '../entities/project-space.entity'
-import { Project } from '../entities/project.entity'
-import { ProjectAsset } from '../entities/project-asset.entity'
-import { ComponentCategory } from '../entities/component-category.entity'
-import { Component } from '../entities/component.entity'
-import { ComponentVersion } from '../entities/component-version.entity'
+import { User } from '@/shared/entities/user.entity'
+import { Role } from '@/shared/entities/role.entity'
+import { Permission } from '@/shared/entities/permission.entity'
+import { ProjectSpace } from '@/shared/entities/project-space.entity'
+import { Project } from '@/shared/entities/project.entity'
+import { ProjectAsset } from '@/shared/entities/project-asset.entity'
+import { ComponentCategory } from '@/shared/entities/component-category.entity'
+import { Component } from '@/shared/entities/component.entity'
+import { ComponentVersion } from '@/shared/entities/component-version.entity'
+import { DevelopmentApplication } from '@/shared/entities/development-application.entity'
 
 /**
  * TypeORM 数据库配置工厂函数
@@ -58,7 +59,8 @@ export const getDatabaseConfig = () =>
           ProjectAsset,
           ComponentCategory,
           Component,
-          ComponentVersion
+          ComponentVersion,
+          DevelopmentApplication
         ],
         // 🔥 自动重连配置
         retryAttempts, // 开发5次，生产10次
