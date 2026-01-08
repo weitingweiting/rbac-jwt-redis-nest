@@ -8,9 +8,8 @@ import { ComponentVersion } from '@/shared/entities/component-version.entity'
 import { ComponentCategory } from '@/shared/entities/component-category.entity'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
-import { UpdateComponentDto, QueryComponentDto } from '../dto/component.dto'
 import { PaginatedResponseDto } from '@/shared/dto/paginated-response.dto'
-import { ComponentMetaDto } from '../dto/component-meta.dto'
+import { UpdateComponentDto, QueryComponentDto } from '../dto/component.dto'
 import {
   ComponentOverviewDto,
   ICategoryNode,
@@ -18,6 +17,29 @@ import {
   IVersionNode,
   OverviewTreeNode
 } from '../dto/component-overview.dto'
+
+/**
+ * 组件业务信息接口
+ * 用于创建/更新组件时传入的必要业务信息
+ * 这些信息来自 supplement.json（已审批的申请凭证）
+ */
+export interface IComponentBusinessInfo {
+  /** 组件ID（如 BarChart） */
+  id: string
+  /** 组件名称（如 柱状图） */
+  name: string
+  /** 组件描述（可选） */
+  description?: string
+  /** 分类信息 */
+  classification: {
+    level1: string
+    level2: string
+    displayName?: {
+      level1?: string
+      level2?: string
+    }
+  }
+}
 
 @Injectable()
 export class ComponentsService {
@@ -120,58 +142,60 @@ export class ComponentsService {
   }
 
   /**
-   * 从 meta.json 创建或更新组件
-   * 用于组件上传服务（这是创建组件的唯一正确入口）
+   * 创建新组件（仅用于 NEW 类型申请）
    *
-   * 注意：
-   * - 只更新 Component 表的共享字段（name, description, classification）
-   * - type, framework, author, license 等版本专属信息存储在 ComponentVersion 表
-   * - 这样可以保证不同版本可以有不同的技术栈和维护者
-   * - 会验证分类信息是否存在，不存在则上传失败
+   * @param businessInfo 组件业务信息（来自已审批的 supplement.json）
+   * @param userId 操作用户ID
+   *
+   * 职责：创建 Component 表记录，只处理共享字段
    */
-  async createOrUpdateFromMeta(
-    meta: ComponentMetaDto,
-    userId: number
-  ): Promise<{ component: Component; isNew: boolean }> {
-    const existingComponent = await this.findByComponentId(meta.id)
-
-    if (existingComponent) {
-      // 更新现有组件（只更新共享字段）
-      existingComponent.name = meta.name
-      existingComponent.description = meta.description || null
-      existingComponent.updatedBy = userId
-
-      // 分类信息（classification 是必填的）
-      existingComponent.classificationLevel1 = meta.classification.level1
-      existingComponent.classificationLevel2 = meta.classification.level2
-      existingComponent.classificationLevel1Name =
-        meta.classification.displayName?.level1 || meta.classification.level1
-      existingComponent.classificationLevel2Name =
-        meta.classification.displayName?.level2 || meta.classification.level2
-
-      const updated = await this.componentRepository.save(existingComponent)
-      return { component: updated, isNew: false }
-    } else {
-      // 创建新组件（只设置共享字段）
-      const component = new Component()
-      component.componentId = meta.id
-      component.name = meta.name
-      component.description = meta.description || null
-
-      // 分类信息（classification 是必填的）
-      component.classificationLevel1 = meta.classification.level1
-      component.classificationLevel2 = meta.classification.level2
-      component.classificationLevel1Name =
-        meta.classification.displayName?.level1 || meta.classification.level1
-      component.classificationLevel2Name =
-        meta.classification.displayName?.level2 || meta.classification.level2
-
-      component.createdBy = userId
-      component.updatedBy = userId
-
-      const created = await this.componentRepository.save(component)
-      return { component: created, isNew: true }
+  async createComponent(businessInfo: IComponentBusinessInfo, userId: number): Promise<Component> {
+    // 检查组件是否已存在（防御性检查）
+    const existing = await this.findByComponentId(businessInfo.id)
+    if (existing) {
+      throw new BusinessException(
+        `组件 ${businessInfo.id} 已存在，无法创建新组件`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.COMPONENT_ALREADY_EXISTS
+      )
     }
+
+    const component = new Component()
+    component.componentId = businessInfo.id
+    component.name = businessInfo.name
+    component.description = businessInfo.description || null
+
+    // 分类信息
+    component.classificationLevel1 = businessInfo.classification.level1
+    component.classificationLevel2 = businessInfo.classification.level2
+    component.classificationLevel1Name =
+      businessInfo.classification.displayName?.level1 || businessInfo.classification.level1
+    component.classificationLevel2Name =
+      businessInfo.classification.displayName?.level2 || businessInfo.classification.level2
+
+    component.createdBy = userId
+    component.updatedBy = userId
+
+    return await this.componentRepository.save(component)
+  }
+
+  /**
+   * 获取已存在的组件（用于 VERSION/REPLACE 类型申请）
+   *
+   * @param componentId 组件ID
+   *
+   * 职责：获取组件记录，VERSION/REPLACE 类型不修改组件表信息
+   */
+  async getExistingComponent(componentId: string): Promise<Component> {
+    const component = await this.findByComponentId(componentId)
+    if (!component) {
+      throw new BusinessException(
+        `组件 ${componentId} 不存在，无法进行版本迭代或替换`,
+        HttpStatus.NOT_FOUND,
+        ERROR_CODES.COMPONENT_NOT_FOUND
+      )
+    }
+    return component
   }
 
   /**

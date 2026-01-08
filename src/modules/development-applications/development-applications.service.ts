@@ -5,7 +5,6 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import {
   DevelopmentApplication,
-  IUploadInfo,
   IReviewInfo
 } from '@/shared/entities/development-application.entity'
 import { Component } from '@/shared/entities/component.entity'
@@ -18,7 +17,6 @@ import {
   DevelopmentStatus,
   CANCELLABLE_STATUSES,
   EDITABLE_STATUSES,
-  UPLOADABLE_STATUSES,
   DEVELOPMENT_STATUS_LABELS
 } from './constants/development-status.enum'
 import { ApplicationType, APPLICATION_TYPE_LABELS } from './constants/application-type.enum'
@@ -659,58 +657,6 @@ export class DevelopmentApplicationsService {
     }
 
     return supplement
-  }
-
-  /**
-   * 记录上传成功信息（由上传服务调用）
-   *
-   * 新流程说明：
-   * - 上传服务校验 meta.json + supplement.json 成功后调用
-   * - 直接上传到正式 OSS 路径，无临时目录
-   * - 上传成功后状态变为 COMPLETED，同时创建 ComponentVersion 记录
-   *
-   * @param id 申请ID
-   * @param uploadInfo 上传信息
-   * @param componentVersionId 创建的组件版本ID（由上传服务创建后传入）
-   */
-  async recordUploadSuccess(
-    id: number,
-    uploadInfo: IUploadInfo,
-    componentVersionId: number
-  ): Promise<void> {
-    const application = await this.applicationRepository.findOne({
-      where: { id }
-    })
-
-    if (!application) {
-      throw new BusinessException(
-        '研发申请不存在',
-        HttpStatus.NOT_FOUND,
-        ERROR_CODES.RESOURCE_NOT_FOUND
-      )
-    }
-
-    // 检查状态是否允许上传（只有 APPROVED 状态可以上传）
-    if (!UPLOADABLE_STATUSES.includes(application.developmentStatus)) {
-      throw new BusinessException(
-        `当前状态 "${DEVELOPMENT_STATUS_LABELS[application.developmentStatus]}" 不允许上传`,
-        HttpStatus.BAD_REQUEST,
-        ERROR_CODES.OPERATION_NOT_ALLOWED
-      )
-    }
-
-    application.uploadInfo = uploadInfo
-    application.componentVersionId = componentVersionId
-    application.developmentStatus = DevelopmentStatus.COMPLETED
-    application.completedAt = new Date()
-
-    await this.applicationRepository.save(application)
-
-    this.logger.info('研发申请完成', {
-      applicationId: id,
-      applicationNo: application.applicationNo,
-      componentVersionId
-    })
   }
 
   /**

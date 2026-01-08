@@ -80,16 +80,21 @@ export class ZipUtil {
   }
 
   /**
-   * 检查文件是否存在（支持精确匹配或文件名匹配）
+   * 检查文件是否存在（支持精确匹配或子目录匹配）
+   *
+   * @param fileNames ZIP 中的文件路径列表
+   * @param targetPath 目标文件路径（如 "index.js" 或 "dist/index.js"）
+   * @returns 文件是否存在
+   *
+   * 匹配规则：
+   * 1. 精确匹配：fileName === targetPath
+   * 2. 子目录匹配：fileName.endsWith('/' + targetPath)
+   *    确保 targetPath 前面是路径分隔符，避免误匹配（如 "myindex.js" 不应匹配 "index.js"）
    */
   static fileExists(fileNames: string[], targetPath: string): boolean {
-    // 1. 精确匹配完整路径
-    if (fileNames.includes(targetPath)) {
-      return true
-    }
-
-    // 2. 匹配文件名结尾（处理 meta.json 可能在子目录的情况）
-    return fileNames.some((fileName) => fileName.endsWith(targetPath))
+    return fileNames.some(
+      (fileName) => fileName === targetPath || fileName.endsWith('/' + targetPath)
+    )
   }
 
   /**
