@@ -94,14 +94,18 @@ export class ComponentsController {
    * 上传组件 ZIP 包
    * POST /api/components/upload
    *
-   * 流程：
-   * 1. 验证 ZIP 文件结构
-   * 2. 解析 component.meta.json
-   * 3. 上传文件到 OSS
-   * 4. 创建/更新组件记录
-   * 5. 创建版本记录
+   * 新流程（先审批，后开发）：
+   * 1. 验证 ZIP 文件基本格式
+   * 2. 解析 supplement.json（来自研发申请系统）
+   * 3. 验证与研发申请记录的一致性
+   * 4. 检查申请状态（必须为 APPROVED）
+   * 5. 解析 meta.json（来自 abd-cli 构建）
+   * 6. 验证两个 meta 文件的一致性
+   * 7. 上传文件到 OSS
+   * 8. 创建/更新组件和版本记录
+   * 9. 更新申请状态为 COMPLETED
    *
-   * @param file - ZIP 文件（必须包含 component.meta.json）
+   * @param file - ZIP 文件（必须包含 component.meta.json 和 component.meta.supplement.json）
    * @param currentUser - 当前用户信息
    */
   @Post('upload')
@@ -148,6 +152,8 @@ export class ComponentsController {
           type: result.version.type,
           framework: result.version.framework
         },
+        // 研发申请相关
+        applicationNo: result.applicationNo,
         isNewComponent: result.isNewComponent,
         isNewVersion: result.isNewVersion,
         warnings: result.warnings

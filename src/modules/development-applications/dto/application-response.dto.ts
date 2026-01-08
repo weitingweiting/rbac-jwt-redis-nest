@@ -112,20 +112,6 @@ export class CreateApplicationResponseDto {
 }
 
 /**
- * 上传成功响应
- */
-export class UploadSuccessResponseDto {
-  applicationNo: string
-  developmentStatus: DevelopmentStatus
-  uploadInfo: IUploadInfo
-  validationResult: {
-    supplementMatch: boolean
-    metaValid: boolean
-    filesComplete: boolean
-  }
-}
-
-/**
  * 审核成功响应
  */
 export class ReviewSuccessResponseDto {

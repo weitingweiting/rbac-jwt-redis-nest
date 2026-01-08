@@ -135,11 +135,12 @@ export class DevelopmentApplication extends BaseEntity {
 
   /**
    * 研发申请状态
+   * 新流程：pending_review → approved → completed
    */
   @Column({
     type: 'varchar',
     length: 20,
-    default: DevelopmentStatus.PENDING_INFO,
+    default: DevelopmentStatus.PENDING_REVIEW,
     name: 'development_status'
   })
   developmentStatus: DevelopmentStatus

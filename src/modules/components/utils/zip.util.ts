@@ -68,6 +68,18 @@ export class ZipUtil {
   }
 
   /**
+   * 查找 component.meta.supplement.json 文件（支持根目录或子目录）
+   */
+  static findSupplementEntry(entries: AdmZip.IZipEntry[]): AdmZip.IZipEntry | undefined {
+    return entries.find((entry) => {
+      return (
+        entry.entryName === 'component.meta.supplement.json' ||
+        entry.entryName.endsWith('/component.meta.supplement.json')
+      )
+    })
+  }
+
+  /**
    * 检查文件是否存在（支持精确匹配或文件名匹配）
    */
   static fileExists(fileNames: string[], targetPath: string): boolean {

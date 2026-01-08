@@ -11,4 +11,5 @@ export * from './component-version.dto'
 export * from './upload-component.dto'
 
 // Meta 文件映射 DTOs
-export * from './component-meta.dto'
+export * from './component-supplement.dto'
+export * from './component-build-meta.dto'

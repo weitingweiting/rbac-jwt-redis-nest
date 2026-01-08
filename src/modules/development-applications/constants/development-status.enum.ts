@@ -1,65 +1,52 @@
 /**
  * 研发申请状态枚举
  *
- * 状态流转：
- * pending_info → awaiting_upload → uploaded → under_review → approved → completed
- *                                                         ↘ rejected → awaiting_upload
- * pending_info/awaiting_upload → cancelled (版本号释放)
+ * 新流程设计：
+ * 1. 创建申请 → PENDING_REVIEW（待审核，管理员审批"是否允许开发"）
+ * 2. 管理员审核 → APPROVED（通过，可下载supplement.json） / REJECTED（拒绝，终态）
+ * 3. 开发者开发组件，构建后上传组件包
+ * 4. 上传成功+校验通过 → COMPLETED（组件入库draft，终态）
+ * 5. 上传校验失败 → 保持 APPROVED（用户可重新上传）
+ *
+ * 状态流转图：
+ * PENDING_REVIEW → APPROVED → COMPLETED
+ *                ↘ REJECTED（终态）
+ *                ↘ CANCELLED（终态）
  */
 export enum DevelopmentStatus {
   /**
-   * 待完善信息
-   * - 研发申请刚创建的初始状态
-   * - 可执行：编辑信息、取消申请
+   * 待审核
+   * - 研发申请创建后的初始状态
+   * - 等待管理员审批"是否允许开发该组件"
+   * - 可执行：审核通过/驳回、取消申请、编辑信息
    */
-  PENDING_INFO = 'pending_info',
-
-  /**
-   * 等待上传
-   * - 信息已完善，等待上传组件包
-   * - 可执行：上传文件、编辑信息、取消申请
-   */
-  AWAITING_UPLOAD = 'awaiting_upload',
-
-  /**
-   * 已上传待审核
-   * - 组件包已上传，等待提交审核
-   * - 可执行：删除上传文件（回到等待上传）、提交审核
-   */
-  UPLOADED = 'uploaded',
-
-  /**
-   * 审核中
-   * - 已提交审核，审核人员处理中
-   * - 可执行：审核通过、审核不通过
-   */
-  UNDER_REVIEW = 'under_review',
-
-  /**
-   * 审核不通过
-   * - 审核未通过，需重新上传
-   * - 可执行：上传新文件、查看审核意见
-   * - 自动回退到 awaiting_upload
-   */
-  REJECTED = 'rejected',
+  PENDING_REVIEW = 'pending_review',
 
   /**
    * 审核通过
-   * - 审核通过，版本已创建为 draft 状态
-   * - 可执行：发布版本
+   * - 管理员已批准该组件的开发申请
+   * - 可执行：下载 supplement.json、上传组件包
+   * - 上传成功后自动变为 COMPLETED
    */
   APPROVED = 'approved',
 
   /**
+   * 审核不通过
+   * - 管理员驳回了该组件的开发申请
+   * - 最终状态，不可变更
+   */
+  REJECTED = 'rejected',
+
+  /**
    * 已完成
-   * - 版本已发布为 published
+   * - 组件包上传成功，版本已创建为 draft 状态
    * - 最终状态，不可变更
    */
   COMPLETED = 'completed',
 
   /**
    * 已取消
-   * - 申请已取消，版本号已释放
+   * - 申请人主动取消申请，版本号已释放
    * - 最终状态，不可变更
    */
   CANCELLED = 'cancelled'
@@ -69,44 +56,36 @@ export enum DevelopmentStatus {
  * 研发申请状态标签映射（用于前端展示）
  */
 export const DEVELOPMENT_STATUS_LABELS: Record<DevelopmentStatus, string> = {
-  [DevelopmentStatus.PENDING_INFO]: '待完善信息',
-  [DevelopmentStatus.AWAITING_UPLOAD]: '等待上传',
-  [DevelopmentStatus.UPLOADED]: '已上传',
-  [DevelopmentStatus.UNDER_REVIEW]: '审核中',
-  [DevelopmentStatus.REJECTED]: '审核不通过',
+  [DevelopmentStatus.PENDING_REVIEW]: '待审核',
   [DevelopmentStatus.APPROVED]: '审核通过',
+  [DevelopmentStatus.REJECTED]: '审核不通过',
   [DevelopmentStatus.COMPLETED]: '已完成',
   [DevelopmentStatus.CANCELLED]: '已取消'
 }
 
 /**
  * 可取消的状态列表
+ * 只有待审核状态可以取消
  */
-export const CANCELLABLE_STATUSES: DevelopmentStatus[] = [
-  DevelopmentStatus.PENDING_INFO,
-  DevelopmentStatus.AWAITING_UPLOAD
-]
+export const CANCELLABLE_STATUSES: DevelopmentStatus[] = [DevelopmentStatus.PENDING_REVIEW]
 
 /**
  * 可编辑信息的状态列表
+ * 待审核状态可以编辑申请信息
  */
-export const EDITABLE_STATUSES: DevelopmentStatus[] = [
-  DevelopmentStatus.PENDING_INFO,
-  DevelopmentStatus.AWAITING_UPLOAD
-]
+export const EDITABLE_STATUSES: DevelopmentStatus[] = [DevelopmentStatus.PENDING_REVIEW]
 
 /**
  * 可上传文件的状态列表
+ * 审核通过后才可以上传组件包
  */
-export const UPLOADABLE_STATUSES: DevelopmentStatus[] = [
-  DevelopmentStatus.AWAITING_UPLOAD,
-  DevelopmentStatus.REJECTED
-]
+export const UPLOADABLE_STATUSES: DevelopmentStatus[] = [DevelopmentStatus.APPROVED]
 
 /**
  * 最终状态列表（不可再变更）
  */
 export const FINAL_STATUSES: DevelopmentStatus[] = [
   DevelopmentStatus.COMPLETED,
+  DevelopmentStatus.REJECTED,
   DevelopmentStatus.CANCELLED
 ]

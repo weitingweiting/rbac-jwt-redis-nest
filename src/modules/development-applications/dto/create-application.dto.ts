@@ -83,16 +83,10 @@ export class CreateVersionApplicationDto extends BaseCreateApplicationDto {
 
 /**
  * 创建替换版本申请 DTO
+ * 说明：替换版本时，版本号自动从 existingVersion 获取，无需传入 targetVersion
  */
 export class CreateReplaceApplicationDto extends BaseCreateApplicationDto {
   applicationType: ApplicationType.REPLACE = ApplicationType.REPLACE
-
-  @IsString({ message: '版本号必须是字符串' })
-  @IsNotEmpty({ message: '版本号不能为空' })
-  @Matches(/^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$/, {
-    message: '版本号格式不正确，应为 x.y.z 或 x.y.z-beta.1'
-  })
-  targetVersion: string
 
   @IsInt({ message: '现有版本ID必须是整数' })
   @IsNotEmpty({ message: '现有版本ID不能为空' })

@@ -353,4 +353,63 @@ export class OSSService {
       throw error
     }
   }
+
+  /**
+   * 复制 OSS 文件（服务端操作，不需要公网回调）
+   * 使用 OSS CopyObject API，文件在 OSS 服务端内部复制
+   *
+   * @param sourceKey 源文件的对象键名
+   * @param targetKey 目标文件的对象键名
+   * @returns 复制后的文件信息
+   */
+  async copyFile(sourceKey: string, targetKey: string): Promise<{ url: string; name: string }> {
+    try {
+      // 使用 OSS SDK 的 copy 方法
+      // 格式：copy(targetKey, sourceKey, sourceBucket?)
+      const result = await this.client.copy(targetKey, sourceKey)
+
+      this.logger.info('复制 OSS 文件成功', {
+        sourceKey,
+        targetKey,
+        url: result.url
+      })
+
+      return {
+        url: result.url,
+        name: result.name
+      }
+    } catch (error) {
+      this.logger.error('复制 OSS 文件失败', { sourceKey, targetKey, error })
+      throw new BadRequestException(`复制文件失败: ${error.message || '未知错误'}`)
+    }
+  }
+
+  /**
+   * 移动 OSS 文件（服务端操作，不需要公网回调）
+   * 先复制到目标位置，再删除源文件
+   *
+   * @param sourceKey 源文件的对象键名
+   * @param targetKey 目标文件的对象键名
+   * @returns 移动后的文件信息
+   */
+  async moveFile(sourceKey: string, targetKey: string): Promise<{ url: string; name: string }> {
+    try {
+      // 1. 复制文件到目标位置
+      const result = await this.copyFile(sourceKey, targetKey)
+
+      // 2. 删除源文件
+      await this.deleteFile(sourceKey)
+
+      this.logger.info('移动 OSS 文件成功', {
+        sourceKey,
+        targetKey,
+        url: result.url
+      })
+
+      return result
+    } catch (error) {
+      this.logger.error('移动 OSS 文件失败', { sourceKey, targetKey, error })
+      throw new BadRequestException(`移动文件失败: ${error.message || '未知错误'}`)
+    }
+  }
 }

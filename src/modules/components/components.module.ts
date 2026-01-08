@@ -6,6 +6,7 @@ import { SharedModule } from '@/shared/shared.module'
 import { ComponentCategory } from '@/shared/entities/component-category.entity'
 import { Component } from '@/shared/entities/component.entity'
 import { ComponentVersion } from '@/shared/entities/component-version.entity'
+import { DevelopmentApplication } from '@/shared/entities/development-application.entity'
 
 // Services
 import { ComponentCategoriesService } from './services/component-categories.service'
@@ -24,7 +25,12 @@ import { OSSModule } from '@/modules/oss/oss.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ComponentCategory, Component, ComponentVersion]),
+    TypeOrmModule.forFeature([
+      ComponentCategory,
+      Component,
+      ComponentVersion,
+      DevelopmentApplication
+    ]),
     SharedModule,
     OSSModule
   ],
