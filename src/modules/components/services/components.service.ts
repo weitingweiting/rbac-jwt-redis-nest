@@ -15,7 +15,8 @@ import {
   ICategoryNode,
   IComponentNode,
   IVersionNode,
-  OverviewTreeNode
+  OverviewTreeNode,
+  LeafLevel
 } from '../dto/component-overview.dto'
 
 /**
@@ -340,10 +341,15 @@ export class ComponentsService {
   /**
    * 获取组件总览数据（树形结构）
    * 用于管理员页面的树形表格展示
-   * 返回: 分类树 → 组件 → 版本 的4层嵌套结构
+   * 根据 leaf 参数返回不同深度的树形结构：
+   * - Level1: 只返回一级分类
+   * - Level2: 返回一、二级分类
+   * - Level3: 返回一、二级分类、组件
+   * - Level4: 返回一、二级分类、组件、版本（完整数据）
    */
   async getComponentOverview(query: ComponentOverviewDto): Promise<OverviewTreeNode[]> {
-    this.logger.info('获取组件总览数据', { query })
+    const leafLevel = query.leaf || LeafLevel.Level4
+    this.logger.info('获取组件总览数据', { query, leafLevel })
 
     // 1. 获取所有分类（两级）
     const categories = await this.categoryRepository.find({
@@ -351,111 +357,112 @@ export class ComponentsService {
       order: { level: 'ASC', sortOrder: 'ASC', id: 'ASC' }
     })
 
-    // 2. 获取所有组件
-    const componentsQuery = this.componentRepository
-      .createQueryBuilder('component')
-      .where('component.deletedAt IS NULL')
+    // 2. 根据 leaf 级别决定是否查询组件
+    let components: Component[] = []
+    if (leafLevel === LeafLevel.Level3 || leafLevel === LeafLevel.Level4) {
+      const componentsQuery = this.componentRepository
+        .createQueryBuilder('component')
+        .where('component.deletedAt IS NULL')
 
-    // 应用筛选条件
-    if (query.keyword) {
-      componentsQuery.andWhere(
-        '(component.name LIKE :keyword OR component.componentId LIKE :keyword OR component.description LIKE :keyword)',
-        { keyword: `%${query.keyword}%` }
-      )
+      // 应用筛选条件
+      if (query.keyword) {
+        componentsQuery.andWhere(
+          '(component.name LIKE :keyword OR component.componentId LIKE :keyword OR component.description LIKE :keyword)',
+          { keyword: `%${query.keyword}%` }
+        )
+      }
+
+      componentsQuery.orderBy('component.createdAt', 'DESC')
+      components = await componentsQuery.getMany()
     }
 
-    componentsQuery.orderBy('component.createdAt', 'DESC')
+    // 3. 根据 leaf 级别决定是否查询版本
+    let versions: ComponentVersion[] = []
+    if (leafLevel === LeafLevel.Level4) {
+      const versionsQuery = this.versionRepository
+        .createQueryBuilder('version')
+        .where('version.deletedAt IS NULL')
+        .orderBy('version.createdAt', 'DESC')
 
-    const components = await componentsQuery.getMany()
+      // 应用版本状态筛选
+      if (query.status === 'draft') {
+        versionsQuery.andWhere('version.status = :status', { status: 'draft' })
+      } else if (query.status === 'published') {
+        versionsQuery.andWhere('version.status = :status', { status: 'published' })
+      } else if (query.status === 'latest') {
+        versionsQuery.andWhere('version.isLatest = :isLatest', { isLatest: true })
+      }
 
-    // 3. 获取所有版本
-    const versionsQuery = this.versionRepository
-      .createQueryBuilder('version')
-      .where('version.deletedAt IS NULL')
-      .orderBy('version.createdAt', 'DESC')
-
-    // 应用版本状态筛选
-    if (query.status === 'draft') {
-      versionsQuery.andWhere('version.status = :status', { status: 'draft' })
-    } else if (query.status === 'published') {
-      versionsQuery.andWhere('version.status = :status', { status: 'published' })
-    } else if (query.status === 'latest') {
-      versionsQuery.andWhere('version.isLatest = :isLatest', { isLatest: true })
+      versions = await versionsQuery.getMany()
     }
 
-    const versions = await versionsQuery.getMany()
-
-    // 4. 构建组件到版本的映射
+    // 4. 构建组件到版本的映射（仅在 Level4 时需要）
     const componentVersionsMap = new Map<string, IVersionNode[]>()
-    for (const version of versions) {
-      if (!componentVersionsMap.has(version.componentId)) {
-        componentVersionsMap.set(version.componentId, [])
+    if (leafLevel === LeafLevel.Level4) {
+      for (const version of versions) {
+        if (!componentVersionsMap.has(version.componentId)) {
+          componentVersionsMap.set(version.componentId, [])
+        }
+        componentVersionsMap.get(version.componentId)!.push({
+          key: `version-${version.id}`,
+          type: 'version',
+          id: version.id,
+          version: version.version,
+          status: version.status,
+          isLatest: version.isLatest,
+          fileSize: version.fileSize,
+          entryUrl: version.entryUrl,
+          styleUrl: version.styleUrl,
+          publishedAt: version.publishedAt?.toISOString(),
+          createdAt: version.createdAt.toISOString(),
+          updatedAt: version.updatedAt.toISOString()
+        })
       }
-      componentVersionsMap.get(version.componentId)!.push({
-        key: `version-${version.id}`,
-        type: 'version',
-        id: version.id,
-        version: version.version,
-        status: version.status,
-        isLatest: version.isLatest,
-        fileSize: version.fileSize,
-        entryUrl: version.entryUrl,
-        styleUrl: version.styleUrl,
-        publishedAt: version.publishedAt?.toISOString(),
-        createdAt: version.createdAt.toISOString(),
-        updatedAt: version.updatedAt.toISOString()
-      })
     }
 
-    // 5. 构建分类到组件的映射
+    // 5. 构建分类到组件的映射（仅在 Level3/Level4 时需要）
     const categoryComponentsMap = new Map<string, IComponentNode[]>()
-    for (const component of components) {
-      const categoryKey = `${component.classificationLevel1}-${component.classificationLevel2}`
-      if (!categoryComponentsMap.has(categoryKey)) {
-        categoryComponentsMap.set(categoryKey, [])
+    if (leafLevel === LeafLevel.Level3 || leafLevel === LeafLevel.Level4) {
+      for (const component of components) {
+        const categoryKey = `${component.classificationLevel1}-${component.classificationLevel2}`
+        if (!categoryComponentsMap.has(categoryKey)) {
+          categoryComponentsMap.set(categoryKey, [])
+        }
+
+        const componentVersions =
+          leafLevel === LeafLevel.Level4
+            ? componentVersionsMap.get(component.componentId) || []
+            : undefined
+
+        categoryComponentsMap.get(categoryKey)!.push({
+          key: `component-${component.componentId}`,
+          type: 'component',
+          componentId: component.componentId,
+          name: component.name,
+          displayName: component.name,
+          description: component.description || undefined,
+          classificationLevel1: component.classificationLevel1,
+          classificationLevel1Name: component.classificationLevel1Name,
+          classificationLevel2: component.classificationLevel2,
+          classificationLevel2Name: component.classificationLevel2Name,
+          createdBy: component.createdBy,
+          createdAt: component.createdAt.toISOString(),
+          updatedAt: component.updatedAt.toISOString(),
+          publishedVersionCount: component.publishedVersionCount,
+          totalVersionCount: component.versionCount,
+          children: componentVersions
+        })
       }
-
-      const componentVersions = componentVersionsMap.get(component.componentId) || []
-
-      categoryComponentsMap.get(categoryKey)!.push({
-        key: `component-${component.componentId}`,
-        type: 'component',
-        componentId: component.componentId,
-        name: component.name,
-        displayName: component.name,
-        description: component.description || undefined,
-        classificationLevel1: component.classificationLevel1,
-        classificationLevel1Name: component.classificationLevel1Name,
-        classificationLevel2: component.classificationLevel2,
-        classificationLevel2Name: component.classificationLevel2Name,
-        createdBy: component.createdBy,
-        createdAt: component.createdAt.toISOString(),
-        updatedAt: component.updatedAt.toISOString(),
-        publishedVersionCount: component.publishedVersionCount,
-        totalVersionCount: component.versionCount,
-        children: componentVersions
-      })
     }
 
     // 6. 构建完整的树形结构
     const level1Categories = categories.filter((cat) => cat.level === 1)
     const level2Categories = categories.filter((cat) => cat.level === 2)
 
-    // 构建二级分类到一级分类的映射
-    const level2ToLevel1Map = new Map<string, string>()
-    for (const level2 of level2Categories) {
-      if (level2.parentId) {
-        const parent = categories.find((c) => c.id === level2.parentId)
-        if (parent) {
-          level2ToLevel1Map.set(level2.code, parent.code)
-        }
-      }
-    }
-
     // 构建树形结构
     const tree: ICategoryNode[] = []
 
-    // 正常分类树构建
+    // 构建一级分类节点
     for (const level1Cat of level1Categories) {
       const level1Node: ICategoryNode = {
         key: `category-${level1Cat.id}`,
@@ -467,36 +474,44 @@ export class ComponentsService {
         icon: level1Cat.icon,
         description: level1Cat.description,
         sortOrder: level1Cat.sortOrder,
-        children: []
+        children: leafLevel === LeafLevel.Level1 ? undefined : []
       }
 
-      // 找到该一级分类下的所有二级分类
-      const childLevel2Categories = level2Categories.filter((cat) => cat.parentId === level1Cat.id)
+      // 如果需要二级分类或更深层级
+      if (leafLevel !== LeafLevel.Level1) {
+        const childLevel2Categories = level2Categories.filter(
+          (cat) => cat.parentId === level1Cat.id
+        )
 
-      for (const level2Cat of childLevel2Categories) {
-        const categoryKey = `${level1Cat.code}-${level2Cat.code}`
-        const componentsInCategory = categoryComponentsMap.get(categoryKey) || []
+        for (const level2Cat of childLevel2Categories) {
+          const categoryKey = `${level1Cat.code}-${level2Cat.code}`
+          const componentsInCategory =
+            leafLevel === LeafLevel.Level3 || leafLevel === LeafLevel.Level4
+              ? categoryComponentsMap.get(categoryKey) || []
+              : []
 
-        const level2Node: ICategoryNode = {
-          key: `category-${level2Cat.id}`,
-          type: 'category',
-          level: 2,
-          id: level2Cat.id,
-          code: level2Cat.code,
-          name: level2Cat.name,
-          icon: level2Cat.icon,
-          description: level2Cat.description,
-          sortOrder: level2Cat.sortOrder,
-          children: componentsInCategory as any
+          const level2Node: ICategoryNode = {
+            key: `category-${level2Cat.id}`,
+            type: 'category',
+            level: 2,
+            id: level2Cat.id,
+            code: level2Cat.code,
+            name: level2Cat.name,
+            icon: level2Cat.icon,
+            description: level2Cat.description,
+            sortOrder: level2Cat.sortOrder,
+            children: leafLevel === LeafLevel.Level2 ? undefined : (componentsInCategory as any)
+          }
+
+          level1Node.children!.push(level2Node)
         }
-
-        level1Node.children!.push(level2Node)
       }
 
       tree.push(level1Node)
     }
 
     this.logger.info('组件总览数据构建完成', {
+      leafLevel,
       categoriesCount: categories.length,
       componentsCount: components.length,
       versionsCount: versions.length,

@@ -60,7 +60,7 @@ export class DevelopmentApplication extends BaseEntity {
    * 格式：APP-YYYYMMDD-XXXX
    * 如：APP-20260107-0001
    */
-  @Column({ type: 'varchar', length: 50, unique: true, name: 'application_no' })
+  @Column({ type: 'varchar', length: 50, name: 'application_no' })
   applicationNo: string
 
   /**

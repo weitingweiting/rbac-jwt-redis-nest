@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/components/overview
+  url: {{baseUrl}}/components/overview?leaf=Level4
   body: none
   auth: bearer
+}
+
+params:query {
+  leaf: Level4
 }
 
 auth:bearer {

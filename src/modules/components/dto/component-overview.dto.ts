@@ -1,4 +1,19 @@
-import { IsOptional, IsString } from 'class-validator'
+import { IsOptional, IsString, IsEnum } from 'class-validator'
+import { Transform } from 'class-transformer'
+
+/**
+ * 树形结构深度级别
+ */
+export enum LeafLevel {
+  /** 只返回一级分类 */
+  Level1 = 'Level1',
+  /** 返回一、二级分类 */
+  Level2 = 'Level2',
+  /** 返回一、二级分类、组件 */
+  Level3 = 'Level3',
+  /** 返回一、二级分类、组件、版本（完整数据） */
+  Level4 = 'Level4'
+}
 
 /**
  * 组件总览查询 DTO
@@ -12,6 +27,11 @@ export class ComponentOverviewDto {
   @IsOptional()
   @IsString({ message: '筛选状态必须是字符串' })
   status?: 'draft' | 'published' | 'latest'
+
+  @IsOptional()
+  @IsEnum(LeafLevel, { message: '树形深度必须是 Level1, Level2, Level3 或 Level4' })
+  @Transform(({ value }) => value || LeafLevel.Level4)
+  leaf?: LeafLevel
 }
 
 /**

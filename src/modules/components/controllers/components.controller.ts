@@ -53,16 +53,22 @@ export class ComponentsController {
 
   /**
    * 获取组件总览（树形结构）
-   * GET /api/components/overview?keyword=xxx&status=draft&framework=Vue 3
+   * GET /api/components/overview?keyword=xxx&status=draft&leaf=Level3
    *
    * 用于管理员页面的树形表格展示
-   * 返回完整的分类树 → 组件 → 版本的4层嵌套结构
+   * 根据 leaf 参数返回不同深度的树形结构
    *
-   * 树形结构：
+   * leaf 参数说明：
+   * - Level1: 只返回一级分类（最轻量）
+   * - Level2: 返回一、二级分类
+   * - Level3: 返回一、二级分类、组件
+   * - Level4: 返回一、二级分类、组件、版本（完整数据，默认）
+   *
+   * 树形结构示例：
    * - Level 1: 一级分类（如：图表）
-   * - Level 2: 二级分类（如：柱状图）
-   * - Level 3: 组件（如：BarChart）
-   * - Level 4: 版本（如：v1.2.0）
+   *   - Level 2: 二级分类（如：柱状图）
+   *     - Level 3: 组件（如：BarChart）
+   *       - Level 4: 版本（如：v1.2.0）
    */
   @Get('overview')
   @RequirePermissions('component.read')

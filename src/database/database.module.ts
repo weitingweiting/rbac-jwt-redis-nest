@@ -11,6 +11,7 @@ import { DatabaseHealthService } from '@/shared/services/database-health.service
 import { ComponentCategory } from '@/shared/entities/component-category.entity'
 import { Component } from '@/shared/entities/component.entity'
 import { ComponentVersion } from '@/shared/entities/component-version.entity'
+import { DevelopmentApplication } from '@/shared/entities/development-application.entity'
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { ComponentVersion } from '@/shared/entities/component-version.entity'
       ProjectAsset,
       ComponentCategory,
       Component,
-      ComponentVersion
+      ComponentVersion,
+      DevelopmentApplication
     ])
   ],
   providers: [DatabaseHealthService],
