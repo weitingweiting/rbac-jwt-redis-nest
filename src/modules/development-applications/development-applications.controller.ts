@@ -8,11 +8,11 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  Res,
+  Header,
   UseGuards,
-  Inject
+  Inject,
+  StreamableFile
 } from '@nestjs/common'
-import { Response } from 'express'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { DevelopmentApplicationsService } from './development-applications.service'
@@ -193,15 +193,14 @@ export class DevelopmentApplicationsController {
    */
   @Get(':applicationNo/export-meta')
   @RequirePermissions('development:application:read')
-  async exportMeta(@Param('applicationNo') applicationNo: string, @Res() res: Response) {
+  @Header('Content-Type', 'application/json; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="component.meta.supplement.json"')
+  async exportMeta(@Param('applicationNo') applicationNo: string): Promise<StreamableFile> {
     const supplement = await this.applicationsService.exportMetaSupplement(applicationNo)
+    const jsonContent = JSON.stringify(supplement, null, 2)
+    const buffer = Buffer.from(jsonContent, 'utf-8')
 
-    const filename = `component.meta.supplement.json`
-
-    res.setHeader('Content-Type', 'application/json')
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
-
-    return res.send(JSON.stringify(supplement, null, 2))
+    return new StreamableFile(buffer)
   }
 
   /**

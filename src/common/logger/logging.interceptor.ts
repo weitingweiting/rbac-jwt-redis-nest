@@ -1,4 +1,11 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Inject } from '@nestjs/common'
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+  Inject,
+  StreamableFile
+} from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 import { ConfigService } from '@nestjs/config'
@@ -43,6 +50,11 @@ export class LoggingInterceptor implements NestInterceptor {
 
         // ✅ 设置自定义响应头（使用统一工具）
         ResponseHeadersUtil.setCommonHeaders(response, { responseTime })
+
+        // ✅ 如果是 StreamableFile，直接返回，不包装
+        if (data instanceof StreamableFile) {
+          return data
+        }
 
         // ✅ 统一成功响应格式
         const wrappedResponse = {

@@ -1,0 +1,65 @@
+meta {
+  name: 上传组件 - 失败（申请单号不匹配）
+  type: http
+  seq: 25
+}
+
+post {
+  url: {{baseUrl}}/components/upload?applicationNo=WRONG-APP-NO
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(/path/to/component.zip)
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("申请单号不匹配应返回 400 错误", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body).to.have.property('message');
+    expect(res.body.message).to.include('申请单号不一致');
+  });
+  
+  test("返回错误码 APPLICATION_NO_MISMATCH", function() {
+    expect(res.body).to.have.property('code');
+    expect(res.body.code).to.equal('APPLICATION_NO_MISMATCH');
+  });
+}
+
+docs {
+  # 上传组件 - 失败（申请单号不匹配）
+  
+  ## 测试场景
+  测试当用户操作的申请记录与上传包中的 supplement.json 申请单号不匹配时，系统应该拒绝上传。
+  
+  ## 安全目的
+  防止用户误用或恶意使用其他申请单据的组件包进行上传。
+  
+  ## 测试说明
+  1. 在 URL 中传递一个错误的 applicationNo（如：WRONG-APP-NO）
+  2. 但是上传的组件包中的 supplement.json 包含正确的 applicationNo
+  3. 系统应该检测到不匹配并返回 400 错误
+  
+  ## 预期响应
+  ```json
+  {
+    "message": "申请单号不一致：您正在操作的申请单号是 \"WRONG-APP-NO\"，但上传的组件包对应的申请单号是 \"APP-20260112-0007\"。请确保上传正确的组件包，或检查是否选择了错误的申请记录。",
+    "code": "APPLICATION_NO_MISMATCH",
+    "statusCode": 400
+  }
+  ```
+  
+  ## 注意事项
+  - 这个验证发生在解析 supplement.json 之后
+  - 在验证其他申请记录信息之前
+  - 这样可以尽早发现问题，节省处理时间
+}

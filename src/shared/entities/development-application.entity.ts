@@ -1,6 +1,7 @@
 import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm'
 import { BaseEntity } from '@/shared/entities/base.entity'
 import { User } from '@/shared/entities/user.entity'
+import { ComponentVersion } from '@/shared/entities/component-version.entity'
 import {
   DevelopmentStatus,
   ApplicationType
@@ -216,4 +217,15 @@ export class DevelopmentApplication extends BaseEntity {
    */
   @Column({ type: 'timestamp', nullable: true, name: 'completed_at' })
   completedAt: Date | null
+
+  /**
+   * 关联的组件版本（多对一关联）
+   * 申请完成后创建的组件版本
+   * 注意：同一组件和版本可能有多次申请（如被拒绝后重申）
+   */
+  @ManyToOne(() => ComponentVersion, (version) => version.developmentApplications, {
+    nullable: true
+  })
+  @JoinColumn({ name: 'component_version_id' })
+  componentVersion: ComponentVersion | null
 }

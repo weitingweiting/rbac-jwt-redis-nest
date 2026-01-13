@@ -320,6 +320,32 @@ export class ComponentValidationService {
   }
 
   /**
+   * 验证前端传递的申请单号与 supplement.json 中的一致性
+   * 防止用户混用不同申请的组件包
+   *
+   * @param requestedApplicationNo 前端传递的申请单号（用户正在操作的申请）
+   * @param supplementApplicationNo supplement.json 中的申请单号（组件包对应的申请）
+   * @throws BusinessException 如果申请单号不一致
+   */
+  validateApplicationNoConsistency(
+    requestedApplicationNo: string,
+    supplementApplicationNo: string
+  ): void {
+    if (requestedApplicationNo !== supplementApplicationNo) {
+      throw new BusinessException(
+        `申请单号不一致：您正在操作的申请单号是 "${requestedApplicationNo}"，但上传的组件包对应的申请单号是 "${supplementApplicationNo}"。请确保上传正确的组件包，或检查是否选择了错误的申请记录。`,
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.APPLICATION_NO_MISMATCH
+      )
+    }
+
+    this.logger.debug('申请单号一致性验证通过', {
+      requestedApplicationNo,
+      supplementApplicationNo
+    })
+  }
+
+  /**
    * 验证 supplement.json 与研发申请记录的一致性
    * 确保上传的组件包确实对应一个已审核通过的申请
    *

@@ -53,12 +53,14 @@ export class ComponentUploadService {
    *
    * 新流程说明：
    * - 组件包中必须包含 supplement.json（从研发申请系统下载）
+   * - 验证前端传递的 applicationNo 与 supplement.json 中的一致性（防止混用）
    * - 验证 supplement 与申请记录一致
    * - 验证 meta.json 与 supplement 一致
    * - 上传成功后自动更新申请状态为 COMPLETED
    */
   async processUpload(
     file: Express.Multer.File,
+    applicationNo: string,
     userId: number
   ): Promise<{
     component: Component
@@ -88,13 +90,24 @@ export class ComponentUploadService {
         applicationNo: supplement._metadata.applicationNo
       })
 
-      // 3. 验证 supplement 与研发申请记录的一致性
+      // 3. 验证前端传递的 applicationNo 与 supplement.json 中的一致性（防止混用不同申请的组件包）
+      this.validationService.validateApplicationNoConsistency(
+        applicationNo,
+        supplement._metadata.applicationNo
+      )
+
+      this.logger.info('申请单号一致性验证通过', {
+        requestedApplicationNo: applicationNo,
+        supplementApplicationNo: supplement._metadata.applicationNo
+      })
+
+      // 4. 验证 supplement 与研发申请记录的一致性
       const application = await this.validationService.validateSupplementWithApplication(supplement)
 
-      // 4. 检查申请状态（只有 APPROVED 状态才能上传）
+      // 5. 检查申请状态（只有 APPROVED 状态才能上传）
       this.validationService.validateApplicationStatus(application)
 
-      // 5. 解析并验证 meta.json（来自 abd-cli 构建，只包含技术信息）
+      // 6. 解析并验证 meta.json（来自 abd-cli 构建，只包含技术信息）
       const buildMeta = await this.validationService.parseAndValidateBuildMeta(file.buffer)
 
       this.logger.info('解析 meta.json 成功', {
@@ -103,10 +116,10 @@ export class ComponentUploadService {
         framework: buildMeta.framework
       })
 
-      // 6. 验证 meta 中声明的文件是否存在
+      // 7. 验证 meta 中声明的文件是否存在
       this.validationService.validateBuildMetaFiles(file.buffer, buildMeta)
 
-      // 7. 验证分类信息是否存在（使用 supplement 中的分类，已在申请时验证过）
+      // 8. 验证分类信息是否存在（使用 supplement 中的分类，已在申请时验证过）
       await this.validationService.validateClassification(
         supplement.classification.level1,
         supplement.classification.level2
@@ -117,7 +130,7 @@ export class ComponentUploadService {
         level2: supplement.classification.level2
       })
 
-      // 8. 上传文件到 OSS
+      // 9. 上传文件到 OSS
       const ossBasePath = this.generateOSSPath(supplement.id, supplement.version)
       this.logger.info('开始上传文件到 OSS', { ossBasePath })
 
@@ -127,14 +140,14 @@ export class ComponentUploadService {
         fileCount: Object.keys(uploadedFiles).length
       })
 
-      // 9. 根据申请类型处理组件记录
+      // 10. 根据申请类型处理组件记录
       const { component, isNew } = await this.handleComponentByApplicationType(
         supplement,
         application,
         userId
       )
 
-      // 10. 创建或替换版本记录（根据申请类型决定）
+      // 11. 创建或替换版本记录（根据申请类型决定）
       const { version, isNewVersion } = await this.handleVersionByApplicationType(
         component,
         supplement,
@@ -146,7 +159,7 @@ export class ComponentUploadService {
         userId
       )
 
-      // 11. 更新研发申请状态为 COMPLETED
+      // 12. 更新研发申请状态为 COMPLETED
       await this.completeApplication(application, file, version.id)
 
       this.logger.info('组件上传处理完成', {

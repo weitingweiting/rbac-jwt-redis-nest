@@ -1,0 +1,61 @@
+meta {
+  name: 上传组件 - 失败（缺少申请单号）
+  type: http
+  seq: 26
+}
+
+post {
+  url: {{baseUrl}}/components/upload
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  file: @file(/path/to/component.zip)
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("缺少申请单号应返回 400 错误", function() {
+    expect(res.status).to.equal(400);
+    expect(res.body).to.have.property('message');
+    expect(res.body.message).to.include('缺少申请单号参数');
+  });
+  
+  test("返回错误码 MISSING_REQUIRED_PARAMS", function() {
+    expect(res.body).to.have.property('code');
+    expect(res.body.code).to.equal('MISSING_REQUIRED_PARAMS');
+  });
+}
+
+docs {
+  # 上传组件 - 失败（缺少申请单号）
+  
+  ## 测试场景
+  测试当用户上传组件时没有提供必需的 applicationNo 参数，系统应该拒绝请求。
+  
+  ## 测试说明
+  1. 发送上传请求，但不包含 applicationNo 查询参数
+  2. 系统应该在控制器层就拦截请求
+  3. 返回 400 错误，提示缺少必需参数
+  
+  ## 预期响应
+  ```json
+  {
+    "message": "缺少申请单号参数 applicationNo",
+    "code": "MISSING_REQUIRED_PARAMS",
+    "statusCode": 400
+  }
+  ```
+  
+  ## 注意事项
+  - 这个验证发生在最早期，在任何文件处理之前
+  - 可以避免无效请求消耗服务器资源
+}

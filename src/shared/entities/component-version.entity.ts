@@ -1,7 +1,8 @@
-import { Entity, Column, Index, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, Column, Index, ManyToOne, JoinColumn, OneToMany } from 'typeorm'
 import { BaseEntity } from '@/shared/entities/base.entity'
 import { User } from '@/shared/entities/user.entity'
 import { Component } from '@/shared/entities/component.entity'
+import { DevelopmentApplication } from '@/shared/entities/development-application.entity'
 
 /**
  * 组件版本表
@@ -211,4 +212,11 @@ export class ComponentVersion extends BaseEntity {
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updater: User | null
+
+  /**
+   * 关联的研发申请列表（一对多关系）
+   * 一个版本可能对应多个申请（如被拒绝后重申）
+   */
+  @OneToMany(() => DevelopmentApplication, (app) => app.componentVersion)
+  developmentApplications: DevelopmentApplication[]
 }

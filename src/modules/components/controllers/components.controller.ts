@@ -10,8 +10,11 @@ import {
   UploadedFile,
   ParseFilePipe,
   MaxFileSizeValidator,
-  FileTypeValidator
+  FileTypeValidator,
+  HttpStatus
 } from '@nestjs/common'
+import { BusinessException } from '@/shared/exceptions/business.exception'
+import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ComponentsService } from '../services/components.service'
 import { ComponentUploadService } from '../services/component-upload.service'
@@ -98,20 +101,22 @@ export class ComponentsController {
 
   /**
    * 上传组件 ZIP 包
-   * POST /api/components/upload
+   * POST /api/components/upload?applicationNo=APP-20260112-0007
    *
    * 新流程（先审批，后开发）：
    * 1. 验证 ZIP 文件基本格式
    * 2. 解析 supplement.json（来自研发申请系统）
-   * 3. 验证与研发申请记录的一致性
-   * 4. 检查申请状态（必须为 APPROVED）
-   * 5. 解析 meta.json（来自 abd-cli 构建）
-   * 6. 验证两个 meta 文件的一致性
-   * 7. 上传文件到 OSS
-   * 8. 创建/更新组件和版本记录
-   * 9. 更新申请状态为 COMPLETED
+   * 3. 验证前端传递的 applicationNo 与 supplement.json 中的一致性（防止混用）
+   * 4. 验证与研发申请记录的一致性
+   * 5. 检查申请状态（必须为 APPROVED）
+   * 6. 解析 meta.json（来自 abd-cli 构建）
+   * 7. 验证两个 meta 文件的一致性
+   * 8. 上传文件到 OSS
+   * 9. 创建/更新组件和版本记录
+   * 10. 更新申请状态为 COMPLETED
    *
    * @param file - ZIP 文件（必须包含 component.meta.json 和 component.meta.supplement.json）
+   * @param applicationNo - 申请单号（必须与 supplement.json 中的一致，防止混用）
    * @param currentUser - 当前用户信息
    */
   @Post('upload')
@@ -132,9 +137,19 @@ export class ComponentsController {
       })
     )
     file: Express.Multer.File,
+    @Query('applicationNo') applicationNo: string,
     @CurrentUser() currentUser: CurrentUserDto
   ) {
-    const result = await this.uploadService.processUpload(file, currentUser.id)
+    // 验证必传参数
+    if (!applicationNo) {
+      throw new BusinessException(
+        '缺少申请单号参数 applicationNo',
+        HttpStatus.BAD_REQUEST,
+        ERROR_CODES.MISSING_REQUIRED_PARAMS
+      )
+    }
+
+    const result = await this.uploadService.processUpload(file, applicationNo, currentUser.id)
 
     return {
       message: result.isNewComponent ? '组件上传成功（新组件）' : '组件版本上传成功',

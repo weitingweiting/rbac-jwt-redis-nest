@@ -33,6 +33,15 @@ export class ComponentVersionsController {
    * - all: 是否查询所有版本（包括草稿）
    * - page, limit: 分页参数
    *
+   * 返回数据包含：
+   * - version: 版本基本信息
+   * - component: 关联的组件信息
+   * - developmentApplication: 创建该版本的研发申请信息
+   *   - applicationNo: 申请单号
+   *   - applicant: 申请人信息
+   *   - applicationType: 申请类型（new/version/replace）
+   *   - developmentStatus: 申请状态
+   *
    * @param componentId - 组件ID（如：BarChart）
    * @param query - 查询参数
    */
@@ -56,6 +65,11 @@ export class ComponentVersionsController {
   /**
    * 获取版本详情
    * GET /api/component-versions/:versionId
+   *
+   * 返回完整的版本信息，包括：
+   * - 版本基本信息
+   * - 关联的组件信息
+   * - 创建该版本的研发申请信息（applicationNo、申请人等）
    *
    * @param versionId - 版本ID（数据库主键，number）
    */

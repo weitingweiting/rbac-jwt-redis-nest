@@ -39,6 +39,12 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
     const queryBuilder = this.versionRepository
       .createQueryBuilder('version')
       .leftJoinAndSelect('version.component', 'component')
+      .leftJoinAndSelect(
+        'version.developmentApplications',
+        'application',
+        "application.developmentStatus = 'completed'"
+      )
+      .leftJoinAndSelect('application.applicant', 'applicant')
       .where('version.deletedAt IS NULL')
 
     // 按组件ID过滤
@@ -69,7 +75,16 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
     const [versions, total] = await queryBuilder.getManyAndCount()
 
-    return new PaginatedResponseDto(versions, total, query.page ?? 1, query.limit ?? 10)
+    // 将 developmentApplications 数组转换为单个对象（方便前端使用）
+    const versionsWithApp = versions.map((version) => {
+      const { developmentApplications, ...rest } = version as any
+      return {
+        ...rest,
+        developmentApplication: developmentApplications?.[0] || null
+      }
+    })
+
+    return new PaginatedResponseDto(versionsWithApp, total, query.page ?? 1, query.limit ?? 10)
   }
 
   /**
@@ -77,6 +92,39 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
    * @param id - ComponentVersion.id (数据库主键 number)
    */
   async findOneVersion(id: number): Promise<ComponentVersion> {
+    const version = await this.versionRepository
+      .createQueryBuilder('version')
+      .leftJoinAndSelect('version.component', 'component')
+      .leftJoinAndSelect(
+        'version.developmentApplications',
+        'application',
+        "application.developmentStatus = 'completed'"
+      )
+      .leftJoinAndSelect('application.applicant', 'applicant')
+      .where('version.id = :id', { id })
+      .andWhere('version.deletedAt IS NULL')
+      .getOne()
+
+    if (!version) {
+      throw new BusinessException(
+        `组件版本 ID ${id} 不存在`,
+        HttpStatus.NOT_FOUND,
+        ERROR_CODES.COMPONENT_VERSION_NOT_FOUND
+      )
+    }
+
+    // 将 developmentApplications 数组转换为单个对象（方便前端使用）
+    const { developmentApplications, ...rest } = version as any
+    return {
+      ...rest,
+      developmentApplication: developmentApplications?.[0] || null
+    } as ComponentVersion
+  }
+
+  /**
+   * 根据 ID 查找单个版本（不加载关联，内部使用）
+   */
+  private async findOneVersionSimple(id: number): Promise<ComponentVersion> {
     const version = await this.versionRepository.findOne({
       where: { id },
       relations: ['component'],
@@ -171,7 +219,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
     updateDto: UpdateComponentVersionDto,
     userId?: number
   ): Promise<ComponentVersion> {
-    const version = await this.findOneVersion(id)
+    const version = await this.findOneVersionSimple(id)
 
     Object.assign(version, updateDto)
     if (userId) {
@@ -186,7 +234,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
    * @param id - ComponentVersion.id (数据库主键 number)
    */
   async publishVersion(id: number, publishDto?: PublishVersionDto): Promise<ComponentVersion> {
-    const version = await this.findOneVersion(id)
+    const version = await this.findOneVersionSimple(id)
 
     if (version.status === VersionStatus.PUBLISHED) {
       throw new BusinessException(
@@ -280,7 +328,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
    * @param id - ComponentVersion.id (数据库主键 number)
    */
   async unpublishVersion(id: number): Promise<ComponentVersion> {
-    const version = await this.findOneVersion(id)
+    const version = await this.findOneVersionSimple(id)
 
     if (version.status === VersionStatus.DRAFT) {
       throw new BusinessException(
@@ -358,7 +406,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
    * @param versionId - ComponentVersion.id（版本主键，number）
    */
   async setLatestVersion(componentId: string, versionId: number): Promise<ComponentVersion> {
-    const version = await this.findOneVersion(versionId)
+    const version = await this.findOneVersionSimple(versionId)
 
     // 验证版本属于指定组件
     if (version.componentId !== componentId) {
@@ -427,7 +475,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
    * @param id - ComponentVersion.id (数据库主键 number)
    */
   async deleteVersion(id: number): Promise<void> {
-    const version = await this.findOneVersion(id)
+    const version = await this.findOneVersionSimple(id)
 
     // 如果是推荐版本，不允许删除
     if (version.isLatest) {
