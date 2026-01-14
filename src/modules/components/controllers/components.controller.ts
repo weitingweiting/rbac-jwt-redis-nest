@@ -16,15 +16,15 @@ import {
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { ComponentsService } from '../services/components.service'
-import { ComponentUploadService } from '../services/component-upload.service'
-import { QueryComponentDto } from '../dto/component.dto'
-import { ComponentOverviewDto } from '../dto/component-overview.dto'
+import { ComponentsService } from '@/modules/components/services/components.service'
+import { ComponentUploadService } from '@/modules/components/services/component-upload.service'
+import { QueryComponentDto } from '@/modules/components/dto/component.dto'
+import { ComponentOverviewDto } from '@/modules/components/dto/component-overview.dto'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
 import { CurrentUserDto } from '@/shared/dto/current-user.dto'
-import { COMPONENT_FILE_UPLOAD_RULES } from '../constants/validation-rules.constant'
+import { COMPONENT_FILE_UPLOAD_RULES } from '@/modules/components/constants/validation-rules.constant'
 
 /**
  * 组件管理控制器
@@ -42,12 +42,25 @@ export class ComponentsController {
 
   /**
    * 获取组件列表（分页、筛选）
-   * GET /api/components?page=1&limit=10&keyword=xxx&classificationLevel1=chart&hasPublishedVersion=true
+   * GET /api/components?page=1&limit=10&keyword=xxx&classificationLevel1=chart&classificationLevel2=bar&hasPublishedVersion=true
+   *
+   * 画布场景使用参数：
+   * - includeDrafts=true: 包含当前用户的 draft 版本组件（用于开发调试）
+   * GET /api/components?page=1&limit=10&keyword=xxx&classificationLevel1=chart&classificationLevel2=bar&hasPublishedVersion=true
+   *
+   * 画布场景使用参数：
+   * - includeDrafts=true: 包含当前用户的 draft 版本组件（用于开发调试）
+   * - 默认只返回有 published 版本的组件
+   * 组件可见性规则：
+   * - 默认只返回有 published 版本的组件
+   * - includeDrafts=true 时，额外返回当前用户有 draft 版本的组件
    */
   @Get()
   @RequirePermissions('component.read')
-  async findAll(@Query() query: QueryComponentDto) {
-    const result = await this.componentsService.findAllWithPagination(query)
+  async findAll(@Query() query: QueryComponentDto, @CurrentUser() user: CurrentUserDto) {
+    // 注入当前用户ID，用于 draft 版本可见性过滤
+
+    const result = await this.componentsService.findAllWithPagination(query, user)
     return {
       message: '获取组件列表成功',
       ...result

@@ -20,7 +20,7 @@ import {
   DevelopmentApplication,
   IUploadInfo
 } from '@/shared/entities/development-application.entity'
-import { DevelopmentStatus, ApplicationType } from '@/modules/development-applications/constants'
+import { ApplicationType } from '@/modules/development-applications/constants'
 
 /**
  * 组件上传服务
@@ -53,10 +53,10 @@ export class ComponentUploadService {
    *
    * 新流程说明：
    * - 组件包中必须包含 supplement.json（从研发申请系统下载）
-   * - 验证前端传递的 applicationNo 与 supplement.json 中的一致性（防止混用）
-   * - 验证 supplement 与申请记录一致
+   * - 验证 supplement 与申请记录一致（包括 applicationNo、组件ID、版本号等）
    * - 验证 meta.json 与 supplement 一致
-   * - 上传成功后自动更新申请状态为 COMPLETED
+   * - 上传成功后保持 APPROVED 状态，允许多次上传调试
+   * - 申请状态在版本发布时才变更为 COMPLETED
    */
   async processUpload(
     file: Express.Multer.File,
@@ -87,17 +87,22 @@ export class ComponentUploadService {
         componentId: supplement.id,
         version: supplement.version,
         applicationId: supplement._metadata.applicationId,
-        applicationNo: supplement._metadata.applicationNo
+        applicationNo: supplement._metadata.applicationNo,
+        requestedApplicationNo: applicationNo // 记录前端传参，用于对比
       })
 
-      // 3. 验证前端传递的 applicationNo 与 supplement.json 中的一致性（防止混用不同申请的组件包）
-      this.validationService.validateApplicationNoConsistency(
-        applicationNo,
-        supplement._metadata.applicationNo
-      )
+      // 3. 验证前端传参与组件包的一致性（防止混用不同申请的组件包）
+      if (applicationNo !== supplement._metadata.applicationNo) {
+        throw new BusinessException(
+          `申请单号不匹配：当前操作的申请为 "${applicationNo}"，但组件包属于 "${supplement._metadata.applicationNo}"。` +
+            `请确认上传的组件包是否正确，或检查是否下载了错误的 supplement.json`,
+          HttpStatus.BAD_REQUEST,
+          ERROR_CODES.APPLICATION_MISMATCH
+        )
+      }
 
       this.logger.info('申请单号一致性验证通过', {
-        requestedApplicationNo: applicationNo,
+        applicationNo,
         supplementApplicationNo: supplement._metadata.applicationNo
       })
 
@@ -107,7 +112,7 @@ export class ComponentUploadService {
       // 5. 检查申请状态（只有 APPROVED 状态才能上传）
       this.validationService.validateApplicationStatus(application)
 
-      // 6. 解析并验证 meta.json（来自 abd-cli 构建，只包含技术信息）
+      // 5. 解析并验证 meta.json（来自 abd-cli 构建，只包含技术信息）
       const buildMeta = await this.validationService.parseAndValidateBuildMeta(file.buffer)
 
       this.logger.info('解析 meta.json 成功', {
@@ -116,10 +121,10 @@ export class ComponentUploadService {
         framework: buildMeta.framework
       })
 
-      // 7. 验证 meta 中声明的文件是否存在
+      // 6. 验证 meta 中声明的文件是否存在
       this.validationService.validateBuildMetaFiles(file.buffer, buildMeta)
 
-      // 8. 验证分类信息是否存在（使用 supplement 中的分类，已在申请时验证过）
+      // 7. 验证分类信息是否存在（使用 supplement 中的分类，已在申请时验证过）
       await this.validationService.validateClassification(
         supplement.classification.level1,
         supplement.classification.level2
@@ -130,7 +135,7 @@ export class ComponentUploadService {
         level2: supplement.classification.level2
       })
 
-      // 9. 上传文件到 OSS
+      // 8. 上传文件到 OSS
       const ossBasePath = this.generateOSSPath(supplement.id, supplement.version)
       this.logger.info('开始上传文件到 OSS', { ossBasePath })
 
@@ -140,14 +145,14 @@ export class ComponentUploadService {
         fileCount: Object.keys(uploadedFiles).length
       })
 
-      // 10. 根据申请类型处理组件记录
+      // 9. 根据申请类型处理组件记录
       const { component, isNew } = await this.handleComponentByApplicationType(
         supplement,
         application,
         userId
       )
 
-      // 11. 创建或替换版本记录（根据申请类型决定）
+      // 10. 创建或替换版本记录（根据申请类型决定）
       const { version, isNewVersion } = await this.handleVersionByApplicationType(
         component,
         supplement,
@@ -159,8 +164,8 @@ export class ComponentUploadService {
         userId
       )
 
-      // 12. 更新研发申请状态为 COMPLETED
-      await this.completeApplication(application, file, version.id)
+      // 11. 更新申请的上传信息（保持 APPROVED 状态，允许多次上传调试）
+      await this.updateApplicationUploadInfo(application, file, version.id)
 
       this.logger.info('组件上传处理完成', {
         componentId: component.componentId,
@@ -193,7 +198,7 @@ export class ComponentUploadService {
   /**
    * 根据申请类型处理组件记录
    *
-   * - NEW: 创建新组件
+   * - NEW: 创建新组件（如果已存在则直接获取，支持多次上传）
    * - VERSION/REPLACE: 获取已存在的组件（不修改组件表）
    */
   private async handleComponentByApplicationType(
@@ -202,23 +207,36 @@ export class ComponentUploadService {
     userId: number
   ): Promise<{ component: Component; isNew: boolean }> {
     if (application.applicationType === ApplicationType.NEW) {
-      // 新组件申请：创建组件记录
-      const component = await this.componentsService.createComponent(
-        {
-          id: supplement.id,
-          name: supplement.name,
-          description: undefined,
-          classification: supplement.classification
-        },
-        userId
-      )
+      // 新组件申请：先检查是否已创建（支持多次上传调试）
+      let component = await this.componentsService.findByComponentId(supplement.id)
+      let isNew = false
 
-      this.logger.info('新组件创建完成', {
-        componentId: component.componentId,
-        applicationType: application.applicationType
-      })
+      if (!component) {
+        // 首次上传：创建组件记录
+        component = await this.componentsService.createComponent(
+          {
+            id: supplement.id,
+            name: supplement.name,
+            description: undefined,
+            classification: supplement.classification
+          },
+          userId
+        )
+        isNew = true
 
-      return { component, isNew: true }
+        this.logger.info('新组件创建完成', {
+          componentId: component.componentId,
+          applicationType: application.applicationType
+        })
+      } else {
+        // 重复上传：直接使用已存在的组件
+        this.logger.info('组件已存在，使用现有记录', {
+          componentId: component.componentId,
+          applicationType: application.applicationType
+        })
+      }
+
+      return { component, isNew }
     } else {
       // VERSION/REPLACE 申请：获取已存在的组件
       const component = await this.componentsService.getExistingComponent(supplement.id)
@@ -393,10 +411,11 @@ export class ComponentUploadService {
   }
 
   /**
-   * 完成研发申请
-   * 更新申请状态为 COMPLETED，记录上传信息
+   * 更新申请的上传信息
+   * 保持 APPROVED 状态，允许开发者多次上传调试
+   * 申请状态在版本发布时才变更为 COMPLETED
    */
-  private async completeApplication(
+  private async updateApplicationUploadInfo(
     application: DevelopmentApplication,
     file: Express.Multer.File,
     componentVersionId: number
@@ -409,15 +428,16 @@ export class ComponentUploadService {
 
     application.uploadInfo = uploadInfo
     application.componentVersionId = componentVersionId
-    application.developmentStatus = DevelopmentStatus.COMPLETED
-    application.completedAt = new Date()
+    // 注意：不再修改 developmentStatus，保持 APPROVED 状态
+    // 申请状态在版本发布（publishVersion）时才变更为 COMPLETED
 
     await this.applicationRepository.save(application)
 
-    this.logger.info('研发申请已完成', {
+    this.logger.info('申请上传信息已更新', {
       applicationId: application.id,
       applicationNo: application.applicationNo,
-      componentVersionId
+      componentVersionId,
+      status: application.developmentStatus // 保持 approved
     })
   }
 

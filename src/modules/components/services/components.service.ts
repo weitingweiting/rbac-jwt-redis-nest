@@ -9,7 +9,8 @@ import { ComponentCategory } from '@/shared/entities/component-category.entity'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
 import { PaginatedResponseDto } from '@/shared/dto/paginated-response.dto'
-import { UpdateComponentDto, QueryComponentDto } from '../dto/component.dto'
+import { UpdateComponentDto, QueryComponentDto } from '@/modules/components/dto/component.dto'
+import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 import {
   ComponentOverviewDto,
   ICategoryNode,
@@ -17,7 +18,7 @@ import {
   IVersionNode,
   OverviewTreeNode,
   LeafLevel
-} from '../dto/component-overview.dto'
+} from '@/modules/components/dto/component-overview.dto'
 
 /**
  * 组件业务信息接口
@@ -57,8 +58,15 @@ export class ComponentsService {
 
   /**
    * 获取组件列表（带分页和查询）
+   *
+   * 可见性策略：
+   * - 默认：返回所有 published + 当前用户的 draft 版本的组件
+   * - 支持按 keyword、分类、申请单号过滤
    */
-  async findAllWithPagination(query: QueryComponentDto): Promise<PaginatedResponseDto<Component>> {
+  async findAllWithPagination(
+    query: QueryComponentDto,
+    user: CurrentUserDto
+  ): Promise<PaginatedResponseDto<Component>> {
     const queryBuilder = this.componentRepository
       .createQueryBuilder('component')
       .where('component.deletedAt IS NULL')
@@ -84,18 +92,35 @@ export class ComponentsService {
       })
     }
 
-    // 是否有已发布版本过滤（关键查询）
-    if (query.hasPublishedVersion === true) {
-      queryBuilder.andWhere('component.publishedVersionCount > 0')
-    } else if (query.hasPublishedVersion === false) {
-      queryBuilder.andWhere('component.publishedVersionCount = 0')
+    // 申请单号过滤：返回包含该申请单号关联版本的组件
+    if (query.applicationNo) {
+      queryBuilder.andWhere(
+        `EXISTS (
+          SELECT 1 FROM component_versions v
+          INNER JOIN development_applications da ON da.component_version_id = v.id
+          WHERE v.component_id = component.component_id
+          AND da.application_no LIKE :applicationNo
+          AND v.deleted_at IS NULL
+        )`,
+        { applicationNo: `%${query.applicationNo}%` }
+      )
     }
 
-    // 是否官方组件过滤
-    if (query.isOfficial !== undefined) {
-      queryBuilder.andWhere('component.isOfficial = :isOfficial', {
-        isOfficial: query.isOfficial
-      })
+    // 核心可见性：published + 当前用户的 draft
+    if (user?.id) {
+      queryBuilder.andWhere(
+        `(component.publishedVersionCount > 0 OR EXISTS (
+          SELECT 1 FROM component_versions v 
+          WHERE v.component_id = component.component_id 
+          AND v.status = 'draft' 
+          AND v.created_by = :currentUserId
+          AND v.deleted_at IS NULL
+        ))`,
+        { currentUserId: user.id }
+      )
+    } else {
+      // 未登录：只返回有发布版本的组件
+      queryBuilder.andWhere('component.publishedVersionCount > 0')
     }
 
     // 排序

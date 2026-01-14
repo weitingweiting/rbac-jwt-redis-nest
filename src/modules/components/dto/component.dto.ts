@@ -1,6 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, MaxLength, IsEnum } from 'class-validator'
 import { PartialType } from '@nestjs/mapped-types'
-import { Transform } from 'class-transformer'
 import { PaginationDto } from '@/shared/dto/pagination.dto'
 
 /**
@@ -73,16 +72,6 @@ export class QueryComponentDto extends PaginationDto {
   classificationLevel2?: string
 
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : undefined))
-  @IsBoolean()
-  hasPublishedVersion?: boolean
-
-  @IsOptional()
-  @Transform(({ value }) => (value === 'true' ? true : value === 'false' ? false : undefined))
-  @IsBoolean()
-  isOfficial?: boolean
-
-  @IsOptional()
   @IsEnum(['usedCount', 'versionCount', 'createdAt', 'updatedAt'], {
     message: '排序字段只能是 usedCount, versionCount, createdAt, updatedAt'
   })
@@ -91,6 +80,14 @@ export class QueryComponentDto extends PaginationDto {
   @IsOptional()
   @IsEnum(['ASC', 'DESC'], { message: '排序方向只能是 ASC 或 DESC' })
   sortOrder?: 'ASC' | 'DESC'
+
+  /**
+   * 申请单号过滤
+   * 返回包含该申请单号关联版本的组件
+   */
+  @IsOptional()
+  @IsString()
+  applicationNo?: string
 }
 
 /**

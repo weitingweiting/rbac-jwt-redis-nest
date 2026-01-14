@@ -22,6 +22,7 @@ help:
 	@echo "  make backup      - 备份数据目录"
 	@echo "  make install     - 安装 npm 依赖"
 	@echo "  make seed        - 初始化数据库种子数据"
+	@echo "  make clear-components - 清空组件表（Docker 方式）⚠️"
 	@echo "  make dev         - 启动开发服务器（直接运行）"
 	@echo "  make build       - 构建生产版本"
 	@echo "  make start       - 启动生产服务器（PM2）"
@@ -114,6 +115,11 @@ install:
 seed:
 	@echo "🌱 初始化数据库种子数据..."
 	npm run seed
+
+# 清空组件表
+clear-components:
+	@echo "🧹 清空组件相关表（components, component_versions, development_applications）..."
+	@bash scripts/clear-component-tables.sh
 
 # 开发环境
 dev:

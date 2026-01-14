@@ -8,10 +8,12 @@ import {
   UseGuards,
   ParseIntPipe
 } from '@nestjs/common'
-import { ComponentVersionsService } from '../services/component-versions.service'
-import { QueryComponentVersionDto } from '../dto/component-version.dto'
+import { ComponentVersionsService } from '@/modules/components/services/component-versions.service'
+import { QueryComponentVersionDto } from '@/modules/components/dto/component-version.dto'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
+import { CurrentUserDto } from '@/shared/dto/current-user.dto'
 
 /**
  * 组件版本管理控制器
@@ -28,33 +30,32 @@ export class ComponentVersionsController {
    * GET /api/components/:componentId/versions
    *
    * 支持查询参数：
-   * - status: 版本状态（draft/published）
    * - isLatest: 是否推荐版本
-   * - all: 是否查询所有版本（包括草稿）
    * - page, limit: 分页参数
    *
    * 返回数据包含：
    * - version: 版本基本信息
    * - component: 关联的组件信息
    * - developmentApplication: 创建该版本的研发申请信息
-   *   - applicationNo: 申请单号
-   *   - applicant: 申请人信息
-   *   - applicationType: 申请类型（new/version/replace）
-   *   - developmentStatus: 申请状态
+   *
+   * 可见性策略：
+   * - 默认返回：所有 published + 当前用户的 draft
+   * - 按 componentId 过滤
+   * - 按创建时间降序排列
    *
    * @param componentId - 组件ID（如：BarChart）
    * @param query - 查询参数
+   * @param user - 当前登录用户
    */
   @Get('components/:componentId/versions')
   @RequirePermissions('component.read')
   async getVersionList(
     @Param('componentId') componentId: string,
-    @Query() query: QueryComponentVersionDto
+    @Query() query: QueryComponentVersionDto,
+    @CurrentUser() user: CurrentUserDto
   ) {
-    // 将 componentId 注入到查询参数中
     query.componentId = componentId
-
-    const result = await this.versionsService.findAllWithPagination(query)
+    const result = await this.versionsService.findAllWithPagination(query, user)
 
     return {
       message: '获取版本列表成功',

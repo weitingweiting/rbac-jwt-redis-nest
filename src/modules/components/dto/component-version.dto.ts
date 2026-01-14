@@ -154,11 +154,6 @@ export class QueryComponentVersionDto extends PaginationDto {
   @IsBoolean()
   @Type(() => Boolean)
   isLatest?: boolean
-
-  @IsOptional()
-  @IsBoolean()
-  @Type(() => Boolean)
-  all?: boolean // 是否查询所有版本（包括 draft）
 }
 
 /**

@@ -4,6 +4,8 @@ import { Repository, DataSource } from 'typeorm'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { ComponentVersion } from '@/shared/entities/component-version.entity'
+import { DevelopmentApplication } from '@/shared/entities/development-application.entity'
+import { DevelopmentStatus } from '@/modules/development-applications/constants'
 import { BaseService } from '@/common/services/base.service'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { ERROR_CODES } from '@/shared/constants/error-codes.constant'
@@ -12,10 +14,11 @@ import {
   UpdateComponentVersionDto,
   QueryComponentVersionDto,
   PublishVersionDto
-} from '../dto/component-version.dto'
+} from '@/modules/components/dto/component-version.dto'
 import { PaginatedResponseDto } from '@/shared/dto/paginated-response.dto'
-import { VersionStatus } from '../constants/version-status.enum'
-import { ComponentsService } from './components.service'
+import { VersionStatus } from '@/modules/components/constants/version-status.enum'
+import { CurrentUserDto } from '@/shared/dto/current-user.dto'
+import { ComponentsService } from '@/modules/components/services/components.service'
 
 @Injectable()
 export class ComponentVersionsService extends BaseService<ComponentVersion> {
@@ -32,9 +35,15 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
   /**
    * 获取版本列表（带分页和查询）
+   *
+   * 可见性策略：
+   * - 默认：返回所有 published + 当前用户的 draft
+   * - published 版本对所有用户可见
+   * - draft 版本只对创建者可见（安全策略）
    */
   async findAllWithPagination(
-    query: QueryComponentVersionDto
+    query: QueryComponentVersionDto,
+    user: CurrentUserDto
   ): Promise<PaginatedResponseDto<ComponentVersion>> {
     const queryBuilder = this.versionRepository
       .createQueryBuilder('version')
@@ -42,7 +51,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       .leftJoinAndSelect(
         'version.developmentApplications',
         'application',
-        "application.developmentStatus = 'completed'"
+        "application.developmentStatus IN ('completed', 'approved')"
       )
       .leftJoinAndSelect('application.applicant', 'applicant')
       .where('version.deletedAt IS NULL')
@@ -54,11 +63,19 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       })
     }
 
-    // 按状态过滤
-    if (query.status) {
-      queryBuilder.andWhere('version.status = :status', { status: query.status })
-    } else if (!query.all) {
-      // 默认只返回已发布版本（除非指定 all=true）
+    // 核心可见性控制：published + 当前用户的 draft
+    if (user && user.id) {
+      // 登录用户：返回所有 published + 该用户创建的 draft
+      queryBuilder.andWhere(
+        '(version.status = :published OR (version.status = :draft AND version.createdBy = :currentUserId))',
+        {
+          published: VersionStatus.PUBLISHED,
+          draft: VersionStatus.DRAFT,
+          currentUserId: user.id
+        }
+      )
+    } else {
+      // 未登录或无用户ID：只返回 published（安全策略）
       queryBuilder.andWhere('version.status = :status', { status: VersionStatus.PUBLISHED })
     }
 
@@ -67,7 +84,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       queryBuilder.andWhere('version.isLatest = :isLatest', { isLatest: query.isLatest })
     }
 
-    // 按版本号降序排列
+    // 按创建时间降序排列（最新的在前）
     queryBuilder.orderBy('version.createdAt', 'DESC')
 
     // 分页
@@ -174,6 +191,10 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
   /**
    * 创建组件版本（通常由上传服务调用）
+   *
+   * 多次上传支持：
+   * - 如果版本已存在且是 draft，返回现有版本（允许多次上传调试）
+   * - 如果版本已存在且是 published，抛出异常（保护已发布版本）
    */
   async createVersion(
     createDto: CreateComponentVersionDto,
@@ -189,10 +210,21 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
     )
 
     if (existingVersion) {
+      // 如果版本已存在且是 draft 状态，返回现有版本（支持多次上传调试）
+      if (existingVersion.status === VersionStatus.DRAFT) {
+        this.logger.info('版本已存在，返回现有 draft 版本（支持多次上传）', {
+          componentId: createDto.componentId,
+          version: createDto.version,
+          versionId: existingVersion.id
+        })
+        return existingVersion
+      }
+
+      // 如果是 published 状态，不允许覆盖
       throw new BusinessException(
-        `组件版本 ${createDto.version} 已存在`,
+        `组件版本 ${createDto.version} 已发布，无法覆盖`,
         HttpStatus.BAD_REQUEST,
-        ERROR_CODES.COMPONENT_VERSION_ALREADY_EXISTS
+        ERROR_CODES.COMPONENT_VERSION_ALREADY_PUBLISHED
       )
     }
 
@@ -231,6 +263,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
   /**
    * 发布版本（draft → published）
    * 重要：需要更新 publishedVersionCount
+   * 重要：发布后自动将关联的研发申请状态设为 COMPLETED
    * @param id - ComponentVersion.id (数据库主键 number)
    */
   async publishVersion(id: number, publishDto?: PublishVersionDto): Promise<ComponentVersion> {
@@ -273,6 +306,9 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         { publishedVersionCount: publishedCount }
       )
 
+      // 3. 自动完成关联的研发申请（APPROVED → COMPLETED）
+      await this.completeRelatedApplications(queryRunner, id)
+
       await queryRunner.commitTransaction()
 
       this.logger.info('版本发布成功', {
@@ -282,7 +318,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         publishedCount
       })
 
-      // 3. 如果是该组件的第一个发布版本，自动设为推荐版本
+      // 4. 如果是该组件的第一个发布版本，自动设为推荐版本
       if (publishedCount === 1) {
         this.logger.info('检测到首个发布版本，自动设为推荐版本', {
           componentId: version.componentId,
@@ -319,6 +355,38 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       )
     } finally {
       await queryRunner.release()
+    }
+  }
+
+  /**
+   * 完成关联的研发申请
+   * 当版本发布时，将关联的 APPROVED 状态申请设为 COMPLETED
+   */
+  private async completeRelatedApplications(queryRunner: any, versionId: number): Promise<void> {
+    // 查找关联此版本且状态为 APPROVED 的申请
+    const applications = await queryRunner.manager.find(DevelopmentApplication, {
+      where: {
+        componentVersionId: versionId,
+        developmentStatus: DevelopmentStatus.APPROVED
+      }
+    })
+
+    if (applications.length === 0) {
+      this.logger.info('未找到需要完成的研发申请', { versionId })
+      return
+    }
+
+    // 批量更新申请状态
+    for (const application of applications) {
+      application.developmentStatus = DevelopmentStatus.COMPLETED
+      application.completedAt = new Date()
+      await queryRunner.manager.save(application)
+
+      this.logger.info('研发申请已自动完成', {
+        applicationId: application.id,
+        applicationNo: application.applicationNo,
+        versionId
+      })
     }
   }
 
