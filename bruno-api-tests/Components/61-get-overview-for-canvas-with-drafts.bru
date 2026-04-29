@@ -1,0 +1,77 @@
+meta {
+  name: 61-get-overview-for-canvas-with-drafts
+  type: http
+  seq: 61
+}
+
+get {
+  url: {{baseUrl}}/components/overview-for-canvas?includeDrafts=true
+  body: none
+  auth: bearer
+}
+
+params:query {
+  includeDrafts: true
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: eq 获取画布场景组件总览成功
+  res.body.data: isArray
+}
+
+tests {
+  test("响应结构正确", function() {
+    expect(res.body).to.have.property('message');
+    expect(res.body).to.have.property('data');
+    expect(res.body.data).to.be.an('array');
+  });
+  
+  test("可能包含 draft 版本", function() {
+    const tree = res.body.data;
+    let hasDraft = false;
+    let hasPublished = false;
+    
+    // 递归检查版本状态
+    function checkVersions(nodes) {
+      for (const node of nodes) {
+        if (node.type === 'version') {
+          if (node.status === 'draft') hasDraft = true;
+          if (node.status === 'published') hasPublished = true;
+        }
+        if (node.children) {
+          checkVersions(node.children);
+        }
+      }
+    }
+    
+    checkVersions(tree);
+    
+    // 只验证结构正确，draft 是否存在取决于当前用户是否有 draft 版本
+    console.log(`包含 published 版本: ${hasPublished}`);
+    console.log(`包含 draft 版本: ${hasDraft}`);
+  });
+}
+
+docs {
+  # 获取画布场景组件总览（包含 Draft 版本）
+  
+  ## 功能说明
+  获取当前用户可见的组件树，包括：
+  - 所有 published 版本
+  - 当前登录用户的 draft 版本
+  
+  **使用场景**：开发者调试自己正在开发的组件
+  
+  ## 权限要求
+  - component.read
+  
+  ## 返回说明
+  返回的版本状态可能包含：
+  - published: 所有已发布版本
+  - draft: 仅当前用户创建的草稿版本
+}

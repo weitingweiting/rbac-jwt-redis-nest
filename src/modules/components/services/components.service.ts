@@ -17,7 +17,12 @@ import {
   IComponentNode,
   IVersionNode,
   OverviewTreeNode,
-  LeafLevel
+  LeafLevel,
+  CanvasOverviewDto,
+  ICanvasCategoryNode,
+  ICanvasComponentNode,
+  ICanvasVersionNode,
+  CanvasOverviewTreeNode
 } from '@/modules/components/dto/component-overview.dto'
 
 /**
@@ -540,6 +545,198 @@ export class ComponentsService {
       categoriesCount: categories.length,
       componentsCount: components.length,
       versionsCount: versions.length,
+      treeNodesCount: tree.length
+    })
+
+    return tree
+  }
+
+  /**
+   * 获取画布场景的组件总览数据（树形结构）
+   *
+   * 可见性策略：
+   * - 默认返回所有 published 版本
+   * - includeDrafts=true 时，额外返回当前用户的 draft 版本
+   *
+   * 过滤策略：
+   * - 只返回有可见版本的组件
+   * - 只返回有可见组件的分类
+   *
+   * @param query - 查询参数
+   * @param user - 当前用户（用于 draft 版本可见性判断）
+   */
+  async getOverviewForCanvas(
+    query: CanvasOverviewDto,
+    user: CurrentUserDto
+  ): Promise<CanvasOverviewTreeNode[]> {
+    this.logger.info('获取画布场景组件总览数据', { query, userId: user.id })
+
+    // 1. 构建版本查询（可见性策略）
+    const versionsQuery = this.versionRepository
+      .createQueryBuilder('version')
+      .where('version.deletedAt IS NULL')
+      .orderBy('version.createdAt', 'DESC')
+
+    if (query.includeDrafts) {
+      // 所有 published + 当前用户的 draft
+      versionsQuery.andWhere(
+        '(version.status = :published OR (version.status = :draft AND version.createdBy = :userId))',
+        { published: 'published', draft: 'draft', userId: user.id }
+      )
+    } else {
+      // 仅 published
+      versionsQuery.andWhere('version.status = :status', { status: 'published' })
+    }
+
+    const versions = await versionsQuery.getMany()
+
+    // 2. 获取有可见版本的组件ID列表
+    const visibleComponentIds = [...new Set(versions.map((v) => v.componentId))]
+
+    if (visibleComponentIds.length === 0) {
+      this.logger.info('没有可见的组件版本')
+      return []
+    }
+
+    // 3. 查询这些组件
+    const componentsQuery = this.componentRepository
+      .createQueryBuilder('component')
+      .where('component.deletedAt IS NULL')
+      .andWhere('component.componentId IN (:...componentIds)', {
+        componentIds: visibleComponentIds
+      })
+
+    // 应用筛选条件
+    if (query.keyword) {
+      componentsQuery.andWhere(
+        '(component.name LIKE :keyword OR component.componentId LIKE :keyword OR component.description LIKE :keyword)',
+        { keyword: `%${query.keyword}%` }
+      )
+    }
+
+    if (query.classificationLevel1) {
+      componentsQuery.andWhere('component.classificationLevel1 = :level1', {
+        level1: query.classificationLevel1
+      })
+    }
+
+    if (query.classificationLevel2) {
+      componentsQuery.andWhere('component.classificationLevel2 = :level2', {
+        level2: query.classificationLevel2
+      })
+    }
+
+    componentsQuery.orderBy('component.createdAt', 'DESC')
+    const components = await componentsQuery.getMany()
+
+    if (components.length === 0) {
+      this.logger.info('没有匹配的组件')
+      return []
+    }
+
+    // 4. 获取所有分类
+    const categories = await this.categoryRepository.find({
+      where: { deletedAt: null },
+      order: { level: 'ASC', sortOrder: 'ASC', id: 'ASC' }
+    })
+
+    // 5. 构建组件到版本的映射（只包含该组件的可见版本）
+    const componentVersionsMap = new Map<string, ICanvasVersionNode[]>()
+    for (const version of versions) {
+      // 检查该组件是否在筛选后的组件列表中
+      if (!components.find((c) => c.componentId === version.componentId)) {
+        continue
+      }
+
+      if (!componentVersionsMap.has(version.componentId)) {
+        componentVersionsMap.set(version.componentId, [])
+      }
+      componentVersionsMap.get(version.componentId)!.push({
+        key: `version-${version.id}`,
+        type: 'version',
+        id: version.id,
+        version: version.version,
+        status: version.status,
+        isLatest: version.isLatest,
+        entryUrl: version.entryUrl,
+        styleUrl: version.styleUrl,
+        previewUrl: version.previewUrl
+      })
+    }
+
+    // 6. 构建分类到组件的映射
+    const categoryComponentsMap = new Map<string, ICanvasComponentNode[]>()
+    for (const component of components) {
+      const categoryKey = `${component.classificationLevel1}-${component.classificationLevel2}`
+      if (!categoryComponentsMap.has(categoryKey)) {
+        categoryComponentsMap.set(categoryKey, [])
+      }
+
+      const componentVersions = componentVersionsMap.get(component.componentId) || []
+
+      categoryComponentsMap.get(categoryKey)!.push({
+        key: `component-${component.componentId}`,
+        type: 'component',
+        componentId: component.componentId,
+        name: component.name,
+        displayName: component.name,
+        description: component.description || undefined,
+        thumbnailUrl: component.thumbnailUrl || undefined,
+        children: componentVersions
+      })
+    }
+
+    // 7. 构建树形结构（只包含有组件的分类）
+    const level1Categories = categories.filter((cat) => cat.level === 1)
+    const level2Categories = categories.filter((cat) => cat.level === 2)
+
+    const tree: ICanvasCategoryNode[] = []
+
+    for (const level1Cat of level1Categories) {
+      const level2Children: (ICanvasCategoryNode | ICanvasComponentNode)[] = []
+
+      // 查找属于该一级分类的二级分类
+      const childLevel2Categories = level2Categories.filter((cat) => cat.parentId === level1Cat.id)
+
+      for (const level2Cat of childLevel2Categories) {
+        const categoryKey = `${level1Cat.code}-${level2Cat.code}`
+        const componentsInCategory = categoryComponentsMap.get(categoryKey) || []
+
+        // 只有有组件的二级分类才加入
+        if (componentsInCategory.length > 0) {
+          level2Children.push({
+            key: `category-${level2Cat.id}`,
+            type: 'category',
+            level: 2,
+            id: level2Cat.id,
+            code: level2Cat.code,
+            name: level2Cat.name,
+            icon: level2Cat.icon,
+            children: componentsInCategory
+          })
+        }
+      }
+
+      // 只有有子节点的一级分类才加入
+      if (level2Children.length > 0) {
+        tree.push({
+          key: `category-${level1Cat.id}`,
+          type: 'category',
+          level: 1,
+          id: level1Cat.id,
+          code: level1Cat.code,
+          name: level1Cat.name,
+          icon: level1Cat.icon,
+          children: level2Children
+        })
+      }
+    }
+
+    this.logger.info('画布场景组件总览数据构建完成', {
+      includeDrafts: query.includeDrafts,
+      userId: user.id,
+      visibleVersionsCount: versions.length,
+      componentsCount: components.length,
       treeNodesCount: tree.length
     })
 

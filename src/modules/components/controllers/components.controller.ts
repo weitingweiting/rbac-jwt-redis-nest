@@ -19,7 +19,10 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { ComponentsService } from '@/modules/components/services/components.service'
 import { ComponentUploadService } from '@/modules/components/services/component-upload.service'
 import { QueryComponentDto } from '@/modules/components/dto/component.dto'
-import { ComponentOverviewDto } from '@/modules/components/dto/component-overview.dto'
+import {
+  ComponentOverviewDto,
+  CanvasOverviewDto
+} from '@/modules/components/dto/component-overview.dto'
 import { RequirePermissions } from '@/shared/decorators/permissions.decorator'
 import { PermissionsGuard } from '@/shared/guards/permissions.guard'
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator'
@@ -44,16 +47,6 @@ export class ComponentsController {
    * 获取组件列表（分页、筛选）
    * GET /api/components?page=1&limit=10&keyword=xxx&classificationLevel1=chart&classificationLevel2=bar&hasPublishedVersion=true
    *
-   * 画布场景使用参数：
-   * - includeDrafts=true: 包含当前用户的 draft 版本组件（用于开发调试）
-   * GET /api/components?page=1&limit=10&keyword=xxx&classificationLevel1=chart&classificationLevel2=bar&hasPublishedVersion=true
-   *
-   * 画布场景使用参数：
-   * - includeDrafts=true: 包含当前用户的 draft 版本组件（用于开发调试）
-   * - 默认只返回有 published 版本的组件
-   * 组件可见性规则：
-   * - 默认只返回有 published 版本的组件
-   * - includeDrafts=true 时，额外返回当前用户有 draft 版本的组件
    */
   @Get()
   @RequirePermissions('component.read')
@@ -92,6 +85,37 @@ export class ComponentsController {
     const tree = await this.componentsService.getComponentOverview(query)
     return {
       message: '获取组件总览成功',
+      data: tree
+    }
+  }
+
+  /**
+   * 获取画布场景的组件总览（树形结构）
+   * GET /api/components/overview-for-canvas?keyword=xxx&classificationLevel1=chart&includeDrafts=true
+   *
+   * 专为画布场景设计，实现组件可见性策略：
+   * - 默认只返回有 published 版本的组件
+   * - includeDrafts=true 时，额外返回当前用户有 draft 版本的组件
+   *
+   * 过滤策略：
+   * - 只返回有可见版本的组件
+   * - 只返回有可见组件的分类（空分类不返回）
+   *
+   * 返回的树形结构：
+   * - Level 1: 一级分类（如：图表）
+   *   - Level 2: 二级分类（如：柱状图）
+   *     - Level 3: 组件（如：BarChart）
+   *       - Level 4: 版本（如：v1.2.0）- 只包含可见版本
+   */
+  @Get('overview-for-canvas')
+  @RequirePermissions('component.read')
+  async getOverviewForCanvas(
+    @Query() query: CanvasOverviewDto,
+    @CurrentUser() user: CurrentUserDto
+  ) {
+    const tree = await this.componentsService.getOverviewForCanvas(query, user)
+    return {
+      message: '获取画布场景组件总览成功',
       data: tree
     }
   }

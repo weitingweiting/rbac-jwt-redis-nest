@@ -24,19 +24,21 @@ export class ProxyTestChartsController {
       code: 200,
       message: '成功',
       success: true,
-      data: {
-        dimensions: ['product', 'data1', 'data2'],
-        source: [
-          { product: 'Mon', data1: 120, data2: 130 },
-          { product: 'Tue', data1: 200, data2: 130 },
-          { product: 'Wed', data1: 150, data2: 312 },
-          { product: 'Thu', data1: 80, data2: 268 },
-          { product: 'Fri', data1: 70, data2: 155 },
-          { product: 'Sat', data1: 110, data2: 117 },
-          { product: 'Sun', data1: 130, data2: 160 },
-          { product: 'SunS', data1: 333, data2: 666 }
-        ]
-      }
+      data: [
+        {
+          dimensions: ['product', 'data1', 'data2'],
+          source: [
+            { product: 'Mon', data1: 120, data2: 130 },
+            { product: 'Tue', data1: 200, data2: 130 },
+            { product: 'Wed', data1: 150, data2: 312 },
+            { product: 'Thu', data1: 80, data2: 268 },
+            { product: 'Fri', data1: 70, data2: 155 },
+            { product: 'Sat', data1: 110, data2: 117 },
+            { product: 'Sun', data1: 130, data2: 160 },
+            { product: 'SunS', data1: 333, data2: 666 }
+          ]
+        }
+      ]
     }
   }
 
@@ -51,9 +53,9 @@ export class ProxyTestChartsController {
     // 生成随机数据
     const days = ['Mon1', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'SunS']
     const randomSource = days.map((day) => ({
-      product: day,
-      data1: Math.floor(Math.random() * 300) + 50, // 50-350 之间的随机数
-      data2: Math.floor(Math.random() * 500) + 100 // 100-600 之间的随机数
+      category: day,
+      income: Math.floor(Math.random() * 300) + 50, // 50-350 之间的随机数
+      expense: Math.floor(Math.random() * 500) + 100 // 100-600 之间的随机数
     }))
 
     return {
@@ -61,7 +63,7 @@ export class ProxyTestChartsController {
       message: '成功',
       success: true,
       data: {
-        dimensions: ['product', 'data1', 'data2'],
+        dimensions: ['category', 'income', 'expense'],
         source: randomSource,
         timestamp: Date.now() // 添加时间戳，方便确认每次请求都是新数据
       }

@@ -1,0 +1,135 @@
+meta {
+  name: 60-get-overview-for-canvas
+  type: http
+  seq: 60
+}
+
+get {
+  url: {{baseUrl}}/components/overview-for-canvas
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: eq 获取画布场景组件总览成功
+  res.body.data: isArray
+}
+
+tests {
+  test("响应结构正确", function() {
+    expect(res.body).to.have.property('message');
+    expect(res.body).to.have.property('data');
+    expect(res.body.data).to.be.an('array');
+  });
+  
+  test("树形结构正确（只有有组件的分类）", function() {
+    const tree = res.body.data;
+    
+    // 遍历一级分类
+    for (const level1 of tree) {
+      expect(level1.type).to.equal('category');
+      expect(level1.level).to.equal(1);
+      expect(level1.children).to.be.an('array');
+      expect(level1.children.length).to.be.greaterThan(0); // 空分类不应返回
+      
+      // 遍历二级分类
+      for (const level2 of level1.children) {
+        expect(level2.type).to.equal('category');
+        expect(level2.level).to.equal(2);
+        expect(level2.children).to.be.an('array');
+        expect(level2.children.length).to.be.greaterThan(0); // 空分类不应返回
+        
+        // 遍历组件
+        for (const component of level2.children) {
+          expect(component.type).to.equal('component');
+          expect(component).to.have.property('componentId');
+          expect(component).to.have.property('name');
+          expect(component.children).to.be.an('array');
+          expect(component.children.length).to.be.greaterThan(0); // 有版本才返回
+          
+          // 遍历版本
+          for (const version of component.children) {
+            expect(version.type).to.equal('version');
+            expect(version).to.have.property('id');
+            expect(version).to.have.property('version');
+            expect(version).to.have.property('status');
+            // 默认不含 draft，只应该是 published
+            expect(version.status).to.equal('published');
+          }
+        }
+      }
+    }
+  });
+}
+
+docs {
+  # 获取画布场景组件总览（可见性策略）
+  
+  ## 功能说明
+  专为画布场景设计，返回用户可见的组件树形数据。
+  
+  **可见性策略**：
+  - 默认只返回有 published 版本的组件
+  - includeDrafts=true 时，额外返回当前用户的 draft 版本
+  
+  **过滤策略**：
+  - 只返回有可见版本的组件
+  - 只返回有可见组件的分类（空分类不返回）
+  
+  ## 权限要求
+  - component.read
+  
+  ## 查询参数
+  - keyword: 搜索关键词（可选，模糊匹配 name/componentId/description）
+  - classificationLevel1: 一级分类过滤（可选）
+  - classificationLevel2: 二级分类过滤（可选）
+  - includeDrafts: 是否包含当前用户的 draft 版本（可选，默认 false）
+  
+  ## 返回结构
+  ```json
+  {
+    "message": "获取画布场景组件总览成功",
+    "data": [
+      {
+        "key": "category-1",
+        "type": "category",
+        "level": 1,
+        "name": "图表",
+        "code": "chart",
+        "children": [
+          {
+            "key": "category-2",
+            "type": "category",
+            "level": 2,
+            "name": "柱状图",
+            "code": "bar",
+            "children": [
+              {
+                "key": "component-BarChart",
+                "type": "component",
+                "componentId": "BarChart",
+                "name": "柱状图",
+                "children": [
+                  {
+                    "key": "version-1",
+                    "type": "version",
+                    "id": 1,
+                    "version": "1.0.0",
+                    "status": "published",
+                    "isLatest": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+  ```
+}

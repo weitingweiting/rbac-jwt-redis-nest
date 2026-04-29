@@ -22,6 +22,8 @@ export class CreateProjectDto {
   @MaxLength(30, { message: '项目名称最多30个字符' })
   name!: string
 
+  @Type(() => Number)
+  @IsNotEmpty({ message: '项目空间ID不能为空' })
   @IsInt({ message: '项目空间ID必须是整数' })
   projectSpaceId!: number
 

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator'
+import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator'
 import { Transform } from 'class-transformer'
 
 /**
@@ -33,6 +33,93 @@ export class ComponentOverviewDto {
   @Transform(({ value }) => value || LeafLevel.Level4)
   leaf?: LeafLevel
 }
+
+/**
+ * 画布场景组件总览查询 DTO
+ *
+ * 可见性策略：
+ * - 默认返回所有 published 版本
+ * - includeDrafts=true 时，额外返回当前用户的 draft 版本
+ *
+ * 过滤策略：
+ * - 只返回有可见版本的组件
+ * - 只返回有可见组件的分类
+ */
+export class CanvasOverviewDto {
+  @IsOptional()
+  @IsString({ message: '搜索关键词必须是字符串' })
+  keyword?: string
+
+  @IsOptional()
+  @IsString({ message: '一级分类必须是字符串' })
+  classificationLevel1?: string
+
+  @IsOptional()
+  @IsString({ message: '二级分类必须是字符串' })
+  classificationLevel2?: string
+
+  /**
+   * 是否包含当前用户的 draft 版本
+   * 用于开发者调试场景
+   */
+  @IsOptional()
+  @IsBoolean({ message: 'includeDrafts 必须是布尔值' })
+  @Transform(({ value }) => {
+    if (value === 'true') return true
+    if (value === 'false') return false
+    if (typeof value === 'boolean') return value
+    return value
+  })
+  includeDrafts?: boolean
+}
+
+/**
+ * 画布场景版本节点（精简版）
+ */
+export interface ICanvasVersionNode {
+  key: string
+  type: 'version'
+  id: number
+  version: string
+  status: string
+  isLatest: boolean
+  entryUrl?: string
+  styleUrl?: string
+  previewUrl?: string
+}
+
+/**
+ * 画布场景组件节点（精简版）
+ */
+export interface ICanvasComponentNode {
+  key: string
+  type: 'component'
+  componentId: string
+  name: string
+  displayName: string
+  description?: string
+  thumbnailUrl?: string
+  children: ICanvasVersionNode[]
+}
+
+/**
+ * 画布场景分类节点
+ */
+export interface ICanvasCategoryNode {
+  key: string
+  type: 'category'
+  level: number
+  id: number
+  code: string
+  name: string
+  icon?: string
+  children: (ICanvasCategoryNode | ICanvasComponentNode)[]
+}
+
+/**
+ * 画布场景树节点类型
+ */
+export type CanvasOverviewTreeNode = ICanvasCategoryNode | ICanvasComponentNode | ICanvasVersionNode
 
 /**
  * 树节点类型
