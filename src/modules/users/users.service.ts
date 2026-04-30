@@ -41,9 +41,8 @@ export class UsersService extends BaseService<User> {
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.roles', 'role')
       .leftJoinAndSelect('role.permissions', 'permission')
-      .where('user.deletedAt IS NULL') // 排除软删除的用户
+      .where('user.deletedAt IS NULL')
 
-    // 应用查询条件
     if (query.username) {
       queryBuilder.andWhere('user.username LIKE :username', {
         username: `%${query.username}%`
@@ -56,18 +55,15 @@ export class UsersService extends BaseService<User> {
       })
     }
 
-    // 应用分页
     queryBuilder.skip(query.skip).take(query.take)
 
-    // 执行查询
     const [users, total] = await queryBuilder.getManyAndCount()
 
     return new PaginatedResponseDto(users, total, query.page ?? 1, query.limit ?? 10)
   }
 
   /**
-   * 内部方法：查找用户实体（包含 password）
-   * 仅在需要完整实体操作时使用（如密码验证）
+   * 查找用户实体（含 password）
    * @private
    */
   private async findUserEntity(id: number): Promise<User> {
@@ -90,12 +86,11 @@ export class UsersService extends BaseService<User> {
 
   /**
    * 根据 ID 查找单个用户（返回 DTO，不包含密码）
-   * 推荐用于所有需要返回用户信息的场景
    */
   async findOneUser(id: number): Promise<UserResponseDto> {
     const user = await this.findUserEntity(id)
     const resUser = plainToInstance(UserResponseDto, user, {
-      excludeExtraneousValues: true // 只包含标记了 @Expose() 的字段
+      excludeExtraneousValues: true
     })
     return resUser
   }
@@ -104,7 +99,6 @@ export class UsersService extends BaseService<User> {
    * 创建用户-给管理员用的
    */
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    // 检查用户名是否已存在
     const existingUser = await this.userRepository.findOne({
       where: { username: createUserDto.username },
       withDeleted: true // 包含软删除用户
@@ -128,7 +122,7 @@ export class UsersService extends BaseService<User> {
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<UserSimpleResponseDto> {
     const existingUser = await this.userRepository.findOne({
       where: { username: updateUserDto.username },
-      withDeleted: true // 包含软删除用户
+      withDeleted: true
     })
 
     if (existingUser) {
@@ -163,7 +157,7 @@ export class UsersService extends BaseService<User> {
         .createQueryBuilder('user')
         .innerJoin('user.roles', 'role')
         .where('role.name = :roleName', { roleName: 'admin' })
-        .andWhere('user.deletedAt IS NULL') // 只统计未删除的管理员
+        .andWhere('user.deletedAt IS NULL')
         .getCount()
 
       if (adminCount <= 1) {
@@ -178,7 +172,6 @@ export class UsersService extends BaseService<User> {
     // 清空用户权限缓存
     await this.userPermissionsService.clearUserCache(id)
 
-    // 执行软删除
     await this.userRepository.softDelete(id)
   }
 
@@ -186,10 +179,9 @@ export class UsersService extends BaseService<User> {
    * 修改用户密码
    */
   async changePassword(userId: number, oldPassword: string, newPassword: string): Promise<void> {
-    // 查找用户（需要密码字段进行验证）
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      select: ['id', 'password'], // 明确选择密码字段
+      select: ['id', 'password'],
       withDeleted: false
     })
 
@@ -197,7 +189,6 @@ export class UsersService extends BaseService<User> {
       throw new BusinessException('用户不存在', HttpStatus.NOT_FOUND, ERROR_CODES.USER_NOT_FOUND)
     }
 
-    // 验证旧密码
     const isOldPasswordValid = PasswordUtil.verifyPassword(oldPassword, user.password)
     if (!isOldPasswordValid) {
       throw new BusinessException(
@@ -207,7 +198,6 @@ export class UsersService extends BaseService<User> {
       )
     }
 
-    // 验证新密码不能与旧密码相同
     if (oldPassword === newPassword) {
       throw new BusinessException(
         '新密码不能与原密码相同',
@@ -216,10 +206,8 @@ export class UsersService extends BaseService<User> {
       )
     }
 
-    // 加密新密码
     const hashedPassword = PasswordUtil.hashPassword(newPassword)
 
-    // 更新密码
     await this.userRepository.update(userId, { password: hashedPassword })
 
     // 将用户踢出登录状态，要求重新登录
@@ -230,7 +218,6 @@ export class UsersService extends BaseService<User> {
    * 管理员重置用户密码
    */
   async resetPassword(userId: number, newPassword: string): Promise<MessageResponseDto> {
-    // 验证用户是否存在
     await this.findOneUser(userId)
 
     // 加密新密码
@@ -269,7 +256,6 @@ export class UsersService extends BaseService<User> {
     // 清空用户权限缓存
     await this.userPermissionsService.clearUserCache(userId)
 
-    // 返回 DTO
     return updatedUser
   }
 }

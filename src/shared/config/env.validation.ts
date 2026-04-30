@@ -32,7 +32,7 @@ export const validationSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('24h'),
   JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
 
-  // 阿里云 OSS 配置
+  // 阿里云 OSS
   OSS_REGION: Joi.string().default('oss-cn-shanghai'),
   OSS_ACCESS_KEY_ID: Joi.string().required().messages({
     'any.required': 'OSS_ACCESS_KEY_ID 是必需的环境变量'
@@ -61,7 +61,6 @@ export const validationSchema = Joi.object({
     .allow('')
     .custom((value, helpers) => {
       if (value && process.env.NODE_ENV === 'production') {
-        // 生产环境建议配置白名单
         if (!value.trim()) {
           return helpers.warn('proxy.emptyWhitelist', {
             message: '⚠️  生产环境建议配置 PROXY_ALLOWED_DOMAINS 白名单'

@@ -83,7 +83,6 @@ export class CreateVersionApplicationDto extends BaseCreateApplicationDto {
 
 /**
  * 创建替换版本申请 DTO
- * 说明：替换版本时，版本号自动从 existingVersion 获取，无需传入 targetVersion
  */
 export class CreateReplaceApplicationDto extends BaseCreateApplicationDto {
   applicationType: ApplicationType.REPLACE = ApplicationType.REPLACE

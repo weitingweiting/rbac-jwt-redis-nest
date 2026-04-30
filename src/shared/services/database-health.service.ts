@@ -22,7 +22,7 @@ export class DatabaseHealthService implements OnModuleInit {
    * 启动定期健康检查
    */
   private startHealthCheck() {
-    this.logger.log('🏥 启动数据库健康检查监控')
+    this.logger.log('启动数据库健康检查监控')
 
     this.checkInterval = setInterval(
       async () => {
@@ -42,7 +42,7 @@ export class DatabaseHealthService implements OnModuleInit {
   async checkDatabaseHealth(): Promise<boolean> {
     try {
       if (!this.dataSource.isInitialized) {
-        this.logger.warn('⚠️ 数据库未初始化，尝试重新连接...')
+        this.logger.warn('数据库未初始化，尝试重新连接...')
         await this.dataSource.initialize()
         return false
       }

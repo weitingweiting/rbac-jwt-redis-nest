@@ -12,11 +12,9 @@ export const createOSSClient = (configService: ConfigService): OSS => {
     bucket: configService.get<string>('oss.bucket')!,
     timeout: configService.get<number>('oss.timeout'),
     internal: configService.get<boolean>('oss.internal'),
-    // 启用 V4 签名算法（更安全）
     authorizationV4: configService.get<boolean>('oss.authorizationV4')
   }
 
-  // 如果配置了自定义 endpoint，使用自定义的
   const endpoint = configService.get<string>('oss.endpoint')
   if (endpoint) {
     return new OSS({ ...config, endpoint })

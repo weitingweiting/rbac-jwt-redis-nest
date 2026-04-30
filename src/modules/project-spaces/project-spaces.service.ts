@@ -170,7 +170,6 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
       )
     }
 
-    // 合并现有用户和新用户，去重
     const existingUserIds = (space?.users ?? []).map((u) => u.id)
     const newUsers = users.filter((u) => !existingUserIds.includes(u.id))
     space.users = [...(space?.users ?? []), ...newUsers]

@@ -71,7 +71,7 @@ export class AuthController {
    */
   @Post('refresh')
   async refreshToken(@CurrentUser() user: CurrentUserDto) {
-    // Token 刷新是安全相关操作，值得记录
+    // 记录安全日志
     this.logger.info('Token refreshed', {
       userId: user.id,
       username: user.username

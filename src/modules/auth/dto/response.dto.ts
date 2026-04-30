@@ -1,7 +1,7 @@
 import { Exclude, Expose, Type } from 'class-transformer'
 
 /**
- * 用户信息 DTO（用于响应）
+ * 用户信息 DTO
  * 对应 User Entity 的公开字段
  */
 @Exclude()

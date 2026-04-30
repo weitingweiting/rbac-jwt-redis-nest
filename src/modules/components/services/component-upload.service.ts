@@ -24,16 +24,8 @@ import { ApplicationType } from '@/modules/development-applications/constants'
 
 /**
  * 组件上传服务
- *
  * 职责：处理组件 ZIP 包的上传、解析、验证和存储
- *
- * 新流程：先审批，后开发
- * 1. 解析 supplement.json（来自研发申请系统，包含业务凭证）
- * 2. 验证与研发申请记录的一致性（防篡改）
- * 3. 解析 meta.json（来自 abd-cli 构建，包含技术信息）
- * 4. 上传到 OSS
- * 5. 根据申请类型（NEW/VERSION/REPLACE）创建或更新组件版本
- * 6. 更新申请状态为 COMPLETED
+ * 先审批，后开发
  */
 @Injectable()
 export class ComponentUploadService {
@@ -50,13 +42,6 @@ export class ComponentUploadService {
 
   /**
    * 处理组件上传（集成研发申请流程）
-   *
-   * 新流程说明：
-   * - 组件包中必须包含 supplement.json（从研发申请系统下载）
-   * - 验证 supplement 与申请记录一致（包括 applicationNo、组件ID、版本号等）
-   * - 验证 meta.json 与 supplement 一致
-   * - 上传成功后保持 APPROVED 状态，允许多次上传调试
-   * - 申请状态在版本发布时才变更为 COMPLETED
    */
   async processUpload(
     file: Express.Multer.File,
@@ -77,10 +62,8 @@ export class ComponentUploadService {
     })
 
     try {
-      // 1. 验证 ZIP 文件基本格式
       const { passed: _passed, warnings } = await this.validationService.validateZipFile(file)
 
-      // 2. 解析并验证 supplement.json（来自研发申请系统）
       const supplement = await this.validationService.parseAndValidateSupplementJson(file.buffer)
 
       this.logger.info('解析 supplement.json 成功', {
@@ -88,10 +71,9 @@ export class ComponentUploadService {
         version: supplement.version,
         applicationId: supplement._metadata.applicationId,
         applicationNo: supplement._metadata.applicationNo,
-        requestedApplicationNo: applicationNo // 记录前端传参，用于对比
+        requestedApplicationNo: applicationNo
       })
 
-      // 3. 验证前端传参与组件包的一致性（防止混用不同申请的组件包）
       if (applicationNo !== supplement._metadata.applicationNo) {
         throw new BusinessException(
           `申请单号不匹配：当前操作的申请为 "${applicationNo}"，但组件包属于 "${supplement._metadata.applicationNo}"。` +
@@ -106,13 +88,10 @@ export class ComponentUploadService {
         supplementApplicationNo: supplement._metadata.applicationNo
       })
 
-      // 4. 验证 supplement 与研发申请记录的一致性
       const application = await this.validationService.validateSupplementWithApplication(supplement)
 
-      // 5. 检查申请状态（只有 APPROVED 状态才能上传）
       this.validationService.validateApplicationStatus(application)
 
-      // 5. 解析并验证 meta.json（来自 abd-cli 构建，只包含技术信息）
       const buildMeta = await this.validationService.parseAndValidateBuildMeta(file.buffer)
 
       this.logger.info('解析 meta.json 成功', {
@@ -121,10 +100,8 @@ export class ComponentUploadService {
         framework: buildMeta.framework
       })
 
-      // 6. 验证 meta 中声明的文件是否存在
       this.validationService.validateBuildMetaFiles(file.buffer, buildMeta)
 
-      // 7. 验证分类信息是否存在（使用 supplement 中的分类，已在申请时验证过）
       await this.validationService.validateClassification(
         supplement.classification.level1,
         supplement.classification.level2
@@ -135,7 +112,7 @@ export class ComponentUploadService {
         level2: supplement.classification.level2
       })
 
-      // 8. 上传文件到 OSS
+      // 上传文件到 OSS
       const ossBasePath = this.generateOSSPath(supplement.id, supplement.version)
       this.logger.info('开始上传文件到 OSS', { ossBasePath })
 
@@ -145,14 +122,12 @@ export class ComponentUploadService {
         fileCount: Object.keys(uploadedFiles).length
       })
 
-      // 9. 根据申请类型处理组件记录
       const { component, isNew } = await this.handleComponentByApplicationType(
         supplement,
         application,
         userId
       )
 
-      // 10. 创建或替换版本记录（根据申请类型决定）
       const { version, isNewVersion } = await this.handleVersionByApplicationType(
         component,
         supplement,
@@ -164,7 +139,6 @@ export class ComponentUploadService {
         userId
       )
 
-      // 11. 更新申请的上传信息（保持 APPROVED 状态，允许多次上传调试）
       await this.updateApplicationUploadInfo(application, file, version.id)
 
       this.logger.info('组件上传处理完成', {
@@ -197,9 +171,6 @@ export class ComponentUploadService {
 
   /**
    * 根据申请类型处理组件记录
-   *
-   * - NEW: 创建新组件（如果已存在则直接获取，支持多次上传）
-   * - VERSION/REPLACE: 获取已存在的组件（不修改组件表）
    */
   private async handleComponentByApplicationType(
     supplement: ComponentSupplementDto,
@@ -207,12 +178,10 @@ export class ComponentUploadService {
     userId: number
   ): Promise<{ component: Component; isNew: boolean }> {
     if (application.applicationType === ApplicationType.NEW) {
-      // 新组件申请：先检查是否已创建（支持多次上传调试）
       let component = await this.componentsService.findByComponentId(supplement.id)
       let isNew = false
 
       if (!component) {
-        // 首次上传：创建组件记录
         component = await this.componentsService.createComponent(
           {
             id: supplement.id,
@@ -229,7 +198,6 @@ export class ComponentUploadService {
           applicationType: application.applicationType
         })
       } else {
-        // 重复上传：直接使用已存在的组件
         this.logger.info('组件已存在，使用现有记录', {
           componentId: component.componentId,
           applicationType: application.applicationType
@@ -238,7 +206,6 @@ export class ComponentUploadService {
 
       return { component, isNew }
     } else {
-      // VERSION/REPLACE 申请：获取已存在的组件
       const component = await this.componentsService.getExistingComponent(supplement.id)
 
       this.logger.info('获取已存在组件', {
@@ -278,7 +245,6 @@ export class ComponentUploadService {
         userId
       )
     } else {
-      // NEW 或 VERSION 类型都创建新版本
       return this.createNewVersion(
         component,
         supplement,
@@ -385,7 +351,7 @@ export class ComponentUploadService {
   ): CreateComponentVersionDto {
     return {
       componentId: component.componentId,
-      version: supplement.version, // 使用 supplement 中的版本号
+      version: supplement.version,
       entryFile: buildMeta.files.entry,
       // styleFile: buildMeta.files.style,
       styleFile: null,
@@ -397,13 +363,11 @@ export class ComponentUploadService {
       buildTime: buildMeta.buildInfo.buildTime,
       buildHash: buildMeta.buildInfo.hash,
       cliVersion: buildMeta.buildInfo.cliVersion,
-      // 版本专属字段
       type: buildMeta.type || 'vue-echarts',
       framework: buildMeta.framework || 'vue3',
       authorOrganization: buildMeta.author?.organization,
       authorUsername: buildMeta.author?.userName,
       license: buildMeta?.license ?? 'MIT',
-      // 其他字段
       fileSize: this.validationService.calculateZipSize(file.buffer),
       assetsManifest: { files: Object.keys(uploadedFiles) },
       metaJson: buildMeta as any,
@@ -414,7 +378,6 @@ export class ComponentUploadService {
   /**
    * 更新申请的上传信息
    * 保持 APPROVED 状态，允许开发者多次上传调试
-   * 申请状态在版本发布时才变更为 COMPLETED
    */
   private async updateApplicationUploadInfo(
     application: DevelopmentApplication,
@@ -429,7 +392,6 @@ export class ComponentUploadService {
 
     application.uploadInfo = uploadInfo
     application.componentVersionId = componentVersionId
-    // 注意：不再修改 developmentStatus，保持 APPROVED 状态
     // 申请状态在版本发布（publishVersion）时才变更为 COMPLETED
 
     await this.applicationRepository.save(application)
@@ -444,21 +406,13 @@ export class ComponentUploadService {
 
   /**
    * 生成组件在 OSS 中的存储路径
-   *
-   * 路径规则: components/{componentId}/{version}/
-   * 示例: components/BarChart/1.0.0/index.esm.js
-   *
-   * 说明：
-   * - 所有组件文件统一存储在 'components' 目录下
-   * - 使用组件ID和版本号构建层级目录
-   * - 便于版本管理和 CDN 缓存
    */
   private generateOSSPath(componentId: string, version: string): string {
     return `components/${componentId}/${version}`
   }
 
   /**
-   * 上传文件到 OSS（使用共享的 OSSService）
+   * 上传文件到 OSS
    */
   private async uploadToOSS(
     zipBuffer: Buffer,
@@ -467,10 +421,8 @@ export class ComponentUploadService {
     const uploadedFiles: Record<string, string> = {}
 
     try {
-      // 获取清理后的文件列表（已移除第一层目录）
       const cleanEntries = ZipUtil.getCleanEntriesWithoutPrefix(zipBuffer)
 
-      // 准备所有待上传的文件
       const filesToUpload = cleanEntries.map(({ cleanPath, entry }) => ({
         objectKey: `${ossBasePath}/${cleanPath}`,
         buffer: entry.getData(),
@@ -485,9 +437,7 @@ export class ComponentUploadService {
       // 使用 OSSService 批量上传
       const results = await this.ossService.uploadFiles(filesToUpload)
 
-      // 构建文件名到 URL 的映射
       for (const result of results) {
-        // 从完整路径中提取文件名（移除 basePath 前缀）
         const fileName = result.objectKey.replace(`${ossBasePath}/`, '')
         uploadedFiles[fileName] = result.url
       }

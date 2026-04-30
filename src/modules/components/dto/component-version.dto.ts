@@ -17,12 +17,11 @@ import { VersionStatus } from '../constants/version-status.enum'
 
 /**
  * 创建组件版本 DTO
- * 注意：通常不直接创建版本，而是通过上传 zip 包自动创建
  */
 export class CreateComponentVersionDto {
   @IsString({ message: '组件ID必须是字符串' })
   @IsNotEmpty({ message: '组件ID不能为空' })
-  componentId!: string // Component.componentId（主键，string 类型）
+  componentId!: string
 
   @IsString({ message: '版本号必须是字符串' })
   @IsNotEmpty({ message: '版本号不能为空' })
@@ -116,9 +115,7 @@ export class CreateComponentVersionDto {
 /**
  * 更新组件版本 DTO
  */
-export class UpdateComponentVersionDto extends PartialType(CreateComponentVersionDto) {
-  // 继承所有字段，但都变为可选
-}
+export class UpdateComponentVersionDto extends PartialType(CreateComponentVersionDto) {}
 
 /**
  * 发布版本 DTO

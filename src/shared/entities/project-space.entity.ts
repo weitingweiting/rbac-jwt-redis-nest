@@ -15,13 +15,13 @@ export class ProjectSpace extends BaseEntity {
   isOpen!: boolean
 
   @ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({ name: 'owner_id', referencedColumnName: 'id' }) // project_spaces.owner_id -> users.id
+  @JoinColumn({ name: 'owner_id', referencedColumnName: 'id' })
   owner?: User
 
   @ManyToMany(() => User, (user) => user.projectSpaces)
   users?: User[]
 
-  // @OneToMany(() => Project, (p) => p.projectSpace, { cascade: true, eager: true }) // eager=true 查询时自动加载关联的 projects
+  // @OneToMany(() => Project, (p) => p.projectSpace, { cascade: true, eager: true })
   @OneToMany(() => Project, (p) => p.projectSpace)
   projects?: Project[]
 }

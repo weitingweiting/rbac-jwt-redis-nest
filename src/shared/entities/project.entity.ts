@@ -4,7 +4,6 @@ import { ProjectSpace } from './project-space.entity'
 import { ProjectAsset } from './project-asset.entity'
 import { User } from './user.entity'
 
-// 草稿状态、已发布状态、已下架状态
 export type ProjectStatus = 'draft' | 'published' | 'archived'
 
 @Entity('projects')
@@ -30,13 +29,12 @@ export class Project extends BaseEntity {
   @Column({ length: 500, nullable: true })
   publishUrl?: string
 
-  // ✅ 项目 ↔ 用户：多个项目可以属于同一个用户
   @ManyToOne(() => User, (user) => user.projects, {
-    onDelete: 'SET NULL', // 用户被删除时，项目的 owner_id 设为 NULL
-    onUpdate: 'CASCADE', // 用户 ID 更新时，级联更新项目的 owner_id
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
     nullable: true
   })
-  @JoinColumn({ name: 'owner_id', referencedColumnName: 'id' }) // project.owner_id -> users.id
+  @JoinColumn({ name: 'owner_id', referencedColumnName: 'id' })
   owner?: User
 
   // ✅ 项目 ↔ 项目空间：多个项目属于同一个空间

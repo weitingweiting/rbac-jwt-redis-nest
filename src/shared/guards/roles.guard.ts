@@ -17,7 +17,7 @@ export class RolesGuard implements CanActivate {
     ])
 
     if (!requiredRoles || requiredRoles.length === 0) {
-      return true // 未设置角色要求，放行
+      return true
     }
 
     const request = context.switchToHttp().getRequest()
@@ -27,10 +27,8 @@ export class RolesGuard implements CanActivate {
       return false
     }
 
-    // 从缓存或数据库获取用户角色
     const userRoles = await this.userPermissionsService.getUserRoles(user.id)
 
-    // 检查是否拥有任意一个必需角色（OR 逻辑）
     return requiredRoles.some((role) => userRoles.includes(role))
   }
 }

@@ -134,7 +134,6 @@ export class PermissionsService extends BaseService<Permission> {
       }
     }
 
-    // 检查权限名称是否被其他权限使用
     if (updatePermissionDto.name && updatePermissionDto.name !== permission.name) {
       const existingName = await this.permissionRepository.findOne({
         where: { name: updatePermissionDto.name },

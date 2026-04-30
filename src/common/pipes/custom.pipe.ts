@@ -2,7 +2,6 @@ import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from
 
 /**
  * 自定义管道：将字符串转换为整数
- * 使用示例：
  * @Get(':id')
  * findOne(@Param('id', ParseIntPipe) id: number) {
  *   return this.service.findOne(id);
@@ -21,7 +20,6 @@ export class ParseIntPipe implements PipeTransform<string, number> {
 
 /**
  * 自定义管道：去除字符串前后空格
- * 使用示例：
  * @Post()
  * create(@Body(TrimPipe) dto: CreateDto) {
  *   return this.service.create(dto);

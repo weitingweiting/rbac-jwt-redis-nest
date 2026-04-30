@@ -27,17 +27,11 @@ import {
 
 /**
  * 组件业务信息接口
- * 用于创建/更新组件时传入的必要业务信息
- * 这些信息来自 supplement.json（已审批的申请凭证）
  */
 export interface IComponentBusinessInfo {
-  /** 组件ID（如 BarChart） */
   id: string
-  /** 组件名称（如 柱状图） */
   name: string
-  /** 组件描述（可选） */
   description?: string
-  /** 分类信息 */
   classification: {
     level1: string
     level2: string
@@ -63,10 +57,6 @@ export class ComponentsService {
 
   /**
    * 获取组件列表（带分页和查询）
-   *
-   * 可见性策略：
-   * - 默认：返回所有 published + 当前用户的 draft 版本的组件
-   * - 支持按 keyword、分类、申请单号过滤
    */
   async findAllWithPagination(
     query: QueryComponentDto,
@@ -97,7 +87,6 @@ export class ComponentsService {
       })
     }
 
-    // 申请单号过滤：返回包含该申请单号关联版本的组件
     if (query.applicationNo) {
       queryBuilder.andWhere(
         `EXISTS (
@@ -111,7 +100,6 @@ export class ComponentsService {
       )
     }
 
-    // 核心可见性：published + 当前用户的 draft
     if (user?.id) {
       queryBuilder.andWhere(
         `(component.publishedVersionCount > 0 OR EXISTS (
@@ -124,16 +112,13 @@ export class ComponentsService {
         { currentUserId: user.id }
       )
     } else {
-      // 未登录：只返回有发布版本的组件
       queryBuilder.andWhere('component.publishedVersionCount > 0')
     }
 
-    // 排序
     const sortBy = query.sortBy || 'createdAt'
     const sortOrder = query.sortOrder || 'DESC'
     queryBuilder.orderBy(`component.${sortBy}`, sortOrder)
 
-    // 分页
     queryBuilder.skip(query.skip).take(query.take)
 
     const [components, total] = await queryBuilder.getManyAndCount()
@@ -143,7 +128,7 @@ export class ComponentsService {
 
   /**
    * 根据组件ID查找单个组件
-   * @param componentId - Component.componentId（主键，string）
+   * @param componentId - Component.componentId
    */
   async findOneComponent(componentId: string): Promise<Component> {
     const component = await this.componentRepository.findOne({
@@ -175,13 +160,11 @@ export class ComponentsService {
   /**
    * 创建新组件（仅用于 NEW 类型申请）
    *
-   * @param businessInfo 组件业务信息（来自已审批的 supplement.json）
+   * @param businessInfo 组件业务信息
    * @param userId 操作用户ID
    *
-   * 职责：创建 Component 表记录，只处理共享字段
    */
   async createComponent(businessInfo: IComponentBusinessInfo, userId: number): Promise<Component> {
-    // 检查组件是否已存在（防御性检查）
     const existing = await this.findByComponentId(businessInfo.id)
     if (existing) {
       throw new BusinessException(
@@ -212,10 +195,7 @@ export class ComponentsService {
 
   /**
    * 获取已存在的组件（用于 VERSION/REPLACE 类型申请）
-   *
    * @param componentId 组件ID
-   *
-   * 职责：获取组件记录，VERSION/REPLACE 类型不修改组件表信息
    */
   async getExistingComponent(componentId: string): Promise<Component> {
     const component = await this.findByComponentId(componentId)
@@ -230,18 +210,16 @@ export class ComponentsService {
   }
 
   /**
-   * 更新组件（不推荐直接使用）
+   * 更新组件
    *
    * @deprecated 组件信息应该由 meta.json 决定，通过上传新版本自动更新。
-   * 此方法保留仅用于管理后台手动修复数据的特殊场景。
    *
-   * 注意：v2 上传会更新 Component 表的共享字段（name, description, classification）
-   * @param componentId - Component.componentId（主键，string）
+   * v2 上传会更新 Component 表的共享字段（name, description, classification）
+   * @param componentId - Component.componentId
    */
   async updateComponent(componentId: string, updateDto: UpdateComponentDto): Promise<Component> {
     const component = await this.findOneComponent(componentId)
 
-    // 如果更新 componentId，检查是否重复
     if (updateDto.componentId && updateDto.componentId !== component.componentId) {
       const existingComponent = await this.findByComponentId(updateDto.componentId)
       if (existingComponent) {
@@ -258,8 +236,8 @@ export class ComponentsService {
   }
 
   /**
-   * 更新组件的已发布版本计数（重要：版本状态变更时调用）
-   * @param componentId - Component.componentId（主键，string）
+   * 更新组件的已发布版本计数
+   * @param componentId - Component.componentId
    */
   async updatePublishedVersionCount(componentId: string): Promise<void> {
     try {
@@ -295,7 +273,7 @@ export class ComponentsService {
 
   /**
    * 更新组件的版本总数
-   * @param componentId - Component.componentId（主键，string）
+   * @param componentId - Component.componentId
    */
   async updateVersionCount(componentId: string): Promise<void> {
     try {
@@ -327,12 +305,11 @@ export class ComponentsService {
 
   /**
    * 软删除组件
-   * @param componentId - Component.componentId（主键，string）
+   * @param componentId - Component.componentId
    */
   async deleteComponent(componentId: string): Promise<void> {
     const component = await this.findOneComponent(componentId)
 
-    // 检查是否有已发布的版本
     if (component.publishedVersionCount > 0) {
       throw new BusinessException(
         '该组件还有已发布的版本，无法删除。请先删除或下架所有已发布版本',
@@ -341,10 +318,8 @@ export class ComponentsService {
       )
     }
 
-    // 软删除组件（级联软删除所有版本）
     await this.componentRepository.softDelete({ componentId })
 
-    // 软删除所有关联版本
     await this.versionRepository.softDelete({ componentId })
   }
 
@@ -358,11 +333,7 @@ export class ComponentsService {
   }
 
   /**
-   * 增加组件使用次数（预留功能）
-   *
-   * @deprecated 当前未使用，预留给未来的组件使用统计功能。
-   * 如果实现此功能，建议配合 Redis 做计数缓存，定时同步到数据库。
-   * @param componentId - Component.componentId（主键，string）
+   * 增加组件使用次数
    */
   async incrementUsedCount(componentId: string): Promise<void> {
     await this.componentRepository.increment({ componentId }, 'usedCount', 1)
@@ -371,30 +342,23 @@ export class ComponentsService {
   /**
    * 获取组件总览数据（树形结构）
    * 用于管理员页面的树形表格展示
-   * 根据 leaf 参数返回不同深度的树形结构：
-   * - Level1: 只返回一级分类
-   * - Level2: 返回一、二级分类
-   * - Level3: 返回一、二级分类、组件
-   * - Level4: 返回一、二级分类、组件、版本（完整数据）
+   * 根据 leaf 参数返回不同深度的树形结构
    */
   async getComponentOverview(query: ComponentOverviewDto): Promise<OverviewTreeNode[]> {
     const leafLevel = query.leaf || LeafLevel.Level4
     this.logger.info('获取组件总览数据', { query, leafLevel })
 
-    // 1. 获取所有分类（两级）
     const categories = await this.categoryRepository.find({
       where: { deletedAt: null },
       order: { level: 'ASC', sortOrder: 'ASC', id: 'ASC' }
     })
 
-    // 2. 根据 leaf 级别决定是否查询组件
     let components: Component[] = []
     if (leafLevel === LeafLevel.Level3 || leafLevel === LeafLevel.Level4) {
       const componentsQuery = this.componentRepository
         .createQueryBuilder('component')
         .where('component.deletedAt IS NULL')
 
-      // 应用筛选条件
       if (query.keyword) {
         componentsQuery.andWhere(
           '(component.name LIKE :keyword OR component.componentId LIKE :keyword OR component.description LIKE :keyword)',
@@ -406,7 +370,6 @@ export class ComponentsService {
       components = await componentsQuery.getMany()
     }
 
-    // 3. 根据 leaf 级别决定是否查询版本
     let versions: ComponentVersion[] = []
     if (leafLevel === LeafLevel.Level4) {
       const versionsQuery = this.versionRepository
@@ -414,7 +377,6 @@ export class ComponentsService {
         .where('version.deletedAt IS NULL')
         .orderBy('version.createdAt', 'DESC')
 
-      // 应用版本状态筛选
       if (query.status === 'draft') {
         versionsQuery.andWhere('version.status = :status', { status: 'draft' })
       } else if (query.status === 'published') {
@@ -426,7 +388,6 @@ export class ComponentsService {
       versions = await versionsQuery.getMany()
     }
 
-    // 4. 构建组件到版本的映射（仅在 Level4 时需要）
     const componentVersionsMap = new Map<string, IVersionNode[]>()
     if (leafLevel === LeafLevel.Level4) {
       for (const version of versions) {
@@ -450,7 +411,6 @@ export class ComponentsService {
       }
     }
 
-    // 5. 构建分类到组件的映射（仅在 Level3/Level4 时需要）
     const categoryComponentsMap = new Map<string, IComponentNode[]>()
     if (leafLevel === LeafLevel.Level3 || leafLevel === LeafLevel.Level4) {
       for (const component of components) {
@@ -485,14 +445,11 @@ export class ComponentsService {
       }
     }
 
-    // 6. 构建完整的树形结构
     const level1Categories = categories.filter((cat) => cat.level === 1)
     const level2Categories = categories.filter((cat) => cat.level === 2)
 
-    // 构建树形结构
     const tree: ICategoryNode[] = []
 
-    // 构建一级分类节点
     for (const level1Cat of level1Categories) {
       const level1Node: ICategoryNode = {
         key: `category-${level1Cat.id}`,
@@ -507,7 +464,6 @@ export class ComponentsService {
         children: leafLevel === LeafLevel.Level1 ? undefined : []
       }
 
-      // 如果需要二级分类或更深层级
       if (leafLevel !== LeafLevel.Level1) {
         const childLevel2Categories = level2Categories.filter(
           (cat) => cat.parentId === level1Cat.id
@@ -554,16 +510,9 @@ export class ComponentsService {
   /**
    * 获取画布场景的组件总览数据（树形结构）
    *
-   * 可见性策略：
+   * 可见性：
    * - 默认返回所有 published 版本
    * - includeDrafts=true 时，额外返回当前用户的 draft 版本
-   *
-   * 过滤策略：
-   * - 只返回有可见版本的组件
-   * - 只返回有可见组件的分类
-   *
-   * @param query - 查询参数
-   * @param user - 当前用户（用于 draft 版本可见性判断）
    */
   async getOverviewForCanvas(
     query: CanvasOverviewDto,
@@ -571,26 +520,22 @@ export class ComponentsService {
   ): Promise<CanvasOverviewTreeNode[]> {
     this.logger.info('获取画布场景组件总览数据', { query, userId: user.id })
 
-    // 1. 构建版本查询（可见性策略）
     const versionsQuery = this.versionRepository
       .createQueryBuilder('version')
       .where('version.deletedAt IS NULL')
       .orderBy('version.createdAt', 'DESC')
 
     if (query.includeDrafts) {
-      // 所有 published + 当前用户的 draft
       versionsQuery.andWhere(
         '(version.status = :published OR (version.status = :draft AND version.createdBy = :userId))',
         { published: 'published', draft: 'draft', userId: user.id }
       )
     } else {
-      // 仅 published
       versionsQuery.andWhere('version.status = :status', { status: 'published' })
     }
 
     const versions = await versionsQuery.getMany()
 
-    // 2. 获取有可见版本的组件ID列表
     const visibleComponentIds = [...new Set(versions.map((v) => v.componentId))]
 
     if (visibleComponentIds.length === 0) {
@@ -598,7 +543,6 @@ export class ComponentsService {
       return []
     }
 
-    // 3. 查询这些组件
     const componentsQuery = this.componentRepository
       .createQueryBuilder('component')
       .where('component.deletedAt IS NULL')
@@ -606,7 +550,6 @@ export class ComponentsService {
         componentIds: visibleComponentIds
       })
 
-    // 应用筛选条件
     if (query.keyword) {
       componentsQuery.andWhere(
         '(component.name LIKE :keyword OR component.componentId LIKE :keyword OR component.description LIKE :keyword)',
@@ -634,16 +577,13 @@ export class ComponentsService {
       return []
     }
 
-    // 4. 获取所有分类
     const categories = await this.categoryRepository.find({
       where: { deletedAt: null },
       order: { level: 'ASC', sortOrder: 'ASC', id: 'ASC' }
     })
 
-    // 5. 构建组件到版本的映射（只包含该组件的可见版本）
     const componentVersionsMap = new Map<string, ICanvasVersionNode[]>()
     for (const version of versions) {
-      // 检查该组件是否在筛选后的组件列表中
       if (!components.find((c) => c.componentId === version.componentId)) {
         continue
       }
@@ -664,7 +604,6 @@ export class ComponentsService {
       })
     }
 
-    // 6. 构建分类到组件的映射
     const categoryComponentsMap = new Map<string, ICanvasComponentNode[]>()
     for (const component of components) {
       const categoryKey = `${component.classificationLevel1}-${component.classificationLevel2}`
@@ -686,7 +625,6 @@ export class ComponentsService {
       })
     }
 
-    // 7. 构建树形结构（只包含有组件的分类）
     const level1Categories = categories.filter((cat) => cat.level === 1)
     const level2Categories = categories.filter((cat) => cat.level === 2)
 
@@ -695,14 +633,12 @@ export class ComponentsService {
     for (const level1Cat of level1Categories) {
       const level2Children: (ICanvasCategoryNode | ICanvasComponentNode)[] = []
 
-      // 查找属于该一级分类的二级分类
       const childLevel2Categories = level2Categories.filter((cat) => cat.parentId === level1Cat.id)
 
       for (const level2Cat of childLevel2Categories) {
         const categoryKey = `${level1Cat.code}-${level2Cat.code}`
         const componentsInCategory = categoryComponentsMap.get(categoryKey) || []
 
-        // 只有有组件的二级分类才加入
         if (componentsInCategory.length > 0) {
           level2Children.push({
             key: `category-${level2Cat.id}`,
@@ -717,7 +653,6 @@ export class ComponentsService {
         }
       }
 
-      // 只有有子节点的一级分类才加入
       if (level2Children.length > 0) {
         tree.push({
           key: `category-${level1Cat.id}`,

@@ -90,7 +90,6 @@ export class RolesService extends BaseService<Role> {
 
     const role = this.roleRepository.create(roleData)
 
-    // 如果提供了权限 ID，关联权限
     if (permissionIds && permissionIds.length > 0) {
       const permissions = await this.permissionRepository.find({
         where: { id: In(permissionIds) }
@@ -117,7 +116,6 @@ export class RolesService extends BaseService<Role> {
     const role = await this.findOneRole(id)
     const { permissionIds, ...roleData } = updateRoleDto
 
-    // 检查角色名是否被其他角色使用
     if (roleData.name && roleData.name !== role.name) {
       const existingRole = await this.roleRepository.findOne({
         where: { name: roleData.name },
@@ -136,9 +134,8 @@ export class RolesService extends BaseService<Role> {
     // 标记是否需要清空缓存
     let needClearCache = false
 
-    // 更新权限关联
     if (permissionIds !== undefined) {
-      needClearCache = true // 权限变更，需要清空缓存
+      needClearCache = true
       if (permissionIds.length > 0) {
         const permissions = await this.permissionRepository.find({
           where: { id: In(permissionIds) }
@@ -162,7 +159,6 @@ export class RolesService extends BaseService<Role> {
     Object.assign(role, roleData)
     const updatedRole = await this.roleRepository.save(role)
 
-    // 如果权限发生变更，清空所有拥有该角色的用户的缓存
     if (needClearCache) {
       await this.clearAffectedUsersCacheByRoleId(id)
     }
@@ -193,7 +189,6 @@ export class RolesService extends BaseService<Role> {
 
     const updatedRole = await this.roleRepository.save(role)
 
-    // 清空所有拥有该角色的用户的缓存
     await this.clearAffectedUsersCacheByRoleId(id)
 
     return updatedRole
@@ -203,7 +198,6 @@ export class RolesService extends BaseService<Role> {
    * 清空所有拥有指定角色的用户的权限缓存
    */
   private async clearAffectedUsersCacheByRoleId(roleId: number): Promise<void> {
-    // 查询所有拥有该角色的用户
     const users = await this.userRepository
       .createQueryBuilder('user')
       .innerJoin('user.roles', 'role')

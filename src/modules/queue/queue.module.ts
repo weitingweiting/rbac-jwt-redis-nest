@@ -11,7 +11,7 @@ import { QueueController } from './queue.controller'
  */
 @Module({
   imports: [
-    // 注册邮件队列
+    // 注册队列
     BullModule.registerQueue({
       name: QUEUE_NAMES.EMAIL
     }),

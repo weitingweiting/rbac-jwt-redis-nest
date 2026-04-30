@@ -8,7 +8,6 @@ import { ValidationExceptionFilter } from './validation-exception.filter'
 @Module({
   imports: [],
   providers: [
-    // 执行顺序：ValidationException → BusinessException → HttpException → AllExceptions
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter

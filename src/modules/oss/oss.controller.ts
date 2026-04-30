@@ -44,22 +44,9 @@ export class OSSController {
   /**
    * OSS 上传回调接口
    * POST /api/oss/callback
-   *
-   * 🔄 流程说明：
-   * 1. 前端上传文件到 OSS（携带 callback 参数）
-   * 2. OSS 保存文件成功后，自动调用此接口
-   * 3. 此接口验证签名、处理业务逻辑、返回响应
-   * 4. OSS 将此接口的响应原样转发给前端
-   *
-   * ⚠️ 关键点：
-   * - 前端收到的响应是此接口返回的 JSON，不是 OSS 的 XML
-   * - 这里可以执行入库、更新关联业务等操作
-   * - 保证数据一致性：上传成功 = 业务处理完成
-   *
-   * 📖 详细说明：docs/为什么需要OSS回调.md
    */
   @Post('callback')
-  @Public() // OSS 回调不需要认证（使用签名验证代替 JWT）
+  @Public()
   @HttpCode(HttpStatus.OK)
   async handleOSSCallback(
     @Body() body: OSSCallbackDto,
@@ -73,9 +60,6 @@ export class OSSController {
       mimeType: body.mimeType
     })
 
-    // ============================================
-    // 步骤 1：验证回调签名（防止伪造请求）
-    // ============================================
     const requestUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`
     const isValid = await this.ossService.verifyOSSCallback(
       authorization,
@@ -91,64 +75,10 @@ export class OSSController {
 
     this.logger.info('✅ 签名验证通过')
 
-    // ============================================
-    // 步骤 2：构建完整的文件 URL
-    // ============================================
-    // ⚠️ 重要说明：
-    // 1. OSS 只返回 object key（如 images/xxx.jpg），不返回完整URL
-    // 2. 后端需要根据 bucket + region + object 构建完整访问地址
-    // 3. 必须使用 https 协议（OSS 服务器强制要求，与本地开发环境无关）
-    // 4. 如果不使用回调（本地模式），前端需要自己构建URL：
-    //    const fileUrl = `https://${bucket}.${region}.aliyuncs.com/${objectKey}`
+    // const fileUrl = `https://${bucket}.${region}.aliyuncs.com/${objectKey}`
     const region = this.configService.get<string>('oss.region')!
     const bucket = this.configService.get<string>('oss.bucket')!
     const fileUrl = `https://${bucket}.${region}.aliyuncs.com/${body.object}`
-
-    // ============================================
-    // 步骤 3：业务逻辑处理（根据需求扩展）
-    // ============================================
-
-    // 🔥 TODO: 这里可以添加业务逻辑
-    //
-    // 示例 1：入库保存文件记录
-    // await this.fileRepository.save({
-    //   objectKey: body.object,
-    //   url: fileUrl,
-    //   size: parseInt(body.size),
-    //   mimeType: body.mimeType,
-    //   uploadedBy: body['x:userId'],  // 前端传的自定义参数
-    //   projectId: body['x:projectId']
-    // })
-    //
-    // 示例 2：自动更新项目封面
-    // if (body['x:projectId']) {
-    //   await this.projectRepository.update(
-    //     body['x:projectId'],
-    //     { coverUrl: fileUrl }
-    //   )
-    // }
-    //
-    // 示例 3：异步生成缩略图
-    // if (body.mimeType.startsWith('image/')) {
-    //   await this.queueService.add('generate-thumbnail', {
-    //     objectKey: body.object,
-    //     width: 200,
-    //     height: 200
-    //   })
-    // }
-    //
-    // 示例 4：更新用户存储使用量
-    // if (body['x:userId']) {
-    //   await this.userService.incrementStorageUsage(
-    //     body['x:userId'],
-    //     parseInt(body.size)
-    //   )
-    // }
-
-    // ============================================
-    // 步骤 4：构建响应数据
-    // ============================================
-    // 📦 这个响应会被 OSS 原样转发给前端
     const response = {
       success: true,
       data: {
@@ -167,7 +97,6 @@ export class OSSController {
             }
           : undefined
 
-        // 🔥 TODO: 可以添加业务数据
         // uploadedAt: new Date().toISOString(),
         // cdnUrl: `https://cdn.example.com/${body.object}`,
         // thumbnailUrl: `${fileUrl}?x-oss-process=image/resize,w_200`
@@ -176,8 +105,6 @@ export class OSSController {
 
     this.logger.info('✅ OSS 回调处理成功，返回数据给前端', { response })
 
-    // ⚠️ 重要：OSS 会将此响应原样返回给前端
-    // 前端的 await fetch(ossUrl) 拿到的就是这个 JSON
     return response
   }
 }

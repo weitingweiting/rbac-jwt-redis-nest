@@ -43,7 +43,6 @@ export interface IOSSCallbackBody {
 
 /**
  * 阿里云 OSS 服务
- * 提供文件上传签名、回调验证等功能
  */
 @Injectable()
 export class OSSService {
@@ -169,7 +168,6 @@ export class OSSService {
       // 1. 获取公钥
       const pubKeyUrlDecoded = Buffer.from(publicKeyUrl, 'base64').toString('utf-8')
 
-      // 安全检查：确保公钥 URL 是阿里云官方域名
       if (!pubKeyUrlDecoded.startsWith('https://gosspublic.alicdn.com/')) {
         this.logger.warn('非法的公钥 URL', pubKeyUrlDecoded)
         return false
@@ -264,7 +262,6 @@ export class OSSService {
   extractObjectKeyFromUrl(url: string): string {
     try {
       const urlObj = new URL(url)
-      // 去掉开头的 /
       return urlObj.pathname.substring(1)
     } catch (error) {
       this.logger.error('解析 URL 失败', error)
@@ -356,7 +353,6 @@ export class OSSService {
 
   /**
    * 复制 OSS 文件（服务端操作，不需要公网回调）
-   * 使用 OSS CopyObject API，文件在 OSS 服务端内部复制
    *
    * @param sourceKey 源文件的对象键名
    * @param targetKey 目标文件的对象键名
@@ -364,8 +360,6 @@ export class OSSService {
    */
   async copyFile(sourceKey: string, targetKey: string): Promise<{ url: string; name: string }> {
     try {
-      // 使用 OSS SDK 的 copy 方法
-      // 格式：copy(targetKey, sourceKey, sourceBucket?)
       const result = await this.client.copy(targetKey, sourceKey)
 
       this.logger.info('复制 OSS 文件成功', {
@@ -385,8 +379,7 @@ export class OSSService {
   }
 
   /**
-   * 移动 OSS 文件（服务端操作，不需要公网回调）
-   * 先复制到目标位置，再删除源文件
+   * 移动 OSS 文件
    *
    * @param sourceKey 源文件的对象键名
    * @param targetKey 目标文件的对象键名

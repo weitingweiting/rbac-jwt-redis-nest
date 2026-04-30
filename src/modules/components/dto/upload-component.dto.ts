@@ -2,7 +2,6 @@ import { IsOptional, IsString } from 'class-validator'
 
 /**
  * 上传组件 DTO
- * 文件通过 @UploadedFile() 装饰器获取
  */
 export class UploadComponentDto {
   @IsOptional()

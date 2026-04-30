@@ -15,10 +15,7 @@ import { TokenBlacklistService } from './services/token-blacklist.service'
  * - TokenBlacklistService: Token 黑名单服务
  */
 @Module({
-  imports: [
-    // 注册实体以供 services 使用
-    TypeOrmModule.forFeature([User, Role, Permission])
-  ],
+  imports: [TypeOrmModule.forFeature([User, Role, Permission])],
   providers: [UserPermissionsService, TokenBlacklistService],
   exports: [UserPermissionsService, TokenBlacklistService]
 })

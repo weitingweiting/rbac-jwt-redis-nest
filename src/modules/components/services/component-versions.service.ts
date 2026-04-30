@@ -35,11 +35,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
   /**
    * 获取版本列表（带分页和查询）
-   *
-   * 可见性策略：
-   * - 默认：返回所有 published + 当前用户的 draft
-   * - published 版本对所有用户可见
-   * - draft 版本只对创建者可见（安全策略）
    */
   async findAllWithPagination(
     query: QueryComponentVersionDto,
@@ -56,16 +51,13 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       .leftJoinAndSelect('application.applicant', 'applicant')
       .where('version.deletedAt IS NULL')
 
-    // 按组件ID过滤
     if (query.componentId) {
       queryBuilder.andWhere('version.componentId = :componentId', {
         componentId: query.componentId
       })
     }
 
-    // 核心可见性控制：published + 当前用户的 draft
     if (user && user.id) {
-      // 登录用户：返回所有 published + 该用户创建的 draft
       queryBuilder.andWhere(
         '(version.status = :published OR (version.status = :draft AND version.createdBy = :currentUserId))',
         {
@@ -75,24 +67,19 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         }
       )
     } else {
-      // 未登录或无用户ID：只返回 published（安全策略）
       queryBuilder.andWhere('version.status = :status', { status: VersionStatus.PUBLISHED })
     }
 
-    // 按是否推荐版本过滤
     if (query.isLatest !== undefined) {
       queryBuilder.andWhere('version.isLatest = :isLatest', { isLatest: query.isLatest })
     }
 
-    // 按创建时间降序排列（最新的在前）
     queryBuilder.orderBy('version.createdAt', 'DESC')
 
-    // 分页
     queryBuilder.skip(query.skip).take(query.take)
 
     const [versions, total] = await queryBuilder.getManyAndCount()
 
-    // 将 developmentApplications 数组转换为单个对象（方便前端使用）
     const versionsWithApp = versions.map((version) => {
       const { developmentApplications, ...rest } = version as any
       return {
@@ -130,7 +117,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       )
     }
 
-    // 将 developmentApplications 数组转换为单个对象（方便前端使用）
     const { developmentApplications, ...rest } = version as any
     return {
       ...rest,
@@ -190,27 +176,20 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
   }
 
   /**
-   * 创建组件版本（通常由上传服务调用）
-   *
-   * 多次上传支持：
-   * - 如果版本已存在且是 draft，返回现有版本（允许多次上传调试）
-   * - 如果版本已存在且是 published，抛出异常（保护已发布版本）
+   * 创建组件版本
    */
   async createVersion(
     createDto: CreateComponentVersionDto,
     userId: number
   ): Promise<ComponentVersion> {
-    // 验证组件是否存在
     await this.componentsService.findOneComponent(createDto.componentId)
 
-    // 检查版本号是否已存在
     const existingVersion = await this.findByComponentAndVersion(
       createDto.componentId,
       createDto.version
     )
 
     if (existingVersion) {
-      // 如果版本已存在且是 draft 状态，返回现有版本（支持多次上传调试）
       if (existingVersion.status === VersionStatus.DRAFT) {
         this.logger.info('版本已存在，返回现有 draft 版本（支持多次上传）', {
           componentId: createDto.componentId,
@@ -220,7 +199,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         return existingVersion
       }
 
-      // 如果是 published 状态，不允许覆盖
       throw new BusinessException(
         `组件版本 ${createDto.version} 已发布，无法覆盖`,
         HttpStatus.BAD_REQUEST,
@@ -230,13 +208,12 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
     const version = this.versionRepository.create(createDto)
     version.status = createDto.status || VersionStatus.DRAFT
-    version.isLatest = false // 新创建的版本默认不是推荐版本
+    version.isLatest = false
     version.createdBy = userId
     version.updatedBy = userId
 
     const saved = await this.versionRepository.save(version)
 
-    // 更新组件的版本计数
     await this.componentsService.updateVersionCount(createDto.componentId)
 
     return saved
@@ -244,7 +221,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
   /**
    * 更新版本
-   * @param id - ComponentVersion.id (数据库主键 number)
+   * @param id - ComponentVersion.id
    */
   async updateVersion(
     id: number,
@@ -262,8 +239,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
   /**
    * 发布版本（draft → published）
-   * 重要：需要更新 publishedVersionCount
-   * 重要：发布后自动将关联的研发申请状态设为 COMPLETED
    * @param id - ComponentVersion.id (数据库主键 number)
    */
   async publishVersion(id: number, publishDto?: PublishVersionDto): Promise<ComponentVersion> {
@@ -283,7 +258,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
     await queryRunner.startTransaction()
 
     try {
-      // 1. 更新版本状态
       version.status = VersionStatus.PUBLISHED
       version.publishedAt = new Date()
       if (publishDto?.changelog) {
@@ -291,7 +265,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       }
       await queryRunner.manager.save(version)
 
-      // 2. 在事务内部直接更新 Component 表的发布版本计数
       const publishedCount = await queryRunner.manager.count(ComponentVersion, {
         where: {
           componentId: version.componentId,
@@ -306,7 +279,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         { publishedVersionCount: publishedCount }
       )
 
-      // 3. 自动完成关联的研发申请（APPROVED → COMPLETED）
       await this.completeRelatedApplications(queryRunner, id)
 
       await queryRunner.commitTransaction()
@@ -318,7 +290,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         publishedCount
       })
 
-      // 4. 如果是该组件的第一个发布版本，自动设为推荐版本
       if (publishedCount === 1) {
         this.logger.info('检测到首个发布版本，自动设为推荐版本', {
           componentId: version.componentId,
@@ -332,7 +303,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
             versionId: id
           })
         } catch (error: any) {
-          // 设置推荐版失败不影响发布流程，只记录警告
           this.logger.warn('自动设置推荐版本失败', {
             componentId: version.componentId,
             versionId: id,
@@ -360,10 +330,8 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
   /**
    * 完成关联的研发申请
-   * 当版本发布时，将关联的 APPROVED 状态申请设为 COMPLETED
    */
   private async completeRelatedApplications(queryRunner: any, versionId: number): Promise<void> {
-    // 查找关联此版本且状态为 APPROVED 的申请
     const applications = await queryRunner.manager.find(DevelopmentApplication, {
       where: {
         componentVersionId: versionId,
@@ -376,7 +344,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       return
     }
 
-    // 批量更新申请状态
     for (const application of applications) {
       application.developmentStatus = DevelopmentStatus.COMPLETED
       application.completedAt = new Date()
@@ -392,8 +359,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
   /**
    * 撤回发布（published → draft）
-   * 重要：需要更新 publishedVersionCount
-   * @param id - ComponentVersion.id (数据库主键 number)
+   * @param id - ComponentVersion.id
    */
   async unpublishVersion(id: number): Promise<ComponentVersion> {
     const version = await this.findOneVersionSimple(id)
@@ -406,7 +372,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       )
     }
 
-    // 检查是否是推荐版本
     if (version.isLatest) {
       throw new BusinessException(
         '推荐版本不能撤回发布，请先设置其他版本为推荐版',
@@ -415,18 +380,15 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       )
     }
 
-    // 使用事务确保数据一致性
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
-      // 1. 更新版本状态
       version.status = VersionStatus.DRAFT
       version.publishedAt = null
       await queryRunner.manager.save(version)
 
-      // 2. 在事务内部直接更新 Component 表的发布版本计数
       const publishedCount = await queryRunner.manager.count(ComponentVersion, {
         where: {
           componentId: version.componentId,
@@ -470,13 +432,10 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
   /**
    * 设置推荐版本
    * 将当前版本设为推荐版本，其他版本取消推荐
-   * @param componentId - Component.componentId（主键，string）
-   * @param versionId - ComponentVersion.id（版本主键，number）
    */
   async setLatestVersion(componentId: string, versionId: number): Promise<ComponentVersion> {
     const version = await this.findOneVersionSimple(versionId)
 
-    // 验证版本属于指定组件
     if (version.componentId !== componentId) {
       throw new BusinessException(
         '版本ID与组件ID不匹配',
@@ -485,7 +444,6 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       )
     }
 
-    // 验证版本已发布
     if (version.status !== VersionStatus.PUBLISHED) {
       throw new BusinessException(
         '只能将已发布的版本设为推荐版本',
@@ -494,20 +452,17 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
       )
     }
 
-    // 使用事务确保数据一致性
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
-      // 取消该组件的所有推荐版本
       await queryRunner.manager.update(
         ComponentVersion,
         { componentId, isLatest: true },
         { isLatest: false }
       )
 
-      // 设置新的推荐版本
       version.isLatest = true
       await queryRunner.manager.save(version)
 
@@ -539,13 +494,11 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
   /**
    * 软删除版本
-   * 重要：需要更新 publishedVersionCount 和 versionCount
    * @param id - ComponentVersion.id (数据库主键 number)
    */
   async deleteVersion(id: number): Promise<void> {
     const version = await this.findOneVersionSimple(id)
 
-    // 如果是推荐版本，不允许删除
     if (version.isLatest) {
       throw new BusinessException(
         '无法删除推荐版本，请先设置其他版本为推荐版本',
@@ -556,23 +509,19 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
     const wasPublished = version.status === VersionStatus.PUBLISHED
 
-    // 使用事务确保数据一致性
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
 
     try {
-      // 1. 软删除版本
       await queryRunner.manager.softDelete(ComponentVersion, id)
 
-      // 2. 在事务内部直接更新 Component 表的计数
       const versionCount = await queryRunner.manager.count(ComponentVersion, {
         where: { componentId: version.componentId, deletedAt: null as any }
       })
 
       const updateData: any = { versionCount }
 
-      // 如果删除的是已发布版本，更新发布版本计数
       if (wasPublished) {
         const publishedCount = await queryRunner.manager.count(ComponentVersion, {
           where: {

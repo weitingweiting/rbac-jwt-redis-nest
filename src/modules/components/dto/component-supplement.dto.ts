@@ -1,13 +1,7 @@
 /**
  * 组件 supplement.json 映射 DTO
  * 用于解析和验证研发申请系统导出的 component.meta.supplement.json 文件
- *
- * 该文件由研发申请系统在审核通过后生成，包含：
- * - 组件基本信息（id, name, version）
- * - 分类信息（分类标识和显示名称）
- * - 申请元数据（applicationId, applicationNo, exportTime）
  */
-
 import {
   IsString,
   IsNotEmpty,
@@ -80,28 +74,6 @@ export class SupplementMetadataDto {
 
 /**
  * 组件 supplement.json 完整结构 DTO
- *
- * 文件结构示例：
- * ```json
- * {
- *   "id": "BarChart",
- *   "name": "柱状图",
- *   "version": "1.0.0",
- *   "classification": {
- *     "level1": "chart",
- *     "level2": "bar",
- *     "displayName": {
- *       "level1": "图表组件",
- *       "level2": "柱状图"
- *     }
- *   },
- *   "_metadata": {
- *     "applicationId": 123,
- *     "applicationNo": "APP-20260107-0001",
- *     "exportTime": "2026-01-07T10:30:00.000Z"
- *   }
- * }
- * ```
  */
 export class ComponentSupplementDto {
   @IsString({ message: '组件ID必须是字符串' })

@@ -12,7 +12,6 @@ import { User } from '@/shared/entities/user.entity'
 export class ComponentCategory extends BaseEntity {
   /**
    * 分类编码（唯一）
-   * 如：chart, form, chart.bar, form.input
    */
   @Column({ type: 'varchar', length: 50, unique: true })
   code: string

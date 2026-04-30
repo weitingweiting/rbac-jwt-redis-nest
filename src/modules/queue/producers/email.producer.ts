@@ -7,7 +7,6 @@ import { QUEUE_NAMES, JOB_TYPES } from '@/shared/constants/queue.constant'
 
 /**
  * 邮件生产者
- * 负责将邮件任务添加到队列中
  */
 @Injectable()
 export class EmailProducer {
@@ -19,7 +18,7 @@ export class EmailProducer {
   ) {}
 
   /**
-   * 发送欢迎邮件
+   * 发送邮件
    */
   async sendWelcomeEmail(email: string, username: string): Promise<void> {
     try {
@@ -66,8 +65,8 @@ export class EmailProducer {
         },
         {
           priority: 1, // 高优先级
-          attempts: 5, // 更多重试次数
-          removeOnComplete: true // 完成后立即删除
+          attempts: 5,
+          removeOnComplete: true
         }
       )
 

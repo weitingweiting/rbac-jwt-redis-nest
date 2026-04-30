@@ -5,19 +5,15 @@ import { Transform } from 'class-transformer'
  * 树形结构深度级别
  */
 export enum LeafLevel {
-  /** 只返回一级分类 */
   Level1 = 'Level1',
-  /** 返回一、二级分类 */
   Level2 = 'Level2',
-  /** 返回一、二级分类、组件 */
   Level3 = 'Level3',
-  /** 返回一、二级分类、组件、版本（完整数据） */
   Level4 = 'Level4'
 }
 
 /**
  * 组件总览查询 DTO
- * 用于管理员页面的树形表格展示
+ * 管理员页面的树形表格展示
  */
 export class ComponentOverviewDto {
   @IsOptional()
@@ -36,10 +32,6 @@ export class ComponentOverviewDto {
 
 /**
  * 画布场景组件总览查询 DTO
- *
- * 可见性策略：
- * - 默认返回所有 published 版本
- * - includeDrafts=true 时，额外返回当前用户的 draft 版本
  *
  * 过滤策略：
  * - 只返回有可见版本的组件

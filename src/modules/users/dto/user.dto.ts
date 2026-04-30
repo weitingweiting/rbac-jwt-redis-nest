@@ -54,11 +54,9 @@ export class CreateUserDto extends BaseUserDto {
 
 /**
  * 更新用户 DTO
- * 排除密码字段，密码修改应使用专门的接口
+ * 排除密码字段，密码修改使用专门的接口
  */
-export class UpdateUserDto extends PartialType(OmitType(BaseUserDto, ['password'] as const)) {
-  // 所有字段自动变为可选，排除密码字段
-}
+export class UpdateUserDto extends PartialType(OmitType(BaseUserDto, ['password'] as const)) {}
 
 /**
  * 查询用户 DTO
@@ -93,7 +91,6 @@ export class AssignRolesDto {
 
 /**
  * 用户响应 DTO
- * 用于返回给客户端的用户信息，自动排除敏感字段（如密码）
  */
 @Exclude()
 export class UserResponseDto {

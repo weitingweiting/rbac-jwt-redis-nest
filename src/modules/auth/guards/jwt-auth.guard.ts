@@ -18,7 +18,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true
     }
 
-    // passport会去通过PassportStrategy，找到名为'jwt'的策略进行验证（文件：src/modules/auth/strategies/jwt.strategy.ts）
     return super.canActivate(context)
   }
 }

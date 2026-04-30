@@ -32,9 +32,6 @@ import {
   CancelApplicationResponseDto
 } from './dto'
 
-/**
- * supplement 文件接口
- */
 export interface IComponentMetaSupplement {
   id: string
   name: string
@@ -72,10 +69,6 @@ export class DevelopmentApplicationsService {
     private readonly logger: Logger
   ) {}
 
-  /**
-   * 生成申请单号
-   * 格式：APP-YYYYMMDD-XXXX
-   */
   private async generateApplicationNo(): Promise<string> {
     const today = new Date()
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
@@ -115,12 +108,10 @@ export class DevelopmentApplicationsService {
       where: whereCondition
     })
 
-    // 如果找到申请且不是当前申请（编辑场景），则版本号不可用
     if (existingApplication && existingApplication.id !== excludeId) {
       return false
     }
 
-    // 也需要检查 ComponentVersion 中是否已存在该版本
     const existingVersion = await this.componentVersionRepository.findOne({
       where: { componentId, version: targetVersion }
     })
@@ -181,7 +172,6 @@ export class DevelopmentApplicationsService {
   ): Promise<CreateApplicationResponseDto> {
     const { applicationType } = dto
 
-    // 根据申请类型执行不同的验证逻辑
     let application: DevelopmentApplication
 
     switch (applicationType) {
@@ -333,7 +323,6 @@ export class DevelopmentApplicationsService {
     // 生成申请单号
     const applicationNo = await this.generateApplicationNo()
 
-    // 继承组件的基本信息（初始状态为待审核）
     const application = this.applicationRepository.create({
       applicationNo,
       applicationType: ApplicationType.VERSION,
@@ -363,7 +352,6 @@ export class DevelopmentApplicationsService {
 
   /**
    * 创建替换版本申请
-   * 说明：版本号自动从 existingVersion 获取，无需用户传入
    */
   private async createReplaceApplication(
     dto: CreateDevelopmentApplicationDto,
@@ -380,7 +368,6 @@ export class DevelopmentApplicationsService {
       )
     }
 
-    // 检查组件是否存在
     const component = await this.componentRepository.findOne({
       where: { componentId }
     })
@@ -411,7 +398,6 @@ export class DevelopmentApplicationsService {
       )
     }
 
-    // 版本号直接从现有版本获取（替换操作不改变版本号）
     const targetVersion = existingVersion.version
 
     // 生成申请单号
@@ -435,7 +421,6 @@ export class DevelopmentApplicationsService {
       applicantId
     })
 
-    // 查询并设置分类名称
     try {
       const { level1Name, level2Name } = await this.validateClassification(
         component.classificationLevel1,
@@ -452,7 +437,6 @@ export class DevelopmentApplicationsService {
 
   /**
    * 获取申请详情
-   * @param applicationNo 申请单号（业务单号，如 APP-20260108-0001）
    */
   async getApplicationDetail(applicationNo: string): Promise<DevelopmentApplicationResponseDto> {
     const application = await this.applicationRepository.findOne({
@@ -515,7 +499,6 @@ export class DevelopmentApplicationsService {
     // 排序：最新优先
     queryBuilder.orderBy('app.createdAt', 'DESC')
 
-    // 分页（使用继承自 PaginationDto 的属性）
     queryBuilder.skip(query.skip).take(query.take)
 
     const [items, total] = await queryBuilder.getManyAndCount()
@@ -568,10 +551,8 @@ export class DevelopmentApplicationsService {
       )
     }
 
-    // 根据申请类型限制可编辑字段
     const { name, description, classificationLevel1, classificationLevel2, changelog } = dto
 
-    // 所有类型都可修改 description 和 changelog
     if (description !== undefined) {
       application.description = description
     }
@@ -579,7 +560,6 @@ export class DevelopmentApplicationsService {
       application.changelog = changelog
     }
 
-    // 仅新组件可修改 name 和分类
     if (application.applicationType === ApplicationType.NEW) {
       if (name !== undefined) {
         application.name = name
@@ -603,11 +583,6 @@ export class DevelopmentApplicationsService {
 
   /**
    * 导出组件元数据补充文件
-   *
-   * 新流程说明：
-   * - 只有审核通过（APPROVED）状态才允许下载
-   * - 这确保了管理员先批准申请，用户才能开始开发
-   * @param applicationNo 申请单号（业务单号）
    */
   async exportMetaSupplement(applicationNo: string): Promise<IComponentMetaSupplement> {
     const application = await this.applicationRepository.findOne({
@@ -650,7 +625,6 @@ export class DevelopmentApplicationsService {
       }
     }
 
-    // 替换版本场景，添加额外标记
     if (application.applicationType === ApplicationType.REPLACE && application.existingVersionId) {
       supplement._metadata.isReplacement = true
       supplement._metadata.originalVersionId = application.existingVersionId
@@ -661,12 +635,6 @@ export class DevelopmentApplicationsService {
 
   /**
    * 审核申请
-   *
-   * 新流程说明：
-   * - 管理员审核的是"是否允许开发该组件"
-   * - 审核通过后，用户才可以下载 supplement.json 开始开发
-   * - 抢单模式：审核人在审核时才确定
-   * @param applicationNo 申请单号（业务单号）
    */
   async reviewApplication(
     applicationNo: string,
@@ -790,10 +758,6 @@ export class DevelopmentApplicationsService {
   /**
    * 生成正式 OSS 路径
    * 格式：components/{componentId}/{version}/
-   *
-   * 新流程说明：
-   * - 上传直接到正式路径，无临时目录
-   * - 由上传服务在校验成功后使用此路径
    */
   generateOSSPath(componentId: string, version: string): string {
     return `components/${componentId}/${version}`

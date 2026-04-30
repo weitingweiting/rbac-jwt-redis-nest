@@ -14,7 +14,6 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus()
     const exceptionResponse = exception.getResponse() as any
 
-    // 检查是否是验证错误
     const isValidationError = Array.isArray(exceptionResponse.message)
 
     if (isValidationError) {
@@ -30,7 +29,7 @@ export class ValidationExceptionFilter implements ExceptionFilter {
         method: request.method,
         error: 'VALIDATION_ERROR',
         message: '数据验证失败',
-        details: exceptionResponse.message, // 详细的验证错误信息
+        details: exceptionResponse.message,
         requestId
       }
 
@@ -38,7 +37,6 @@ export class ValidationExceptionFilter implements ExceptionFilter {
       response.setHeader('X-Request-ID', requestId)
       response.setHeader('X-Error-Type', 'ValidationException')
 
-      // 记录验证错误日志
       this.logger.warn('🔍 ValidationExceptionFilter: 数据验证失败', {
         path: request.url,
         method: request.method,

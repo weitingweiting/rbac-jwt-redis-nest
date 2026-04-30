@@ -29,26 +29,7 @@ import {
 import { DevelopmentStatus } from './constants/development-status.enum'
 
 /**
- *
- * 新流程说明：
- * 1. 创建申请（填写组件信息）→ PENDING_REVIEW
- * 2. 管理员审核申请（是否允许开发）→ APPROVED / REJECTED
- * 3. 审核通过后，用户下载 supplement.json 开始开发
- * 4. 开发完成后，上传组件包（由上传服务校验 meta.json + supplement.json）
- * 5. 校验成功 → COMPLETED（组件入库 draft）
- * 6. 校验失败 → 保持 APPROVED（用户可重新上传）
- *
- * 管理接口：
- * - POST   /                    创建申请
- * - GET    /                    查询申请列表
- * - GET    /mine                查询我的申请
- * - GET    /pending-review      查询待审核申请（审核人员用）
- * - GET    /:applicationNo          查询申请详情
- * - PATCH  /:applicationNo          编辑申请（仅待审核状态）
- * - GET    /:applicationNo/export-meta     导出元数据补充文件（仅审核通过状态）
- * - POST   /:applicationNo/review          审核申请
- * - POST   /:applicationNo/self-approve    管理员自助审批
- * - POST   /:applicationNo/cancel          取消申请（仅待审核状态）
+ * development-applications
  */
 @Controller('development-applications')
 @UseGuards(PermissionsGuard)
@@ -89,8 +70,6 @@ export class DevelopmentApplicationsController {
   /**
    * 获取申请列表
    * GET /api/development-applications
-   *
-   * 支持筛选：状态、申请类型、组件ID、申请人、关键词
    */
   @Get()
   @RequirePermissions('development:application:read')
@@ -106,13 +85,10 @@ export class DevelopmentApplicationsController {
   /**
    * 获取我的申请列表
    * GET /api/development-applications/mine
-   *
-   * 获取当前用户提交的申请列表
    */
   @Get('mine')
   @RequirePermissions('development:application:read')
   async findMine(@Query() query: QueryApplicationListDto, @CurrentUser() user: CurrentUserDto) {
-    // 覆盖 applicantId 为当前用户
     query.applicantId = user.id
     const result = await this.applicationsService.getApplicationList(query)
 
@@ -125,8 +101,6 @@ export class DevelopmentApplicationsController {
   /**
    * 获取待审核申请列表
    * GET /api/development-applications/pending-review
-   *
-   * 获取所有待审核状态的申请（审核人员使用）
    */
   @Get('pending-review')
   @RequirePermissions('development:application:review')
@@ -159,9 +133,6 @@ export class DevelopmentApplicationsController {
   /**
    * 编辑申请信息
    * PATCH /api/development-applications/:applicationNo
-   *
-   * 仅允许在待审核状态下编辑
-   * 仅允许申请人本人编辑
    */
   @Patch(':applicationNo')
   @RequirePermissions('development:application:update')
@@ -186,10 +157,6 @@ export class DevelopmentApplicationsController {
   /**
    * 导出元数据补充文件
    * GET /api/development-applications/:applicationNo/export-meta
-   *
-   * 返回 component.meta.supplement.json 文件
-   * 新流程：只有审核通过状态才能下载
-   * 开发者需要将此文件放入组件目录，由 abd-cli 构建时合并
    */
   @Get(':applicationNo/export-meta')
   @RequirePermissions('development:application:read')
@@ -206,11 +173,6 @@ export class DevelopmentApplicationsController {
   /**
    * 审核申请
    * POST /api/development-applications/:id/review
-   *
-   * 新流程说明：
-   * - 管理员审核的是"是否允许开发该组件"
-   * - 审核通过后状态变为 APPROVED，用户才能下载 supplement.json
-   * - 不能审核自己的申请（除非使用自助审批接口）
    */
   @Post(':applicationNo/review')
   @HttpCode(HttpStatus.OK)
@@ -244,9 +206,6 @@ export class DevelopmentApplicationsController {
   /**
    * 管理员自助审批
    * POST /api/development-applications/:applicationNo/self-approve
-   *
-   * 允许管理员审批自己的申请
-   * 需要特殊权限：development:application:self-approve
    */
   @Post(':applicationNo/self-approve')
   @HttpCode(HttpStatus.OK)
@@ -279,9 +238,6 @@ export class DevelopmentApplicationsController {
   /**
    * 取消申请
    * POST /api/development-applications/:applicationNo/cancel
-   *
-   * 取消待审核状态的申请
-   * 仅允许申请人本人取消
    */
   @Post(':applicationNo/cancel')
   @HttpCode(HttpStatus.OK)

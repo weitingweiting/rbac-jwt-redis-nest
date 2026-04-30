@@ -5,7 +5,7 @@ import { Role } from './role.entity'
 @Entity('permissions')
 export class Permission extends BaseEntity {
   @Column({ unique: true })
-  code: string // e.g. 'project.create'
+  code: string
 
   @Column({ unique: true })
   name!: string

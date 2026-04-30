@@ -33,7 +33,6 @@ import { COMPONENT_FILE_UPLOAD_RULES } from '@/modules/components/constants/vali
  * 组件管理控制器
  *
  * 提供组件的查询、上传、删除等功能
- * 注意：组件信息的修改通过上传新版本实现，不提供直接更新接口
  */
 @Controller('components')
 @UseGuards(PermissionsGuard)
@@ -51,8 +50,6 @@ export class ComponentsController {
   @Get()
   @RequirePermissions('component.read')
   async findAll(@Query() query: QueryComponentDto, @CurrentUser() user: CurrentUserDto) {
-    // 注入当前用户ID，用于 draft 版本可见性过滤
-
     const result = await this.componentsService.findAllWithPagination(query, user)
     return {
       message: '获取组件列表成功',
@@ -63,21 +60,6 @@ export class ComponentsController {
   /**
    * 获取组件总览（树形结构）
    * GET /api/components/overview?keyword=xxx&status=draft&leaf=Level3
-   *
-   * 用于管理员页面的树形表格展示
-   * 根据 leaf 参数返回不同深度的树形结构
-   *
-   * leaf 参数说明：
-   * - Level1: 只返回一级分类（最轻量）
-   * - Level2: 返回一、二级分类
-   * - Level3: 返回一、二级分类、组件
-   * - Level4: 返回一、二级分类、组件、版本（完整数据，默认）
-   *
-   * 树形结构示例：
-   * - Level 1: 一级分类（如：图表）
-   *   - Level 2: 二级分类（如：柱状图）
-   *     - Level 3: 组件（如：BarChart）
-   *       - Level 4: 版本（如：v1.2.0）
    */
   @Get('overview')
   @RequirePermissions('component.read')
@@ -92,20 +74,6 @@ export class ComponentsController {
   /**
    * 获取画布场景的组件总览（树形结构）
    * GET /api/components/overview-for-canvas?keyword=xxx&classificationLevel1=chart&includeDrafts=true
-   *
-   * 专为画布场景设计，实现组件可见性策略：
-   * - 默认只返回有 published 版本的组件
-   * - includeDrafts=true 时，额外返回当前用户有 draft 版本的组件
-   *
-   * 过滤策略：
-   * - 只返回有可见版本的组件
-   * - 只返回有可见组件的分类（空分类不返回）
-   *
-   * 返回的树形结构：
-   * - Level 1: 一级分类（如：图表）
-   *   - Level 2: 二级分类（如：柱状图）
-   *     - Level 3: 组件（如：BarChart）
-   *       - Level 4: 版本（如：v1.2.0）- 只包含可见版本
    */
   @Get('overview-for-canvas')
   @RequirePermissions('component.read')
@@ -124,7 +92,7 @@ export class ComponentsController {
    * 获取单个组件详情
    * GET /api/components/:componentId
    *
-   * @param componentId - 组件ID（如：BarChart）
+   * @param componentId - 组件ID
    */
   @Get(':componentId')
   @RequirePermissions('component.read')
@@ -140,21 +108,11 @@ export class ComponentsController {
    * 上传组件 ZIP 包
    * POST /api/components/upload?applicationNo=APP-20260112-0007
    *
-   * 新流程（先审批，后开发）：
-   * 1. 验证 ZIP 文件基本格式
-   * 2. 解析 supplement.json（来自研发申请系统）
-   * 3. 验证前端传递的 applicationNo 与 supplement.json 中的一致性（防止混用）
-   * 4. 验证与研发申请记录的一致性
-   * 5. 检查申请状态（必须为 APPROVED）
-   * 6. 解析 meta.json（来自 abd-cli 构建）
-   * 7. 验证两个 meta 文件的一致性
-   * 8. 上传文件到 OSS
-   * 9. 创建/更新组件和版本记录
-   * 10. 更新申请状态为 COMPLETED
+   * 流程：先审批，后开发，最后上传组件包
    *
-   * @param file - ZIP 文件（必须包含 component.meta.json 和 component.meta.supplement.json）
+   * @param file
    * @param applicationNo - 申请单号（必须与 supplement.json 中的一致，防止混用）
-   * @param currentUser - 当前用户信息
+   * @param currentUser
    */
   @Post('upload')
   @RequirePermissions('component.create')
@@ -177,7 +135,6 @@ export class ComponentsController {
     @Query('applicationNo') applicationNo: string,
     @CurrentUser() currentUser: CurrentUserDto
   ) {
-    // 验证必传参数
     if (!applicationNo) {
       throw new BusinessException(
         '缺少申请单号参数 applicationNo',
@@ -210,7 +167,6 @@ export class ComponentsController {
           type: result.version.type,
           framework: result.version.framework
         },
-        // 研发申请相关
         applicationNo: result.applicationNo,
         isNewComponent: result.isNewComponent,
         isNewVersion: result.isNewVersion,
@@ -222,11 +178,6 @@ export class ComponentsController {
   /**
    * 删除组件
    * DELETE /api/components/:componentId
-   *
-   * 注意：
-   * - 只能删除没有已发布版本的组件
-   * - 删除操作为软删除（可恢复）
-   * - 会级联软删除所有关联的版本记录
    *
    * @param componentId - 组件ID（如：BarChart）
    */

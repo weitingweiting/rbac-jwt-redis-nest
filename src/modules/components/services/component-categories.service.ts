@@ -25,19 +25,16 @@ export class ComponentCategoriesService extends BaseService<ComponentCategory> {
    * 获取分类树结构
    */
   async getCategoryTree(): Promise<ComponentCategory[]> {
-    // 查询所有一级分类
     const level1Categories = await this.categoryRepository.find({
       where: { level: 1, isActive: true },
       order: { sortOrder: 'ASC', createdAt: 'ASC' }
     })
 
-    // 查询所有二级分类
     const level2Categories = await this.categoryRepository.find({
       where: { level: 2, isActive: true },
       order: { sortOrder: 'ASC', createdAt: 'ASC' }
     })
 
-    // 构建树形结构
     const categoryTree = level1Categories.map((parent) => {
       const children = level2Categories.filter((child) => child.parentId === parent.id)
       return {
@@ -116,7 +113,6 @@ export class ComponentCategoriesService extends BaseService<ComponentCategory> {
    * 创建分类
    */
   async createCategory(createDto: CreateComponentCategoryDto): Promise<ComponentCategory> {
-    // 检查分类编码是否已存在
     const existingCategory = await this.categoryRepository.findOne({
       where: { code: createDto.code },
       withDeleted: true
@@ -137,7 +133,6 @@ export class ComponentCategoriesService extends BaseService<ComponentCategory> {
       )
     }
 
-    // 验证层级关系
     if (createDto.level === 2 && !createDto.parentId) {
       throw new BusinessException(
         '二级分类必须指定父分类',
@@ -154,7 +149,6 @@ export class ComponentCategoriesService extends BaseService<ComponentCategory> {
       )
     }
 
-    // 如果是二级分类，验证父分类存在且为一级分类
     if (createDto.level === 2 && createDto.parentId) {
       const parentCategory = await this.findOneCategory(createDto.parentId)
       if (parentCategory.level !== 1) {
@@ -179,7 +173,6 @@ export class ComponentCategoriesService extends BaseService<ComponentCategory> {
   ): Promise<ComponentCategory> {
     const category = await this.findOneCategory(id)
 
-    // 如果更新编码，检查是否重复
     if (updateDto.code && updateDto.code !== category.code) {
       const existingCategory = await this.categoryRepository.findOne({
         where: { code: updateDto.code },
@@ -195,7 +188,6 @@ export class ComponentCategoriesService extends BaseService<ComponentCategory> {
       }
     }
 
-    // 验证层级关系
     if (updateDto.level === 2 && !updateDto.parentId && !category.parentId) {
       throw new BusinessException(
         '二级分类必须指定父分类',
@@ -214,7 +206,6 @@ export class ComponentCategoriesService extends BaseService<ComponentCategory> {
   async deleteCategory(id: number): Promise<void> {
     const category = await this.findOneCategory(id)
 
-    // 检查是否有子分类
     if (category.level === 1) {
       const childrenCount = await this.categoryRepository.count({
         where: { parentId: id }
@@ -228,13 +219,6 @@ export class ComponentCategoriesService extends BaseService<ComponentCategory> {
         )
       }
     }
-
-    // 检查是否有组件使用该分类
-    // 注意：这里需要在实现 ComponentsService 后添加检查逻辑
-    // const componentsCount = await this.componentsService.countByCategory(id)
-    // if (componentsCount > 0) {
-    //   throw new BusinessException('该分类下还有组件，无法删除')
-    // }
 
     await this.categoryRepository.softDelete(id)
   }

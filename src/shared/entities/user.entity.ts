@@ -11,7 +11,7 @@ export class User extends BaseEntity {
   username!: string
 
   @Column()
-  @Exclude() // 序列化时自动排除密码字段
+  @Exclude()
   password!: string
 
   @Column({ nullable: true })

@@ -16,8 +16,8 @@ import { Logger } from 'winston'
  * 全局异常过滤器
  * 捕获所有未被其他过滤器处理的异常
  *
- * 注意：LoggingInterceptor 已经记录了大部分错误日志，
- * 此过滤器主要负责：
+ * LoggingInterceptor 已经记录了大部分错误日志，
+ * 本次过滤器主要负责：
  * 1. 统一错误响应格式
  * 2. 处理非 HTTP 异常（如数据库错误、未知错误）
  */
@@ -42,9 +42,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let message: string | string[] = 'Internal server error'
     let error = 'Internal Server Error'
 
-    // 处理不同类型的异常
     if (exception instanceof HttpException) {
-      // HTTP 异常应该被 HttpExceptionFilter 处理，但如果到了这里说明有遗漏
       status = exception.getStatus()
       const exceptionResponse = exception.getResponse()
 
@@ -56,7 +54,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
         error = responseObj.error || exception.name
       }
 
-      // 特殊处理 404 错误
       if (status === HttpStatus.NOT_FOUND) {
         error = 'ROUTE_NOT_FOUND'
         message = `路由 ${request.method} ${request.url} 不存在`
@@ -65,19 +62,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message = exception.message
       error = exception.name
 
-      // 🔧 更精确的错误检测
       if (exception.constructor.name === 'QueryFailedError') {
-        // TypeORM 数据库错误
         status = HttpStatus.BAD_REQUEST
         error = 'DATABASE_ERROR'
         message = isProduction ? '数据库操作失败' : exception.message
       } else if (exception.name === 'ValidationError') {
-        // class-validator 验证错误
         status = HttpStatus.BAD_REQUEST
         error = 'VALIDATION_ERROR'
         message = '数据验证失败'
       } else if (exception instanceof UnauthorizedException) {
-        // 这种情况理论上不应该到达这里，应该被 HttpExceptionFilter 处理
         status = HttpStatus.UNAUTHORIZED
         error = 'UNAUTHORIZED'
         message = '未授权访问'
@@ -87,17 +80,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exception.message?.includes('Cannot PUT') ||
         exception.message?.includes('Cannot DELETE')
       ) {
-        // Express 路由不存在错误
         status = HttpStatus.NOT_FOUND
         error = 'ROUTE_NOT_FOUND'
         message = `路由 ${request.method} ${request.url} 不存在`
       } else if (exception.name === 'TypeError') {
-        // JavaScript 类型错误
         status = HttpStatus.INTERNAL_SERVER_ERROR
         error = 'TYPE_ERROR'
         message = isProduction ? '服务器内部错误' : exception.message
       } else if (exception.name === 'ReferenceError') {
-        // JavaScript 引用错误
         status = HttpStatus.INTERNAL_SERVER_ERROR
         error = 'REFERENCE_ERROR'
         message = isProduction ? '服务器内部错误' : exception.message

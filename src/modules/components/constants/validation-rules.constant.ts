@@ -2,14 +2,14 @@
  * 组件管理模块验证规则常量
  *
  * 注意：
- * - 分页相关规则请使用 @/shared/dto/pagination.dto.ts 中的 PaginationDto
- * - 通用文件上传规则请参考 @/shared/config/oss.config.ts 中的 OSS_CONFIG
- * - 具体验证规则已在 DTO 中通过 class-validator 装饰器实现
+ * - 分页相关规则 @/shared/dto/pagination.dto.ts PaginationDto
+ * - 通用文件 @/shared/config/oss.config.ts  OSS_CONFIG
+ * - 具体验证规则 DTO 中通过 class-validator 装饰器实现
  */
 
 /**
  * 文件上传限制（组件专用）
- * 注意：通用文件上传限制请参考 @/shared/config/oss.config.ts 中的 OSS_CONFIG
+ * 通用文件上传限： @/shared/config/oss.config.ts 中  OSS_CONFIG
  */
 export const COMPONENT_FILE_UPLOAD_RULES = {
   // zip 文件最大 50MB（组件包）

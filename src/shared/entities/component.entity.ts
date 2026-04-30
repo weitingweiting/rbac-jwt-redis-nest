@@ -17,22 +17,18 @@ import { ComponentVersion } from '@/shared/entities/component-version.entity'
  * 组件主表
  * 存储组件的基本信息，信息完全由 component.meta.json 决定
  *
- * 注意：
  * 1. 使用 componentId 作为主键（string），不继承 BaseEntity
  * 2. componentId 作为主键保证全局唯一，不可重复
  * 3. 组件本身不再有状态字段，状态管理通过版本表（component_versions）实现
- * - publishedVersionCount > 0：表示组件有可用版本（相当于已发布状态）
- * - publishedVersionCount = 0：表示组件无可用版本（相当于草稿状态）
  */
 @Entity('components')
-@Index(['componentId'], { unique: true }) // 明确标注唯一索引（主键已保证唯一）
+@Index(['componentId'], { unique: true })
 @Index(['classificationLevel1', 'classificationLevel2'])
-@Index(['publishedVersionCount']) // 用于查询可用组件
+@Index(['publishedVersionCount'])
 export class Component {
   /**
    * 组件唯一标识（对应 meta.json 的 id 字段）- 主键
    * 如：BarChart, LineChart
-   * 注意：此字段为主键，保证全局唯一，不可重复
    */
   @PrimaryColumn({ type: 'varchar', length: 100, name: 'component_id', unique: true })
   componentId: string
@@ -104,8 +100,6 @@ export class Component {
 
   /**
    * 已发布版本数量（缓存字段，用于查询优化）
-   * - 当 publishedVersionCount > 0 时，表示组件有可用版本
-   * - 当 publishedVersionCount = 0 时，表示组件无可用版本（类似草稿状态）
    */
   @Column({ type: 'int', default: 0, name: 'published_version_count' })
   publishedVersionCount: number

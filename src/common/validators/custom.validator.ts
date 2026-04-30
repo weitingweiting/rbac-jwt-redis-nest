@@ -2,7 +2,6 @@ import { registerDecorator, ValidationOptions, ValidationArguments } from 'class
 
 /**
  * 自定义验证器：验证两个字段是否匹配（如：密码确认）
- * 使用示例：
  * export class ChangePasswordDto {
  *   @IsString()
  *   newPassword: string;

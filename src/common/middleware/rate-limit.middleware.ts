@@ -11,7 +11,6 @@ import { Logger } from 'winston'
  */
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
-  // 配置项
   private readonly windowMs = 60 * 1000 // 时间窗口：60秒
   private readonly maxRequests = 100 // 最大请求数：100次/分钟
 
@@ -58,10 +57,8 @@ export class RateLimitMiddleware implements NestMiddleware {
         )
       }
 
-      // 增加请求计数
       await this.cacheManager.set(key, requests + 1, this.windowMs)
 
-      // 设置限流响应头
       res.setHeader('X-RateLimit-Limit', this.maxRequests.toString())
       res.setHeader('X-RateLimit-Remaining', (this.maxRequests - requests - 1).toString())
       res.setHeader('X-RateLimit-Reset', this.getRateLimitReset().toString())
@@ -72,7 +69,7 @@ export class RateLimitMiddleware implements NestMiddleware {
         throw error
       }
 
-      // Redis 连接错误等，不应阻塞请求
+      // Redis 连接错误等，不阻塞请求
       this.logger.error('⚠️ 限流中间件异常，允许请求通过', {
         error: error instanceof Error ? error.message : String(error),
         ip,

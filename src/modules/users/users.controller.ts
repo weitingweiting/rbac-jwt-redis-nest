@@ -91,7 +91,6 @@ export class UsersController {
   /**
    * 修改当前用户密码
    * PUT /api/users/me/password
-   * 注意：必须在 PUT /api/users/:id 之前定义
    */
   @Put('me/password')
   @HttpCode(HttpStatus.OK)
@@ -213,7 +212,7 @@ export class UsersController {
     }
   }
 
-  // ==================== 权限示例路由（可选，用于测试） ====================
+  // ==================== 权限示例路由（用于测试） ====================
 
   /**
    * 编辑者路由示例（需要 admin 或 editor 角色之一）

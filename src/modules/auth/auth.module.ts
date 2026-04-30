@@ -14,7 +14,7 @@ import { SharedModule } from '@/shared/shared.module'
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule,
-    SharedModule, // 导入共享模块获取 UserPermissionsService 和 TokenBlacklistService
+    SharedModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

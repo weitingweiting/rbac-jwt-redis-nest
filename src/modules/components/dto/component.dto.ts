@@ -4,8 +4,6 @@ import { PaginationDto } from '@/shared/dto/pagination.dto'
 
 /**
  * 创建组件 DTO
- * 注意：通常不直接创建组件，而是通过上传 zip 包自动创建
- * 此 DTO 用于内部服务或特殊场景
  */
 export class CreateComponentDto {
   @IsString({ message: '组件ID必须是字符串' })
@@ -50,8 +48,6 @@ export class CreateComponentDto {
 
 /**
  * 更新组件 DTO
- * 注意：组件信息通常由 component.meta.json 决定
- * 直接更新组件字段仅用于管理后台特殊场景
  */
 export class UpdateComponentDto extends PartialType(CreateComponentDto) {}
 
@@ -81,17 +77,13 @@ export class QueryComponentDto extends PaginationDto {
   @IsEnum(['ASC', 'DESC'], { message: '排序方向只能是 ASC 或 DESC' })
   sortOrder?: 'ASC' | 'DESC'
 
-  /**
-   * 申请单号过滤
-   * 返回包含该申请单号关联版本的组件
-   */
   @IsOptional()
   @IsString()
   applicationNo?: string
 }
 
 /**
- * 组件详情响应 DTO（用于标准化返回数据）
+ * 组件详情响应 DTO
  */
 export class ComponentResponseDto {
   componentId!: string

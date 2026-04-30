@@ -2,7 +2,6 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
 
-// 应用核心
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 
@@ -10,7 +9,6 @@ import { AppService } from './app.service'
 import { DatabaseModule } from './database/database.module'
 import { SeedService } from './database/seeds/seed.service'
 
-// 共享配置
 import {
   appConfig,
   databaseConfig,
@@ -23,19 +21,15 @@ import { validationSchema } from './shared/config/env.validation'
 import { getRedisConfig } from './shared/config/redis.config'
 import { getBullMQConfig } from './shared/config/bullmq.config'
 
-// 守卫和拦截器
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard'
 
-// 中间件
 import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware'
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware'
 
-// 通用模块
 import { FiltersModule } from './common/filters/filters.module'
 import { LoggerModule } from './common/logger/logger.module'
 import { LoggingInterceptor } from './common/logger/logging.interceptor'
 
-// 模块
 import { QueueModule } from './modules/queue/queue.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { UsersModule } from './modules/users/users.module'
@@ -54,13 +48,13 @@ import { DevelopmentApplicationsModule } from './modules/development-application
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'], // 支持多个环境文件，优先级从左到右
-      validationSchema, // 先用Joi 验证 envFilePath 指定的环境变量
-      load: [appConfig, databaseConfig, redisConfig, jwtConfig, ossConfig, proxyConfig], // joi 验证通过后，使用registerAs分配命名空间，并加载配置
+      validationSchema,
+      load: [appConfig, databaseConfig, redisConfig, jwtConfig, ossConfig, proxyConfig], // 使用registerAs分配命名空间，并加载配置
       cache: true, // 缓存环境变量以提高性能
       expandVariables: true, // 支持变量展开 ${VAR}
       validationOptions: {
         allowUnknown: true, // 允许未知的环境变量
-        abortEarly: false // 显示所有验证错误，而不是第一个错误后停止
+        abortEarly: false // 显示所有验证错误
       }
     }),
     LoggerModule,
@@ -97,13 +91,12 @@ import { DevelopmentApplicationsModule } from './modules/development-application
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // 为所有路由应用请求 ID 中间件（优先级最高）
+    // 为所有路由应用请求 ID 中间件
     consumer.apply(RequestIdMiddleware).forRoutes('*path')
     // 为所有路由应用限流中间件
     consumer.apply(RateLimitMiddleware).forRoutes('*path')
   }
 
-  // 执行顺序：onModuleInit -> onApplicationBootstrap -> beforeApplicationShutdown -> onModuleDestroy
   async onModuleInit() {
     console.log('AppModule initialized')
   }

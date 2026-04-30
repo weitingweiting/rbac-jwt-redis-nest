@@ -30,10 +30,8 @@ export class LoggingInterceptor implements NestInterceptor {
     const requestId = request['requestId'] || 'unknown'
     const isProduction = this.configService.get<string>('app.nodeEnv') === 'production'
 
-    // 在请求对象上存储开始时间，供后续使用
     request['startTime'] = startTime
 
-    // 记录请求信息
     this.logger.http('HTTP Request [Interceptor]', {
       method,
       url,
@@ -48,7 +46,6 @@ export class LoggingInterceptor implements NestInterceptor {
       map((data) => {
         const responseTime = Date.now() - startTime
 
-        // ✅ 设置自定义响应头（使用统一工具）
         ResponseHeadersUtil.setCommonHeaders(response, { responseTime })
 
         // ✅ 如果是 StreamableFile，直接返回，不包装
@@ -56,10 +53,9 @@ export class LoggingInterceptor implements NestInterceptor {
           return data
         }
 
-        // ✅ 统一成功响应格式
         const wrappedResponse = {
           success: true,
-          statusCode: 200, // 成功响应默认为200，实际状态码由NestJS处理
+          statusCode: 200,
           timestamp: new Date().toISOString(),
           path: request.url,
           method: request.method,
@@ -74,7 +70,6 @@ export class LoggingInterceptor implements NestInterceptor {
           const { statusCode } = response
           const responseTime = Date.now() - startTime
 
-          // 记录响应信息
           this.logger.http('HTTP Response [Interceptor]', {
             method,
             url,
@@ -88,7 +83,6 @@ export class LoggingInterceptor implements NestInterceptor {
           const response = context.switchToHttp().getResponse()
           const responseTime = Date.now() - startTime
 
-          // 🔧 从异常对象获取正确的状态码
           let statusCode = 500
           if (error && typeof error.getStatus === 'function') {
             statusCode = error.getStatus()
@@ -96,7 +90,6 @@ export class LoggingInterceptor implements NestInterceptor {
             statusCode = response.statusCode
           }
 
-          // 记录错误信息
           this.logger.error('HTTP Error [Interceptor]', {
             method,
             url,

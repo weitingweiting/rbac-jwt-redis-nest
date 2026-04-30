@@ -1,6 +1,5 @@
 /**
  * 队列名称常量
- * 集中管理所有队列名称，避免硬编码
  */
 export const QUEUE_NAMES = {
   EMAIL: 'email-queue',

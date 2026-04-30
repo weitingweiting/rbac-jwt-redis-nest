@@ -13,9 +13,9 @@ export class AppController {
   getHello(): BaseResponseDto<any> {
     return BaseResponseDto.success(
       {
-        name: 'RBAC JWT Redis Demo',
+        name: 'low-code-agile-designer-backend',
         version: '1.0.0',
-        description: 'NestJS RBAC + JWT + Redis 后端管理系统'
+        description: 'agile后端管理系统'
       },
       'API 运行正常'
     )
@@ -24,17 +24,14 @@ export class AppController {
   @Get('health')
   @Public()
   async healthCheck(): Promise<BaseResponseDto<any>> {
-    // 检查数据库连接
     let dbStatus = 'disconnected'
     let dbPoolInfo = null
 
     try {
       if (this.dataSource.isInitialized) {
-        // 执行简单查询测试连接
         await this.dataSource.query('SELECT 1')
         dbStatus = 'connected'
 
-        // 获取连接池信息
         const driver = this.dataSource.driver as any
         if (driver.pool) {
           dbPoolInfo = {

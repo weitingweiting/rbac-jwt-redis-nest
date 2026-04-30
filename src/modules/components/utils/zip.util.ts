@@ -15,7 +15,7 @@ export class ZipUtil {
         !name.startsWith('__MACOSX/') &&
         !name.includes('.DS_Store') &&
         !name.startsWith('._') &&
-        !entry.isDirectory // 同时过滤目录项
+        !entry.isDirectory
       )
     })
   }
@@ -31,7 +31,6 @@ export class ZipUtil {
 
   /**
    * 解包 ZIP 文件并移除第一层目录前缀
-   * 例如：dist/index.js -> index.js, dist/assets/icon.png -> assets/icon.png
    */
   static getCleanEntriesWithoutPrefix(zipBuffer: Buffer): Array<{
     originalPath: string
@@ -42,7 +41,6 @@ export class ZipUtil {
 
     return entries.map((entry) => {
       const originalPath = entry.entryName
-      // 移除第一个 / 之前的所有内容（包括 /）
       const firstSlashIndex = originalPath.indexOf('/')
       const cleanPath =
         firstSlashIndex !== -1 ? originalPath.substring(firstSlashIndex + 1) : originalPath
@@ -56,7 +54,7 @@ export class ZipUtil {
   }
 
   /**
-   * 查找 component.meta.json 文件（支持根目录或子目录）
+   * 查找 component.meta.json 文件
    */
   static findMetaEntry(entries: AdmZip.IZipEntry[]): AdmZip.IZipEntry | undefined {
     return entries.find((entry) => {
@@ -68,7 +66,7 @@ export class ZipUtil {
   }
 
   /**
-   * 查找 component.meta.supplement.json 文件（支持根目录或子目录）
+   * 查找 component.meta.supplement.json 文件
    */
   static findSupplementEntry(entries: AdmZip.IZipEntry[]): AdmZip.IZipEntry | undefined {
     return entries.find((entry) => {
@@ -80,16 +78,11 @@ export class ZipUtil {
   }
 
   /**
-   * 检查文件是否存在（支持精确匹配或子目录匹配）
+   * 检查文件是否存在
    *
    * @param fileNames ZIP 中的文件路径列表
    * @param targetPath 目标文件路径（如 "index.js" 或 "dist/index.js"）
    * @returns 文件是否存在
-   *
-   * 匹配规则：
-   * 1. 精确匹配：fileName === targetPath
-   * 2. 子目录匹配：fileName.endsWith('/' + targetPath)
-   *    确保 targetPath 前面是路径分隔符，避免误匹配（如 "myindex.js" 不应匹配 "index.js"）
    */
   static fileExists(fileNames: string[], targetPath: string): boolean {
     return fileNames.some(

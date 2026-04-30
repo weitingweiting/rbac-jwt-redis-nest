@@ -33,19 +33,14 @@ export class ComponentVersionsController {
    * - isLatest: 是否推荐版本
    * - page, limit: 分页参数
    *
-   * 返回数据包含：
-   * - version: 版本基本信息
-   * - component: 关联的组件信息
-   * - developmentApplication: 创建该版本的研发申请信息
    *
-   * 可见性策略：
+   * 可见性：
    * - 默认返回：所有 published + 当前用户的 draft
    * - 按 componentId 过滤
-   * - 按创建时间降序排列
    *
-   * @param componentId - 组件ID（如：BarChart）
+   * @param componentId - 组件ID
    * @param query - 查询参数
-   * @param user - 当前登录用户
+   * @param user - 登录用户
    */
   @Get('components/:componentId/versions')
   @RequirePermissions('component.read')
@@ -72,7 +67,7 @@ export class ComponentVersionsController {
    * - 关联的组件信息
    * - 创建该版本的研发申请信息（applicationNo、申请人等）
    *
-   * @param versionId - 版本ID（数据库主键，number）
+   * @param versionId - 版本ID
    */
   @Get('component-versions/:versionId')
   @RequirePermissions('component.read')
@@ -97,7 +92,7 @@ export class ComponentVersionsController {
    *
    * 权限要求：component.publish（需要审核权限）
    *
-   * @param versionId - 版本ID（数据库主键，number）
+   * @param versionId - 版本ID
    */
   @Post('component-versions/:versionId/publish')
   @RequirePermissions('component.publish')
@@ -130,7 +125,7 @@ export class ComponentVersionsController {
    *
    * 权限要求：component.publish
    *
-   * @param versionId - 版本ID（数据库主键，number）
+   * @param versionId - 版本ID
    */
   @Post('component-versions/:versionId/unpublish')
   @RequirePermissions('component.publish')
@@ -153,25 +148,19 @@ export class ComponentVersionsController {
    * 设置推荐版本
    * POST /api/component-versions/:versionId/set-latest
    *
-   * 功能：
-   * 1. 将当前版本的 is_latest 设为 true
-   * 2. 将同组件其他版本的 is_latest 设为 false（唯一性保证）
-   *
    * 注意：
    * - 只有 published 状态的版本才能设为推荐
    * - 前端画布将使用推荐版本（is_latest=true）
    *
    * 权限要求：component.publish
    *
-   * @param versionId - 版本ID（数据库主键，number）
+   * @param versionId - 版本ID
    */
   @Post('component-versions/:versionId/set-latest')
   @RequirePermissions('component.publish')
   async setLatestVersion(@Param('versionId', ParseIntPipe) versionId: number) {
-    // 先查询版本获取 componentId
     const versionInfo = await this.versionsService.findOneVersion(versionId)
 
-    // 调用 Service 设置推荐版本
     const version = await this.versionsService.setLatestVersion(versionInfo.componentId, versionId)
 
     return {
@@ -189,17 +178,9 @@ export class ComponentVersionsController {
    * 删除版本（软删除）
    * DELETE /api/component-versions/:versionId
    *
-   * 功能：
-   * 1. 软删除版本（设置 deleted_at）
-   * 2. 更新组件的版本计数
-   *
-   * 注意：
-   * - 如果删除的是推荐版本（is_latest=true），需要手动设置新的推荐版本
-   * - 如果是 published 版本，会减少 publishedVersionCount
-   *
    * 权限要求：component.delete
    *
-   * @param versionId - 版本ID（数据库主键，number）
+   * @param versionId - 版本ID
    */
   @Delete('component-versions/:versionId')
   @RequirePermissions('component.delete')

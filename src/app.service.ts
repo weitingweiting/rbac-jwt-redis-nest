@@ -8,15 +8,14 @@ export class AppService {
 
   getAppInfo() {
     return {
-      name: 'RBAC JWT Redis Demo',
+      name: 'low-code-agile-designer-backend',
       version: '1.0.0',
-      description: 'NestJS 后端管理系统脚手架'
+      description: 'agile后端管理系统'
     }
   }
 
   async onModuleInit() {
     try {
-      // 测试缓存功能：设置、获取、删除
       const testKey = 'app-service-test'
       const testValue = {
         timestamp: Date.now(),

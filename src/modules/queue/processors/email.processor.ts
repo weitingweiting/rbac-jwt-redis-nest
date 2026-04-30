@@ -7,7 +7,6 @@ import { QUEUE_NAMES, JOB_TYPES } from '@/shared/constants/queue.constant'
 
 /**
  * 邮件队列处理器
- * 处理所有邮件发送任务
  */
 @Processor(QUEUE_NAMES.EMAIL)
 export class EmailProcessor extends WorkerHost {
@@ -18,7 +17,6 @@ export class EmailProcessor extends WorkerHost {
     super()
   }
 
-  // 每次发现对列：QUEUE_NAMES.EMAIL中，还有未处理的任务时，都会调用此方法
   async process(job: Job): Promise<any> {
     this.logger.info('📧 Email Job Started', {
       jobId: job.id,
@@ -53,16 +51,12 @@ export class EmailProcessor extends WorkerHost {
     }
   }
 
-  /**
-   * 发送欢迎邮件
-   */
   private async sendWelcomeEmail(data: { email: string; username: string }): Promise<void> {
     this.logger.info('📨 Sending Welcome Email', {
       email: data.email,
       username: data.username
     })
 
-    // TODO: 集成实际的邮件服务（如 SendGrid, AWS SES, Nodemailer 等）
     // 模拟发送延迟
     await this.sleep(1000)
 
@@ -71,9 +65,6 @@ export class EmailProcessor extends WorkerHost {
     })
   }
 
-  /**
-   * 发送验证邮件
-   */
   private async sendVerificationEmail(data: {
     email: string
     verificationCode: string
@@ -82,7 +73,6 @@ export class EmailProcessor extends WorkerHost {
       email: data.email
     })
 
-    // TODO: 实现实际的邮件发送逻辑
     await this.sleep(1000)
 
     this.logger.info('✅ Verification Email Sent', {
@@ -132,7 +122,7 @@ export class EmailProcessor extends WorkerHost {
   }
 
   /**
-   * 工具方法：延迟
+   * 延迟
    */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))

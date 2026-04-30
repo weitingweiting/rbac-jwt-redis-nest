@@ -27,7 +27,7 @@ export class TokenBlacklistService {
   /**
    * 检查 Token 是否在黑名单中
    * @param token JWT Token
-   * @returns true 表示在黑名单中（已失效）
+   * @returns true 表示在黑名单中
    */
   async isBlacklisted(token: string): Promise<boolean> {
     const key = `blacklist:token:${token}`
@@ -37,8 +37,7 @@ export class TokenBlacklistService {
 
   /**
    * admin专用，将用户加入黑名单
-   * 和token加入黑名单不同，这里是将用户的所有Token都加入黑名单。
-   * 意味着用户多处的登录状态都会被强制登出。（假设用户多端多处登录）
+   * 用户多处的登录状态都会被强制登出。（假设用户多端多处登录）
    * @param userId 用户 ID
    * @param expiresIn Token 有效期（秒）
    */

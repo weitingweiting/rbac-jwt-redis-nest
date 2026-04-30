@@ -11,7 +11,6 @@ export class ValidationTestController {
   @Public()
   @Post('register')
   async testValidation(@Body() registerDto: RegisterDto) {
-    // 如果到达这里，说明验证已经通过
     return {
       message: '验证通过',
       data: registerDto

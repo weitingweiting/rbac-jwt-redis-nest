@@ -22,7 +22,7 @@ export class PermissionsGuard implements CanActivate {
     ])
 
     if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true // 未设置权限要求，放行
+      return true
     }
 
     const request = context.switchToHttp().getRequest()
@@ -32,20 +32,12 @@ export class PermissionsGuard implements CanActivate {
       return false
     }
 
-    // 从缓存或数据库获取用户权限
     const userPermissions = await this.userPermissionsService.getUserPermissions(user.id)
     console.log('🚀 ~ PermissionsGuard ~ canActivate ~ userPermissions:', userPermissions)
 
-    // 检查是否拥有所有必需权限（AND 逻辑）
-    // return requiredPermissions.every(permission =>
-    //   userPermissions.includes(permission),
-    // );
-
     if (logic === 'OR') {
-      // OR 逻辑：只要有一个权限匹配即可
       return requiredPermissions.some((permission) => userPermissions.includes(permission))
     } else {
-      // 默认 AND 逻辑：必须全部权限匹配
       return requiredPermissions.every((permission) => userPermissions.includes(permission))
     }
   }

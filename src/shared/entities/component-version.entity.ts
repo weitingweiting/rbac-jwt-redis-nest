@@ -17,7 +17,6 @@ import { DevelopmentApplication } from '@/shared/entities/development-applicatio
 export class ComponentVersion extends BaseEntity {
   /**
    * 关联的组件ID（外键，引用 Component.componentId）
-   * 注意：这是 string 类型，直接引用 Component 的主键 componentId
    */
   @Column({ type: 'varchar', length: 100, name: 'component_id' })
   componentId: string
@@ -44,7 +43,7 @@ export class ComponentVersion extends BaseEntity {
   entryFile: string
 
   /**
-   * 样式文件名（可选）
+   * 样式文件名
    * 如：style.css
    */
   @Column({ type: 'varchar', length: 255, nullable: true, name: 'style_file' })
@@ -101,9 +100,7 @@ export class ComponentVersion extends BaseEntity {
   cliVersion: string
 
   /**
-   * 组件模板类型（此版本专属）
-   * 如：vue-echarts, vue-component, js
-   * 注意：不同版本可能使用不同的构建方式
+   * 组件模板类型
    */
   @Column({ type: 'varchar', length: 50 })
   type: string
@@ -111,21 +108,18 @@ export class ComponentVersion extends BaseEntity {
   /**
    * 开发框架（此版本专属）
    * 如：vue3, vue2, react
-   * 注意：组件可能在不同版本中升级技术栈
    */
   @Column({ type: 'varchar', length: 50 })
   framework: string
 
   /**
    * 作者组织名称（此版本专属）
-   * 注意：维护者可能在不同版本中变更
    */
   @Column({ type: 'varchar', length: 200, nullable: true, name: 'author_organization' })
   authorOrganization: string | null
 
   /**
-   * 作者用户名（此版本专属）
-   * 注意：维护者可能在不同版本中变更
+   * 作者用户名
    */
   @Column({ type: 'varchar', length: 100, nullable: true, name: 'author_username' })
   authorUsername: string | null
@@ -133,7 +127,6 @@ export class ComponentVersion extends BaseEntity {
   /**
    * 许可证（此版本专属）
    * 如：MIT, Apache-2.0
-   * 注意：许可证可能在不同版本中变更
    */
   @Column({ type: 'varchar', length: 50, nullable: true })
   license: string | null
@@ -158,7 +151,6 @@ export class ComponentVersion extends BaseEntity {
 
   /**
    * 版本状态
-   * draft = 草稿, published = 已发布, deprecated = 已弃用, archived = 已下架
    */
   @Column({ type: 'varchar', length: 20, default: 'draft' })
   status: string
@@ -215,7 +207,7 @@ export class ComponentVersion extends BaseEntity {
 
   /**
    * 关联的研发申请列表（一对多关系）
-   * 一个版本可能对应多个申请（如被拒绝后重申）
+   * 一个版本可能对应多个申请
    */
   @OneToMany(() => DevelopmentApplication, (app) => app.componentVersion)
   developmentApplications: DevelopmentApplication[]

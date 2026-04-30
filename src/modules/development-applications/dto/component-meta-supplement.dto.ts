@@ -64,7 +64,6 @@ export class SupplementMetadataDto {
 /**
  * 组件元数据补充文件 DTO
  *
- * 对应 component.meta.supplement.json 文件
  * 由研发申请系统生成，用户下载后放入组件包
  */
 export class ComponentMetaSupplementDto {
@@ -95,9 +94,6 @@ export class ComponentMetaSupplementDto {
   _metadata?: SupplementMetadataDto
 }
 
-/**
- * 生成 supplement 文件内容
- */
 export interface IGenerateSupplementOptions {
   id: string
   name: string

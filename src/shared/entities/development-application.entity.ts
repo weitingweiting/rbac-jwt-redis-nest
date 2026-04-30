@@ -11,15 +11,10 @@ import {
  * 上传文件信息接口
  */
 export interface IUploadInfo {
-  /** 文件名 */
   fileName?: string
-  /** 文件大小（字节） */
   fileSize?: number
-  /** 上传时间 */
   uploadTime?: Date
-  /** 临时存储路径 */
   tempPath?: string
-  /** 文件校验和 */
   checksum?: string
 }
 
@@ -27,15 +22,10 @@ export interface IUploadInfo {
  * 审核信息接口
  */
 export interface IReviewInfo {
-  /** 审核人ID */
   reviewerId?: number
-  /** 审核人用户名 */
   reviewerName?: string
-  /** 审核时间 */
   reviewTime?: Date
-  /** 审核动作 */
   reviewAction?: 'approve' | 'reject'
-  /** 审核意见 */
   reviewComment?: string
 }
 
@@ -136,7 +126,6 @@ export class DevelopmentApplication extends BaseEntity {
 
   /**
    * 研发申请状态
-   * 新流程：pending_review → approved → completed
    */
   @Column({
     type: 'varchar',
@@ -148,28 +137,24 @@ export class DevelopmentApplication extends BaseEntity {
 
   /**
    * 上传文件信息（JSON）
-   * 包含：文件名、大小、上传时间、临时路径、校验和
    */
   @Column({ type: 'json', nullable: true, name: 'upload_info' })
   uploadInfo: IUploadInfo | null
 
   /**
    * 审核信息（JSON）
-   * 包含：审核人、审核时间、审核动作、审核意见
    */
   @Column({ type: 'json', nullable: true, name: 'review_info' })
   reviewInfo: IReviewInfo | null
 
   /**
    * 关联的组件版本ID
-   * 审核通过后创建的 ComponentVersion 的 ID
    */
   @Column({ type: 'int', nullable: true, name: 'component_version_id' })
   componentVersionId: number | null
 
   /**
    * 关联的现有版本ID
-   * 仅替换版本场景使用，指向要被替换的 draft 版本
    */
   @Column({ type: 'int', nullable: true, name: 'existing_version_id' })
   existingVersionId: number | null
@@ -220,8 +205,6 @@ export class DevelopmentApplication extends BaseEntity {
 
   /**
    * 关联的组件版本（多对一关联）
-   * 申请完成后创建的组件版本
-   * 注意：同一组件和版本可能有多次申请（如被拒绝后重申）
    */
   @ManyToOne(() => ComponentVersion, (version) => version.developmentApplications, {
     nullable: true

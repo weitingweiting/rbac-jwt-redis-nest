@@ -28,16 +28,12 @@ export class ComponentValidationService {
     @Inject(WINSTON_MODULE_PROVIDER)
     private readonly logger: Logger
   ) {}
-  /**
-   * 验证上传的 ZIP 文件
-   */
   async validateZipFile(file: Express.Multer.File): Promise<{
     passed: boolean
     warnings: string[]
   }> {
     const warnings: string[] = []
 
-    // 1. 验证文件类型
     if (file.mimetype !== 'application/zip' && !file.originalname.endsWith('.zip')) {
       throw new BusinessException(
         '只支持 .zip 格式的文件',
@@ -46,7 +42,6 @@ export class ComponentValidationService {
       )
     }
 
-    // 2. 验证文件大小
     if (file.size > COMPONENT_FILE_UPLOAD_RULES.MAX_ZIP_SIZE) {
       throw new BusinessException(
         `ZIP 文件大小不能超过 ${COMPONENT_FILE_UPLOAD_RULES.MAX_ZIP_SIZE / 1024 / 1024}MB`,
@@ -55,11 +50,9 @@ export class ComponentValidationService {
       )
     }
 
-    // 3. 验证 ZIP 文件结构
     try {
       const entries = ZipUtil.getCleanEntries(file.buffer)
 
-      // 检查是否包含 component.meta.json（可能在根目录或子目录中）
       const metaEntry = ZipUtil.findMetaEntry(entries)
       if (!metaEntry) {
         throw new BusinessException(
@@ -69,12 +62,10 @@ export class ComponentValidationService {
         )
       }
 
-      // 验证总文件数量
       if (entries.length > COMPONENT_FILE_UPLOAD_RULES.MAX_FILE_COUNT) {
         warnings.push(`文件数量较多（${entries.length}），建议精简组件资源`)
       }
 
-      // 验证是否包含必要的文件类型
       const hasJsFile = entries.some((entry) => entry.entryName.endsWith('.js'))
       if (!hasJsFile) {
         throw new BusinessException(
@@ -99,13 +90,11 @@ export class ComponentValidationService {
 
   /**
    * 解析并验证 component.meta.json（构建信息）
-   * 该文件由 abd-cli 生成，只包含构建相关的技术信息
    */
   async parseAndValidateBuildMeta(zipBuffer: Buffer): Promise<ComponentBuildMetaDto> {
     try {
       const entries = ZipUtil.getCleanEntries(zipBuffer)
 
-      // 查找 component.meta.json（可能在根目录或子目录中）
       const metaEntry = ZipUtil.findMetaEntry(entries)
 
       if (!metaEntry) {
@@ -116,14 +105,13 @@ export class ComponentValidationService {
         )
       }
 
-      // 解析 JSON
       const metaContent = metaEntry.getData().toString('utf8')
       let metaJson: any
 
       try {
         metaJson = JSON.parse(metaContent)
       } catch (error) {
-        console.log('🚀 ~ ComponentValidationService ~ parseAndValidateBuildMeta ~ error:', error)
+        this.logger.error('解析 component.meta.json 失败', { error })
         throw new BusinessException(
           'component.meta.json 格式不正确，请检查 JSON 语法',
           HttpStatus.BAD_REQUEST,
@@ -131,7 +119,6 @@ export class ComponentValidationService {
         )
       }
 
-      // 转换为 DTO 并验证（只验证构建相关字段）
       const buildMetaDto = plainToClass(ComponentBuildMetaDto, metaJson)
       const errors = await validate(buildMetaDto)
 
@@ -167,7 +154,6 @@ export class ComponentValidationService {
     const entries = ZipUtil.getCleanEntries(zipBuffer)
     const fileNames = entries.map((entry) => entry.entryName)
 
-    // 验证主入口文件
     if (!ZipUtil.fileExists(fileNames, buildMeta.files.entry)) {
       throw new BusinessException(
         `主入口文件 ${buildMeta.files.entry} 不存在`,
@@ -176,7 +162,6 @@ export class ComponentValidationService {
       )
     }
 
-    // 验证样式文件（可选）
     if (buildMeta.files.style && !ZipUtil.fileExists(fileNames, buildMeta.files.style)) {
       throw new BusinessException(
         `样式文件 ${buildMeta.files.style} 不存在`,
@@ -185,7 +170,6 @@ export class ComponentValidationService {
       )
     }
 
-    // 验证预览图（可选）
     if (buildMeta.files.preview && !ZipUtil.fileExists(fileNames, buildMeta.files.preview)) {
       throw new BusinessException(
         `预览图 ${buildMeta.files.preview} 不存在`,
@@ -196,7 +180,7 @@ export class ComponentValidationService {
   }
 
   /**
-   * 获取 ZIP 文件列表（用于生成资源清单）
+   * 获取 ZIP 文件列表
    */
   getZipFileList(zipBuffer: Buffer): string[] {
     return ZipUtil.getFileList(zipBuffer)
@@ -259,13 +243,11 @@ export class ComponentValidationService {
 
   /**
    * 解析并验证 component.meta.supplement.json
-   * 该文件由研发申请系统在审核通过后生成，包含组件基本信息和申请元数据
    */
   async parseAndValidateSupplementJson(zipBuffer: Buffer): Promise<ComponentSupplementDto> {
     try {
       const entries = ZipUtil.getCleanEntries(zipBuffer)
 
-      // 查找 component.meta.supplement.json
       const supplementEntry = ZipUtil.findSupplementEntry(entries)
 
       if (!supplementEntry) {
@@ -276,7 +258,6 @@ export class ComponentValidationService {
         )
       }
 
-      // 解析 JSON
       const supplementContent = supplementEntry.getData().toString('utf8')
       let supplementJson: any
 
@@ -290,7 +271,6 @@ export class ComponentValidationService {
         )
       }
 
-      // 转换为 DTO 并验证
       const supplementDto = plainToClass(ComponentSupplementDto, supplementJson)
       const errors = await validate(supplementDto)
 
@@ -322,10 +302,6 @@ export class ComponentValidationService {
   /**
    * 验证前端传递的申请单号与 supplement.json 中的一致性
    * 防止用户混用不同申请的组件包
-   *
-   * @param requestedApplicationNo 前端传递的申请单号（用户正在操作的申请）
-   * @param supplementApplicationNo supplement.json 中的申请单号（组件包对应的申请）
-   * @throws BusinessException 如果申请单号不一致
    */
   validateApplicationNoConsistency(
     requestedApplicationNo: string,
@@ -348,16 +324,12 @@ export class ComponentValidationService {
   /**
    * 验证 supplement.json 与研发申请记录的一致性
    * 确保上传的组件包确实对应一个已审核通过的申请
-   *
-   * @param supplement 解析后的 supplement.json
-   * @returns 返回对应的研发申请记录
    */
   async validateSupplementWithApplication(
     supplement: ComponentSupplementDto
   ): Promise<DevelopmentApplication> {
     const { applicationId, applicationNo } = supplement._metadata
 
-    // 查询申请记录
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId }
     })
@@ -370,7 +342,6 @@ export class ComponentValidationService {
       )
     }
 
-    // 验证申请单号一致
     if (application.applicationNo !== applicationNo) {
       throw new BusinessException(
         `申请单号不匹配: supplement.json 中为 "${applicationNo}"，系统记录为 "${application.applicationNo}"`,
@@ -379,7 +350,6 @@ export class ComponentValidationService {
       )
     }
 
-    // 验证组件信息一致
     if (application.componentId !== supplement.id) {
       throw new BusinessException(
         `组件ID不匹配: supplement.json 中为 "${supplement.id}"，申请记录为 "${application.componentId}"`,
@@ -388,7 +358,6 @@ export class ComponentValidationService {
       )
     }
 
-    // 验证版本号一致
     if (application.targetVersion !== supplement.version) {
       throw new BusinessException(
         `版本号不匹配: supplement.json 中为 "${supplement.version}"，申请记录为 "${application.targetVersion}"`,
@@ -409,7 +378,6 @@ export class ComponentValidationService {
 
   /**
    * 验证申请状态是否允许上传
-   * 只有 APPROVED 状态的申请才能上传组件包
    */
   validateApplicationStatus(application: DevelopmentApplication): void {
     if (!UPLOADABLE_STATUSES.includes(application.developmentStatus)) {

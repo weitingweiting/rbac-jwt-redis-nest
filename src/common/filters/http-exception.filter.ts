@@ -34,7 +34,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     } else {
       message = exception.message
       error = exception.name
-    } // ✅ 使用中间件生成的 requestId
+    }
     const requestId = request['requestId'] || ResponseHeadersUtil.generateTraceId()
 
     // ✅ 统一的错误响应格式
@@ -92,7 +92,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   private getCustomMessage(status: number, originalMessage: string | string[]): string | string[] {
     if (Array.isArray(originalMessage)) {
-      return originalMessage // 保持验证错误的数组格式
+      return originalMessage
     }
 
     switch (status) {

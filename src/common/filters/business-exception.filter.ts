@@ -27,7 +27,6 @@ export class BusinessExceptionFilter implements ExceptionFilter {
       error: exceptionResponse.errorCode || 'BUSINESS_ERROR',
       message: exceptionResponse.message,
       requestId
-      // 业务异常通常不需要显示技术栈信息
     }
 
     // ✅ 设置响应头

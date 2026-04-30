@@ -1,9 +1,6 @@
 /**
  * 组件构建元信息 DTO
  *
- * 用于校验 abd-cli 生成的 component.meta.json 文件
- * 该文件只包含构建相关的技术信息，不包含业务信息（id、name、version、classification）
- * 业务信息来自 supplement.json
  */
 
 import { IsString, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator'
@@ -60,14 +57,6 @@ export class BuildMetaAuthorDto {
  * 组件构建元信息 DTO（component.meta.json）
  *
  * 职责：只校验 abd-cli 生成的构建信息
- * - files: 入口文件、样式文件、预览图路径
- * - buildInfo: 构建时间、哈希、CLI版本
- * - type/framework: 组件类型和框架
- * - author: 作者信息
- * - license: 许可证
- * - description: 组件描述
- *
- * 注意：不包含 id、name、version、classification，这些来自 supplement.json
  */
 export class ComponentBuildMetaDto {
   @ValidateNested()
