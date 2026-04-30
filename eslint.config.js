@@ -6,10 +6,8 @@ const prettierConfig = require('eslint-config-prettier')
 
 module.exports = [
   {
-    // 全局忽略配置，避免不必要的检查
     ignores: ['dist', 'node_modules', '*.config.js', 'coverage', '**/*.test.ts', '**/*.spec.ts']
   },
-  // TypeScript 文件配置
   {
     files: ['**/*.ts'],
     languageOptions: {
@@ -39,7 +37,7 @@ module.exports = [
       ...tseslint.configs.recommended.rules,
       ...prettierConfig.rules,
 
-      // Prettier 规则（必须在最后，覆盖冲突的规则）
+      // Prettier 规则
       'prettier/prettier': [
         'error',
         {
@@ -53,7 +51,7 @@ module.exports = [
         }
       ],
 
-      // TypeScript 相关规则（宽松配置）
+      // TypeScript 宽松配置
       '@typescript-eslint/naming-convention': [
         'error',
         {
@@ -77,7 +75,6 @@ module.exports = [
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/interface-name-prefix': 'off',
 
-      // 通用规则
       'no-console': 'off',
       'no-debugger': 'warn',
       'no-undef': 'off',

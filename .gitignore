@@ -1,31 +1,22 @@
-# Dependencies
 node_modules/
 dist/
 
-# Environment variables
 .env
 
-# Logs (项目外部，但忽略可能意外创建的日志文件)
 *.log
 npm-debug.log*
 
-# OS
 .DS_Store
 Thumbs.db
 
-# IDE
-# .vscode/
 .idea/
 *.swp
 *.swo
 
-# Test coverage
 coverage/
 
-# Build
 build/
 
-# 文档管理 - 允许根目录README和docs目录下的文档
 *.md
 !README.md
 !docs/

@@ -1,6 +1,7 @@
 {
   "name": "low-code-agile-designer-backend",
   "version": "1.0.0",
+  "author": "weiting",
   "description": "低代码敏捷设计器后台服务",
   "scripts": {
     "prestart": "node scripts/ensure-logs-dir.js",

@@ -1,6 +1,6 @@
 /**
  * PM2 生产环境配置
- * 用于生产环境部署和进程管理
+ * 环境部署和进程管理
  */
 module.exports = {
   apps: [
@@ -11,13 +11,11 @@ module.exports = {
       env: {
         NODE_ENV: 'production'
       },
-      // 自动重启配置
       autorestart: true,
       max_restarts: 10,
       min_uptime: '10s',
       restart_delay: 3000,
 
-      // 内存限制
       max_memory_restart: '500M',
 
       // 日志配置

@@ -1,6 +1,5 @@
 .PHONY: help up down restart logs ps clean install seed dev build
 
-# 默认目标
 help:
 	@echo "🎯 RBAC JWT Redis Demo - 可用命令："
 	@echo ""

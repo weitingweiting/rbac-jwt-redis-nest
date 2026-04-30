@@ -49,7 +49,6 @@ services:
     networks:
       - rbac-network
 
-  # 可选：RedisInsight (Redis 可视化管理工具)
   redis-insight:
     image: redislabs/redisinsight:latest
     container_name: rbac-demo-redis-insight
@@ -68,7 +67,6 @@ services:
     profiles:
       - tools
 
-  # 可选：Adminer (数据库管理工具，比 phpMyAdmin 更轻量)
   adminer:
     image: adminer:latest
     container_name: rbac-demo-adminer
