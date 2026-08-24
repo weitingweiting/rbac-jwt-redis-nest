@@ -1,0 +1,7 @@
+engineStrict: true
+allowBuilds:
+  '@nestjs/core': false
+  msgpackr-extract: false
+minimumReleaseAgeExclude:
+  - mysql2@3.24.0
+  - npm-check-updates@23.1.0

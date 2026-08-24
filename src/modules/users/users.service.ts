@@ -73,7 +73,7 @@ export class UsersService extends BaseService<User> {
   private async findUserEntity(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['roles', 'roles.permissions'],
+      relations: { roles: { permissions: true } },
       withDeleted: false
     })
 
@@ -189,7 +189,7 @@ export class UsersService extends BaseService<User> {
     // 查找用户（需要密码字段进行验证）
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      select: ['id', 'password'], // 明确选择密码字段
+      select: { id: true, password: true }, // 明确选择密码字段
       withDeleted: false
     })
 

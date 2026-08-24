@@ -6,7 +6,7 @@
     "emitDecoratorMetadata": true, // 启用装饰器元数据
     "experimentalDecorators": true, // 启用实验性的装饰器支持
     "allowSyntheticDefaultImports": true, // 允许从没有默认导出的模块中默认导入
-    "target": "ES2022",
+    "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./", // 基础路径，通常设置为项目根目录
@@ -24,7 +24,7 @@
     "esModuleInterop": true, // 允许与ES模块互操作
     "resolveJsonModule": true, // 允许导入JSON模块
     "moduleResolution": "node", // 模块解析策略，使用Node.js的模块解析方式
-    "lib": ["ES2022"],
+    "lib": ["ES2023"],
     "paths": {
       "@/*": ["src/*"]
     }

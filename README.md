@@ -21,6 +21,8 @@ git clone <repository-url>
 cd rbac+jwt+redis-DEMO
 
 # 2. 安装依赖
+node --version # 需要 v24.19.0
+pnpm --version # 需要 11.23.0
 pnpm install
 
 # 3. 启动服务 (Docker)
@@ -84,7 +86,7 @@ pnpm run start:dev
 
 ## 🛠️ 技术栈
 
-- **框架**: NestJS 10
+- **框架**: NestJS 11
 - **认证**: JWT + Passport
 - **数据库**: MySQL + TypeORM
 - **缓存**: Redis

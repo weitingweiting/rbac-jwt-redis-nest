@@ -53,7 +53,7 @@ export class RolesService extends BaseService<Role> {
   async findOneRole(id: number): Promise<Role> {
     const role = await this.roleRepository.findOne({
       where: { id },
-      relations: ['permissions'],
+      relations: { permissions: true },
       withDeleted: false
     })
 

@@ -457,7 +457,7 @@ export class DevelopmentApplicationsService {
   async getApplicationDetail(applicationNo: string): Promise<DevelopmentApplicationResponseDto> {
     const application = await this.applicationRepository.findOne({
       where: { applicationNo },
-      relations: ['applicant', 'reviewer']
+      relations: { applicant: true, reviewer: true }
     })
 
     if (!application) {
@@ -539,7 +539,7 @@ export class DevelopmentApplicationsService {
   ): Promise<DevelopmentApplicationResponseDto> {
     const application = await this.applicationRepository.findOne({
       where: { applicationNo },
-      relations: ['applicant']
+      relations: { applicant: true }
     })
 
     if (!application) {

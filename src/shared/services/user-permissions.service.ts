@@ -31,7 +31,7 @@ export class UserPermissionsService {
     console.log(`❌ 缓存未命中，用户 ${userId} 权限，从数据库加载`)
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['roles', 'roles.permissions']
+      relations: { roles: { permissions: true } }
     })
 
     if (!user || !user.roles) {
@@ -67,7 +67,7 @@ export class UserPermissionsService {
     console.log(`❌ 缓存未命中，用户 ${userId} 角色，从数据库加载`)
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['roles']
+      relations: { roles: true }
     })
 
     if (!user || !user.roles) {

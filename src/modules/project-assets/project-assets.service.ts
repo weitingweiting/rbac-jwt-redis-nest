@@ -58,7 +58,7 @@ export class ProjectAssetsService extends BaseService<ProjectAsset> {
   async findOneAsset(id: number): Promise<ProjectAsset> {
     const asset = await this.projectAssetRepository.findOne({
       where: { id },
-      relations: ['project'],
+      relations: { project: true },
       withDeleted: false
     })
 

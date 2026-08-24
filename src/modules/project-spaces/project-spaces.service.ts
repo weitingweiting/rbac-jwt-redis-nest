@@ -74,7 +74,7 @@ export class ProjectSpacesService extends BaseService<ProjectSpace> {
   async findOneSpace(id: number): Promise<ProjectSpace> {
     const space = await this.projectSpaceRepository.findOne({
       where: { id },
-      relations: ['owner', 'users', 'projects'],
+      relations: { owner: true, users: true, projects: true },
       withDeleted: false
     })
 

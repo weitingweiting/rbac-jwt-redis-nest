@@ -1,6 +1,6 @@
 import { Injectable, HttpStatus, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { IsNull, Repository } from 'typeorm'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { BusinessException } from '@/shared/exceptions/business.exception'
@@ -220,7 +220,7 @@ export class ComponentValidationService {
         code: level1Code,
         level: 1,
         isActive: true,
-        deletedAt: null
+        deletedAt: IsNull()
       }
     })
 
@@ -239,7 +239,7 @@ export class ComponentValidationService {
         level: 2,
         parentId: level1Category.id,
         isActive: true,
-        deletedAt: null
+        deletedAt: IsNull()
       }
     })
 

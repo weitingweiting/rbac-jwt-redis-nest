@@ -68,7 +68,7 @@ export class AuthService {
     // 查找用户（排除软删除的用户）
     const user = await this.userRepository.findOne({
       where: { username },
-      relations: ['roles', 'roles.permissions'],
+      relations: { roles: { permissions: true } },
       withDeleted: false
     })
 
@@ -116,7 +116,7 @@ export class AuthService {
   async validateToken(userId: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['roles'],
+      relations: { roles: true },
       withDeleted: false // 不返回软删除的用户
     })
 

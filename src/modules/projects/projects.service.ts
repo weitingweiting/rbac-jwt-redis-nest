@@ -73,7 +73,7 @@ export class ProjectsService extends BaseService<Project> {
   async findOneProject(id: number): Promise<Project> {
     const project = await this.projectRepository.findOne({
       where: { id },
-      relations: ['projectSpace', 'assets'],
+      relations: { projectSpace: true, assets: true },
       withDeleted: false
     })
 

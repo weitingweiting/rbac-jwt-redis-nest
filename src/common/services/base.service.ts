@@ -1,4 +1,10 @@
-import { Repository, FindOptionsWhere, FindManyOptions, FindOneOptions } from 'typeorm'
+import {
+  Repository,
+  FindOptionsWhere,
+  FindManyOptions,
+  FindOneOptions,
+  FindOptionsRelations
+} from 'typeorm'
 import { BaseEntity } from '@/shared/entities/base.entity'
 import { BusinessException } from '@/shared/exceptions/business.exception'
 import { HttpStatus } from '@nestjs/common'
@@ -39,7 +45,11 @@ export abstract class BaseService<T extends BaseEntity> {
   /**
    * 根据 ID 查找记录，不存在时抛出异常
    */
-  async findOneById(id: number, relations: string[] = [], includeSoftDeleted = false): Promise<T> {
+  async findOneById(
+    id: number,
+    relations?: FindOptionsRelations<T>,
+    includeSoftDeleted = false
+  ): Promise<T> {
     const entity = await this.findOne(
       {
         where: { id } as FindOptionsWhere<T>,
@@ -89,7 +99,7 @@ export abstract class BaseService<T extends BaseEntity> {
    * 硬删除记录（物理删除）
    */
   async hardDelete(id: number): Promise<void> {
-    const entity = await this.findOneById(id, [], true) // 允许查找软删除的记录
+    const entity = await this.findOneById(id, undefined, true) // 允许查找软删除的记录
     await this.repository.remove(entity)
   }
 

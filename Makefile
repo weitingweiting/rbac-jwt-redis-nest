@@ -108,7 +108,7 @@ backup:
 
 # 安装依赖
 install:
-	@echo "📦 安装 npm 依赖..."
+	@echo "📦 安装 pnpm 依赖..."
 	pnpm install
 
 # 数据库种子数据

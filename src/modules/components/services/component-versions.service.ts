@@ -1,6 +1,6 @@
 import { Injectable, HttpStatus, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource } from 'typeorm'
+import { Repository, DataSource, IsNull } from 'typeorm'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { ComponentVersion } from '@/shared/entities/component-version.entity'
@@ -144,7 +144,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
   private async findOneVersionSimple(id: number): Promise<ComponentVersion> {
     const version = await this.versionRepository.findOne({
       where: { id },
-      relations: ['component'],
+      relations: { component: true },
       withDeleted: false
     })
 
@@ -296,7 +296,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         where: {
           componentId: version.componentId,
           status: VersionStatus.PUBLISHED,
-          deletedAt: null as any
+          deletedAt: IsNull()
         }
       })
 
@@ -431,7 +431,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
         where: {
           componentId: version.componentId,
           status: VersionStatus.PUBLISHED,
-          deletedAt: null as any
+          deletedAt: IsNull()
         }
       })
 
@@ -567,7 +567,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
 
       // 2. 在事务内部直接更新 Component 表的计数
       const versionCount = await queryRunner.manager.count(ComponentVersion, {
-        where: { componentId: version.componentId, deletedAt: null as any }
+        where: { componentId: version.componentId, deletedAt: IsNull() }
       })
 
       const updateData: any = { versionCount }
@@ -578,7 +578,7 @@ export class ComponentVersionsService extends BaseService<ComponentVersion> {
           where: {
             componentId: version.componentId,
             status: VersionStatus.PUBLISHED,
-            deletedAt: null as any
+            deletedAt: IsNull()
           }
         })
         updateData.publishedVersionCount = publishedCount

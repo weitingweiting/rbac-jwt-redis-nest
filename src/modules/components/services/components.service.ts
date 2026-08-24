@@ -1,6 +1,6 @@
 import { Injectable, HttpStatus, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { IsNull, Repository } from 'typeorm'
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
 import { Logger } from 'winston'
 import { Component } from '@/shared/entities/component.entity'
@@ -267,7 +267,7 @@ export class ComponentsService {
         where: {
           componentId,
           status: 'published',
-          deletedAt: null as any
+          deletedAt: IsNull()
         }
       })
 
@@ -302,7 +302,7 @@ export class ComponentsService {
       const versionCount = await this.versionRepository.count({
         where: {
           componentId,
-          deletedAt: null as any
+          deletedAt: IsNull()
         }
       })
 
@@ -383,7 +383,7 @@ export class ComponentsService {
 
     // 1. 获取所有分类（两级）
     const categories = await this.categoryRepository.find({
-      where: { deletedAt: null },
+      where: { deletedAt: IsNull() },
       order: { level: 'ASC', sortOrder: 'ASC', id: 'ASC' }
     })
 
@@ -636,7 +636,7 @@ export class ComponentsService {
 
     // 4. 获取所有分类
     const categories = await this.categoryRepository.find({
-      where: { deletedAt: null },
+      where: { deletedAt: IsNull() },
       order: { level: 'ASC', sortOrder: 'ASC', id: 'ASC' }
     })
 
